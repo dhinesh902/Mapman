@@ -1,0 +1,137 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_safearea.dart';
+
+class OnboardScreen extends StatefulWidget {
+  const OnboardScreen({super.key});
+
+  @override
+  State<OnboardScreen> createState() => _OnboardScreenState();
+}
+
+class _OnboardScreenState extends State<OnboardScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return CustomSafeArea(
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        body: ListView(
+          children: [
+            Image.asset(AppIcons.onboardP, height: 392, width: 249),
+            BlurContainer(),
+            SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: HeaderTextBlack(
+                title: 'Boost Your Shop’s \nwith best & affordable \nway',
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 20),
+            GetStartedButton(
+              onTap: () {
+                context.go('/login');
+              },
+            ),
+            SizedBox(height: 20),
+            Center(
+              child: BodyTextHint(
+                title: 'By Continuing you agree to Mapman',
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            SizedBox(height: 10),
+            Center(
+              child: InkWell(
+                onTap: () {},
+                child: HeaderTextPrimary(
+                  title: 'Terms and Conditions',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  textDecoration: TextDecoration.underline,
+                  decorationColor: AppColors.primary,
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// class BlurContainer extends StatelessWidget {
+//   const BlurContainer({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       height: 20,
+//       width: double.infinity,
+//       decoration: BoxDecoration(
+//         boxShadow: [
+//           BoxShadow(
+//             color: AppColors.whiteText,
+//             blurRadius: 10,
+//             spreadRadius: 10,
+//           ),
+//         ],
+//       ),
+//       child: ClipRRect(
+//         child: Stack(
+//           children: [
+//             BackdropFilter(
+//               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+//               child: Container(color: Colors.transparent),
+//             ),
+//             Container(
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   begin: Alignment.topCenter,
+//                   end: Alignment.bottomCenter,
+//                   colors: [
+//                     AppColors.whiteText.withValues(alpha: 0.6),
+//                     GenericColors.lightPrimary.withValues(alpha: 0.15),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+class BlurContainer extends StatelessWidget {
+  const BlurContainer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 20,
+      width: double.infinity,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.whiteText.withValues(alpha: 0.6),
+              GenericColors.lightPrimary.withValues(alpha: .5),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
