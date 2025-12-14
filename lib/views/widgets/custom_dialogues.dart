@@ -70,7 +70,7 @@ class CustomDialogues {
       context: context,
       builder: (context) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 15),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -174,7 +174,7 @@ class CustomDialogues {
       context: context,
       builder: (context) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 15),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -204,6 +204,80 @@ class CustomDialogues {
                 SizedBox(height: 10),
                 BodyTextHint(
                   title: 'Shop details successfully submitted by you',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future showDeleteDialog(BuildContext context) {
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            content: Column(
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(AppIcons.trashP, height: 40, width: 40),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Successfully Updated!!',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'Shop details successfully submitted by you',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: AppColors.scaffoldBackground,
+          child: Container(
+            width: double.maxFinite,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(AppIcons.trashP, height: 40, width: 40),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Deleted Successfully!!',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'Video Permanently deleted by you',
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,

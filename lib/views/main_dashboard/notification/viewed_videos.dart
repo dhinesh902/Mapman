@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
@@ -56,6 +57,10 @@ class _ViewedVideosState extends State<ViewedVideos> {
                 activeTrackColor: GenericColors.darkGreen,
                 onChanged: (value) {
                   homeController.setIsViewedVideo = value;
+                  VideoDialogues().showViewedVideoDialogue(
+                    context,
+                    turnOn: value,
+                  );
                 },
               ),
             ),

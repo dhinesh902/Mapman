@@ -29,12 +29,15 @@ class EnterYourLocation extends StatefulWidget {
 class _EnterYourLocationState extends State<EnterYourLocation> {
   late PlaceController placeController;
   late TextEditingController searchController;
+
   GoogleMapController? _controller;
+  late VoidCallback _placeListener;
   bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
+
     placeController = context.read<PlaceController>();
     searchController = TextEditingController();
 
@@ -43,18 +46,21 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
       getCurrentLocation();
     });
 
-    placeController.addListener(() {
+    _placeListener = () {
+      if (!mounted) return;
       final details = placeController.placeDetails;
       if (details != null && details.location != null) {
-        _animateToSelectedPlace(
-          LatLng(details.location!.lat, details.location!.lng),
-        );
+        final latLng = LatLng(details.location!.lat, details.location!.lng);
+        _animateToSelectedPlace(latLng);
       }
-    });
+    };
+    placeController.addListener(_placeListener);
   }
 
   @override
   void dispose() {
+    placeController.removeListener(_placeListener);
+    _controller?.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -66,6 +72,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   @override
   Widget build(BuildContext context) {
     placeController = context.watch<PlaceController>();
+
     final details = placeController.placeDetails;
 
     return CustomSafeArea(
@@ -77,41 +84,33 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
             switch (placeController.currentLocationLatLng.status) {
               case Status.INITIAL:
               case Status.LOADING:
-                return CustomLoadingIndicator();
+                return const CustomLoadingIndicator();
 
               case Status.COMPLETED:
                 final latLong = placeController.currentLocationLatLng.data;
+
+                final initialLat = details?.location?.lat ?? latLong!.latitude;
+                final initialLng = details?.location?.lng ?? latLong!.longitude;
 
                 return Stack(
                   children: [
                     DynamicMarkerGoogleMap(
                       initialCameraPosition: CameraPosition(
-                        target: LatLng(
-                          details?.location?.lat ?? latLong!.latitude,
-                          details?.location?.lng ?? latLong!.longitude,
-                        ),
+                        target: LatLng(initialLat, initialLng),
                         zoom: 13,
                       ),
                       onMapCreated: (c) {
+                        if (!mounted) return;
                         _controller = c;
-
-                        _updateMarkerPosition(
-                          LatLng(
-                            details?.location?.lat ?? latLong!.latitude,
-                            details?.location?.lng ?? latLong!.longitude,
-                          ),
-                        );
+                        _updateMarkerPosition(LatLng(initialLat, initialLng));
                       },
                       dynamicMarkers: [
                         DynamicMarker(
-                          position: LatLng(
-                            details?.location?.lat ?? latLong!.latitude,
-                            details?.location?.lng ?? latLong!.longitude,
-                          ),
+                          position: LatLng(initialLat, initialLng),
                           anchor: Alignment.bottomCenter,
                           child: Lottie.asset(
-                            AppAnimations.locationPin,
-                            height: 120,
+                            AppAnimations.location,
+                            height: 200,
                           ),
                         ),
                       ],
@@ -150,7 +149,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   }
 
   Future<void> _animateToSelectedPlace(LatLng latLng) async {
-    if (_controller == null) return;
+    if (!mounted || _controller == null) return;
 
     await _controller!.animateCamera(
       CameraUpdate.newCameraPosition(CameraPosition(target: latLng, zoom: 16)),
@@ -161,6 +160,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 
   void _scheduleMarkerUpdate(LatLng latLng) {
     if (_isUpdating) return;
+
     _isUpdating = true;
 
     Future.microtask(() async {
@@ -170,7 +170,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   }
 
   Future<void> _updateMarkerPosition(LatLng latLng) async {
-    if (_controller == null) return;
+    if (!mounted || _controller == null) return;
     await _controller!.getScreenCoordinate(latLng);
   }
 }
@@ -242,15 +242,19 @@ class LocationAutoCompleteSearchField extends StatelessWidget {
                     itemCount: options.length,
                     itemBuilder: (context, index) {
                       final item = options.elementAt(index);
-
                       return InkWell(
                         onTap: () async {
                           onSelected(item);
-                          await SessionManager().addPlaceDetail(item);
-                          if (!context.mounted) return;
                           await context
                               .read<PlaceController>()
                               .fetchPlaceDetails(item.placeId ?? '', context);
+                          await SessionManager().addPlaceDetail(
+                            CustomPrediction(
+                              title: item.title,
+                              placeId: item.placeId,
+                              description: item.description,
+                            ),
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.all(12),

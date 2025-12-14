@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_places_autocomplete/google_places_autocomplete.dart';
 import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -28,19 +27,23 @@ class EnterLocation extends StatefulWidget {
 class _EnterLocationState extends State<EnterLocation> {
   late PlaceController placeController;
 
+  List<CustomPrediction> predictions = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     // TODO: implement initState
     placeController = context.read<PlaceController>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      placeController.setConfirmedPrediction = null;
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   placeController.setConfirmedPrediction = null;
+    // });
+    loadPredictions();
     super.initState();
   }
 
-  Future<List<Prediction>> getPlaceDetails() async {
-    List<Prediction> details = await SessionManager().getPlaceDetails();
-    return details;
+  Future<void> loadPredictions() async {
+    predictions = await SessionManager().getPlaceDetails();
+    setState(() => isLoading = false);
   }
 
   @override
@@ -160,30 +163,34 @@ class _EnterLocationState extends State<EnterLocation> {
               color: AppColors.lightGreyHint,
             ),
             SizedBox(height: 8),
-            FutureBuilder(
-              future: getPlaceDetails(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return SizedBox(height: 2);
-                } else if (snapshot.hasError) {
-                  return CustomErrorTextWidget(title: '${snapshot.error}');
-                } else if (snapshot.hasData) {
-                  List<Prediction> predictions = snapshot.data ?? [];
-                  return ListView.builder(
-                    itemCount: predictions.length,
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    itemBuilder: (context, index) {
-                      return SearchResultContainer(
-                        prediction: predictions[index],
-                        clearOnTap: () {},
-                      );
-                    },
-                  );
-                } else {
-                  return NoDataText(title: 'No data found');
+            Builder(
+              builder: (context) {
+                if (isLoading) {
+                  return CustomLoadingIndicator(height: 40);
                 }
+                if (predictions.isEmpty) {
+                  return NoDataText(title: "No result found");
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: predictions.length,
+                  itemBuilder: (context, index) {
+                    final item = predictions[index];
+                    return SearchResultContainer(
+                      prediction: item,
+                      clearOnTap: () async {
+                        await SessionManager().removePlaceDetail(
+                          item.placeId ?? '',
+                        );
+                        setState(() {
+                          predictions.removeAt(index);
+                        });
+                      },
+                    );
+                  },
+                );
               },
             ),
             SizedBox(height: 30),
@@ -285,7 +292,7 @@ Future<dynamic> showLocationDialogue(BuildContext context) async {
     context: context,
     builder: (context) {
       return Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 15),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           width: double.maxFinite,
@@ -343,7 +350,7 @@ class SearchResultContainer extends StatelessWidget {
     required this.clearOnTap,
   });
 
-  final Prediction prediction;
+  final CustomPrediction prediction;
   final VoidCallback clearOnTap;
 
   @override
@@ -353,6 +360,7 @@ class SearchResultContainer extends StatelessWidget {
         borderRadius: BorderRadiusGeometry.circular(4),
         color: AppColors.scaffoldBackground,
       ),
+      margin: EdgeInsets.only(bottom: 10),
       child: ListTile(
         title: Row(
           mainAxisSize: MainAxisSize.min,

@@ -31,16 +31,24 @@ class _MainDashboardState extends State<MainDashboard> {
     super.initState();
   }
 
+  Color getBackgroundColor(int currentPage, int currentVideoIndex) {
+    if (currentPage == 2 && currentVideoIndex == 0) {
+      return AppColors.lightViolet;
+    }
+    if (currentPage == 0 || (currentPage == 2 && currentVideoIndex != 1)) {
+      return AppColors.scaffoldBackground;
+    }
+    return AppColors.scaffoldBackgroundDark;
+  }
+
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
     return CustomSafeArea(
-      color:
-          (homeController.currentPage == 0 ||
-              (homeController.currentPage == 2 &&
-                  context.watch<VideoController>().currentVideoIndex != 1))
-          ? AppColors.scaffoldBackground
-          : AppColors.scaffoldBackgroundDark,
+      color: getBackgroundColor(
+        homeController.currentPage,
+        context.watch<VideoController>().currentVideoIndex,
+      ),
       child: Scaffold(
         extendBody: true,
         resizeToAvoidBottomInset: false,
@@ -51,8 +59,8 @@ class _MainDashboardState extends State<MainDashboard> {
             await showAddShopDetail(context);
           },
           child: Container(
-            height: 56,
-            width: 56,
+            height: 68,
+            width: 68,
             padding: EdgeInsets.all(4),
             margin: EdgeInsets.fromLTRB(3, 2, 3, 0),
             decoration: BoxDecoration(
@@ -85,10 +93,11 @@ class _MainDashboardState extends State<MainDashboard> {
           alignment: Alignment.center,
           children: [
             AnimatedBottomNavigationBar.builder(
-              height: 62,
+              height: 65,
               itemCount: 4,
               rightCornerRadius: 6,
               leftCornerRadius: 6,
+              gapWidth: 100,
               tabBuilder: (int index, bool isActive) {
                 final List<String> labels = [
                   "Home",
@@ -96,17 +105,23 @@ class _MainDashboardState extends State<MainDashboard> {
                   "Video",
                   "Profile",
                 ];
-                final List<String> icons = [
-                  AppIcons.home,
-                  AppIcons.location,
-                  AppIcons.video,
-                  AppIcons.profile,
+                final List<String> outlineIcons = [
+                  AppIcons.homeOutline,
+                  AppIcons.locationOutline,
+                  AppIcons.videoOutline,
+                  AppIcons.profileOutline,
+                ];
+                final List<String> fillIcons = [
+                  AppIcons.homeFill,
+                  AppIcons.locationFill,
+                  AppIcons.videoFill,
+                  AppIcons.profileFill,
                 ];
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SvgPicture.asset(
-                      icons[index],
+                      isActive ? fillIcons[index] : outlineIcons[index],
                       height: 24,
                       width: 24,
                       colorFilter: ColorFilter.mode(

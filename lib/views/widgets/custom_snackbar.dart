@@ -3,18 +3,20 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 
 class CustomLoadingIndicator extends StatelessWidget {
-  const CustomLoadingIndicator({super.key});
+  const CustomLoadingIndicator({super.key, this.height = 60});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        height: 70,
-        width: 70,
+        height: height,
+        width: height,
         child: CircularProgressIndicator(
           color: AppColors.primary,
           strokeCap: StrokeCap.round,
-          strokeWidth: 6,
+          strokeWidth: 8,
         ),
       ),
     );

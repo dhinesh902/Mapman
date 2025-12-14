@@ -126,6 +126,8 @@ class BodyTextColors extends StatelessWidget {
     required this.color,
     this.textAlign = TextAlign.start,
     this.overflow = TextOverflow.visible,
+    this.textDecoration = TextDecoration.none,
+    this.decorationColor,
   });
 
   final String title;
@@ -134,6 +136,8 @@ class BodyTextColors extends StatelessWidget {
   final Color color;
   final TextAlign textAlign;
   final TextOverflow overflow;
+  final TextDecoration textDecoration;
+  final Color? decorationColor;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +149,8 @@ class BodyTextColors extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
+        decoration: textDecoration,
+        decorationColor: decorationColor,
       ),
     );
   }
@@ -245,7 +251,6 @@ class AppTextStyle {
   );
 }
 
-
 class EndMessageSection extends StatelessWidget {
   final String title;
   final double titleSize;
@@ -268,11 +273,7 @@ class EndMessageSection extends StatelessWidget {
         const SizedBox(height: 20),
         Row(
           children: [
-            Icon(
-              CupertinoIcons.heart_fill,
-              size: 14,
-              color: iconColor,
-            ),
+            Icon(CupertinoIcons.heart_fill, size: 14, color: iconColor),
             const SizedBox(width: 10),
             BodyTextHint(
               title: 'You made it to the end...',

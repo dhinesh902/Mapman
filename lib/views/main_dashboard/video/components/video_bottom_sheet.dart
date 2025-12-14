@@ -4,6 +4,7 @@ import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 
 class VideoBottomSheet {
   Future<dynamic> showEditBottomSheet(BuildContext context) async {
@@ -59,7 +60,9 @@ class VideoBottomSheet {
                     icon: AppIcons.deleteP,
                     title: 'Delete Video',
                     body: 'Delete this video permanently',
-                    onTap: () {},
+                    onTap: () {
+                      CustomDialogues().showDeleteDialog(context);
+                    },
                   ),
                 ],
               ),

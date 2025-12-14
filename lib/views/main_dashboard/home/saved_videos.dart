@@ -32,7 +32,6 @@ class _SavedVideosState extends State<SavedVideos> {
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Stack(
         children: [
-          /// TOP BG
           Positioned(
             top: 0,
             left: 0,
@@ -107,7 +106,7 @@ class TopPromoBanner extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
                 image: DecorationImage(
                   image: AssetImage(AppIcons.savedVideoBg),
-                  fit: BoxFit.fill,
+                  fit: BoxFit.cover,
                 ),
                 color: AppColors.scaffoldBackground,
                 boxShadow: [
@@ -132,7 +131,7 @@ class TopPromoBanner extends StatelessWidget {
           ),
 
           Positioned(
-            right: 20,
+            right: 60,
             top: 30,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

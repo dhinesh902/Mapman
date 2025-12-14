@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
@@ -21,6 +22,7 @@ class SingleVideoScreen extends StatefulWidget {
 
 class _SingleVideoScreenState extends State<SingleVideoScreen> {
   late VideoPlayerController _controller;
+  final ValueNotifier<bool> bookMarkNotifier = ValueNotifier(false);
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    bookMarkNotifier.dispose();
     super.dispose();
   }
 
@@ -74,7 +77,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen> {
                   SizedBox(width: 15),
                   RewardContainer(
                     onTap: () {
-                      VideoDialogues().showRewardsDialogue(context);
+                      VideoDialogues().showRewardsDialogue(
+                        context,
+                        isEarnCoins: true,
+                      );
                     },
                   ),
                 ],
@@ -165,13 +171,26 @@ class _SingleVideoScreenState extends State<SingleVideoScreen> {
                           ),
                         ),
                         SizedBox(width: 10),
-                        CircleContainer(
-                          onTap: () {},
-                          child: Icon(
-                            Icons.bookmark_border_outlined,
-                            size: 30,
-                            color: AppColors.darkGrey,
-                          ),
+                        ValueListenableBuilder(
+                          valueListenable: bookMarkNotifier,
+                          builder: (context, isActive, _) {
+                            return CircleContainer(
+                              onTap: () {
+                                bookMarkNotifier.value = !isActive;
+                              },
+                              child: isActive
+                                  ? Image.asset(
+                                      AppIcons.bookmarkP,
+                                      height: 30,
+                                      width: 30,
+                                    )
+                                  : Icon(
+                                      Icons.bookmark_border_outlined,
+                                      size: 30,
+                                      color: AppColors.darkGrey,
+                                    ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -215,6 +234,8 @@ class BlurBackButton extends StatelessWidget {
     );
   }
 }
+
+/// Shop Detail Button
 
 class ShopDetailsButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -291,6 +312,89 @@ class _ShopDetailsButtonState extends State<ShopDetailsButton>
   }
 }
 
+/// Shop Location Button
+
+class ShopLocationButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const ShopLocationButton({super.key, required this.onTap});
+
+  @override
+  State<ShopLocationButton> createState() => _ShopLocationButtonState();
+}
+
+class _ShopLocationButtonState extends State<ShopLocationButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Container(
+            height: 30,
+            width: 118,
+            margin: EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                transform: GradientRotation(_controller.value * 2 * 3.14159),
+                colors: [AppColors.primary, AppColors.whiteText],
+              ),
+            ),
+            child: Container(
+              margin: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: GenericColors.lightOrange,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    AppIcons.videoShop,
+                    colorFilter: ColorFilter.mode(
+                      AppColors.darkText,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  HeaderTextBlack(
+                    title: "Shop Location",
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class RewardContainer extends StatelessWidget {
   const RewardContainer({super.key, required this.onTap});
 
@@ -308,15 +412,26 @@ class RewardContainer extends StatelessWidget {
           border: Border.all(color: GenericColors.darkYellow),
           borderRadius: BorderRadiusGeometry.circular(20),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Image.asset(AppIcons.rupeeCoinP, height: 20, width: 20),
-            SizedBox(width: 5),
-            HeaderTextBlack(
-              title: 'Rewards',
-              fontSize: 14,
-              fontWeight: FontWeight.w300,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(AppIcons.rupeeCoinP, height: 20, width: 20),
+                SizedBox(width: 5),
+                HeaderTextBlack(
+                  title: 'Rewards',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w300,
+                ),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Center(child: Lottie.asset(AppAnimations.confetti)),
             ),
           ],
         ),

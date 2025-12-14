@@ -98,6 +98,7 @@ class _LoginState extends State<Login> {
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
                                 crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
                                 childAspectRatio: 1,
                                 mainAxisExtent: 135,
                               ),
@@ -107,7 +108,7 @@ class _LoginState extends State<Login> {
                               borderRadius: BorderRadius.circular(10),
                               child: Image.asset(
                                 authController.loginImages[index],
-                                fit: BoxFit.contain,
+                                fit: BoxFit.cover,
                               ),
                             );
                           },
@@ -160,7 +161,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
       child: Center(
         child: Column(
           children: [
-            SizedBox(height: 15),
+            SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

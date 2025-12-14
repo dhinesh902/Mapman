@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:google_places_autocomplete/google_places_autocomplete.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,39 +48,92 @@ class SessionManager {
     return true;
   }
 
+  Future<void> clearPlaceDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('place_details_key');
+  }
+
   /// Store List place details
 
-  Future<Prediction> addPlaceDetail(Prediction newDetail) async {
+  Future<CustomPrediction> addPlaceDetail(CustomPrediction newDetail) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> oldJsonList = prefs.getStringList('place_details_key') ?? [];
-
-    List<Prediction> oldList = oldJsonList
-        .map((e) => Prediction.fromMap(jsonDecode(e)))
+    List<CustomPrediction> oldList = oldJsonList
+        .map((e) => CustomPrediction.fromJson(jsonDecode(e)))
         .toList();
-
     oldList.add(newDetail);
-
     if (oldList.length > 10) {
       oldList = oldList.sublist(oldList.length - 10);
     }
-
     List<String> updatedJsonList = oldList
-        .map((e) => jsonEncode(e.toMap()))
+        .map((e) => jsonEncode(e.toJson()))
         .toList();
-
     await prefs.setStringList('place_details_key', updatedJsonList);
     return newDetail;
   }
 
-  Future<List<Prediction>> getPlaceDetails() async {
+  Future<List<CustomPrediction>> getPlaceDetails() async {
     final prefs = await SharedPreferences.getInstance();
-
-    List<String>? jsonList = prefs.getStringList("place_details_key");
-
-    if (jsonList == null) return [];
-
-    return jsonList
-        .map((jsonStr) => Prediction.fromMap(jsonDecode(jsonStr)))
+    final jsonList = prefs.getStringList("place_details_key");
+    if (jsonList == null || jsonList.isEmpty) {
+      return [];
+    }
+    final details = jsonList
+        .map((jsonStr) => CustomPrediction.fromJson(jsonDecode(jsonStr)))
         .toList();
+    return details;
+  }
+
+  Future<void> removePlaceDetail(String placeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> oldJsonList = prefs.getStringList('place_details_key') ?? [];
+    List<CustomPrediction> list = oldJsonList
+        .map((e) => CustomPrediction.fromJson(jsonDecode(e)))
+        .toList();
+    list.removeWhere((item) => item.placeId == placeId);
+    List<String> updated = list.map((e) => jsonEncode(e.toJson())).toList();
+    await prefs.setStringList('place_details_key', updated);
+  }
+}
+
+class CustomPrediction {
+  final String? placeId;
+  final String? title;
+  final String? description;
+
+  CustomPrediction({this.placeId, this.title, this.description});
+
+  factory CustomPrediction.fromJson(Map<String, dynamic> json) {
+    return CustomPrediction(
+      placeId: json['placeId'] ?? json['place_id'],
+      title: _extractTitle(json),
+      description: _extractDescription(json),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {"placeId": placeId, "title": title, "description": description};
+  }
+
+  static String? _extractTitle(Map<String, dynamic> json) {
+    if (json['title'] != null) return json['title'];
+
+    if (json['structured_formatting'] != null &&
+        json['structured_formatting']['main_text'] != null) {
+      return json['structured_formatting']['main_text'];
+    }
+
+    return null;
+  }
+
+  static String? _extractDescription(Map<String, dynamic> json) {
+    if (json['description'] != null) return json['description'];
+
+    if (json['structured_formatting'] != null &&
+        json['structured_formatting']['secondary_text'] != null) {
+      return json['structured_formatting']['secondary_text'];
+    }
+
+    return null;
   }
 }

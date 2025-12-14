@@ -7,6 +7,7 @@ class AppRoutes {
   static String editProfile = 'edit_profile';
   static String helpAndSupport = 'help_and_support';
   static String addShopDetail = 'add_shop_detail';
+  static String analytics = 'analytics';
   static String shopDetail = 'shop_detail';
   static String registerShopDetail = 'register_shop_detail';
   static String enterLocation = 'enter_location';

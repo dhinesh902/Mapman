@@ -69,69 +69,69 @@ class _OnboardScreenState extends State<OnboardScreen> {
   }
 }
 
-// class BlurContainer extends StatelessWidget {
-//   const BlurContainer({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       height: 20,
-//       width: double.infinity,
-//       decoration: BoxDecoration(
-//         boxShadow: [
-//           BoxShadow(
-//             color: AppColors.whiteText,
-//             blurRadius: 10,
-//             spreadRadius: 10,
-//           ),
-//         ],
-//       ),
-//       child: ClipRRect(
-//         child: Stack(
-//           children: [
-//             BackdropFilter(
-//               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-//               child: Container(color: Colors.transparent),
-//             ),
-//             Container(
-//               decoration: BoxDecoration(
-//                 gradient: LinearGradient(
-//                   begin: Alignment.topCenter,
-//                   end: Alignment.bottomCenter,
-//                   colors: [
-//                     AppColors.whiteText.withValues(alpha: 0.6),
-//                     GenericColors.lightPrimary.withValues(alpha: 0.15),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 class BlurContainer extends StatelessWidget {
   const BlurContainer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       height: 20,
       width: double.infinity,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.whiteText.withValues(alpha: 0.6),
-              GenericColors.lightPrimary.withValues(alpha: .5),
-            ],
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.whiteText,
+            blurRadius: 5,
+            spreadRadius:5,
           ),
+        ],
+      ),
+      child: ClipRRect(
+        child: Stack(
+          children: [
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(color: Colors.transparent),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.whiteText.withValues(alpha: 0.6),
+                    GenericColors.lightPrimary.withValues(alpha: 0.15),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+// class BlurContainer extends StatelessWidget {
+//   const BlurContainer({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return SizedBox(
+//       height: 20,
+//       width: double.infinity,
+//       child: Container(
+//         margin: EdgeInsets.symmetric(horizontal: 10),
+//         decoration: BoxDecoration(
+//           gradient: LinearGradient(
+//             begin: Alignment.topCenter,
+//             end: Alignment.bottomCenter,
+//             colors: [
+//               AppColors.whiteText.withValues(alpha: 0.6),
+//               GenericColors.lightPrimary.withValues(alpha: .5),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

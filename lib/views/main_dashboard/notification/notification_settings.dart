@@ -48,7 +48,10 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                 ),
               ),
               clipBehavior: Clip.hardEdge,
-              child: Image.asset(AppIcons.notificationTopCardP),
+              child: Image.asset(
+                AppIcons.notificationTopCardP,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 

@@ -9,46 +9,51 @@ class CustomTextFieldContainer extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.onTap,
   });
 
   final String title;
   final Widget child;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 2,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 2,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              SizedBox(width: 10),
-              BodyTextHint(
-                title: title,
-                fontSize: 10,
-                fontWeight: FontWeight.w300,
-              ),
-            ],
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: child
-          ),
-        ],
+                SizedBox(width: 10),
+                BodyTextHint(
+                  title: title,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w300,
+                ),
+              ],
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: child,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,8 +104,7 @@ class VideoPausePlayCircleContainer extends StatelessWidget {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.whiteText, width: 1),
-            color: AppColors.whiteText.withOpacity(0.3),
+            color: AppColors.whiteText.withOpacity(0.2),
           ),
           alignment: Alignment.center,
           child: Icon(icon, size: 14, color: AppColors.whiteText),

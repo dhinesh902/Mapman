@@ -59,11 +59,13 @@ class VideoTitleBlurContainer extends StatelessWidget {
     this.isWatched = false,
     this.isEditIcon = false,
     this.isShopDetail = false,
+    this.isViews = false,
   });
 
   final bool isWatched;
   final bool isEditIcon;
   final bool isShopDetail;
+  final bool isViews;
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +142,36 @@ class VideoTitleBlurContainer extends StatelessWidget {
                   onTap: () {
                     context.pushNamed(AppRoutes.viewedVideosShopDetail);
                   },
+                ),
+              ],
+
+              if (isViews) ...[
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    height: 21,
+                    decoration: BoxDecoration(
+                      color: AppColors.darkText,
+                      borderRadius: BorderRadiusGeometry.circular(20),
+                    ),
+                    padding: EdgeInsetsGeometry.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(AppIcons.eye),
+                        SizedBox(width: 5),
+                        BodyTextColors(
+                          title: '100k views',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w300,
+                          color: AppColors.whiteText,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ],

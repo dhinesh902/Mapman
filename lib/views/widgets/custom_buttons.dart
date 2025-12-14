@@ -87,7 +87,7 @@ class GetStartedButton extends StatelessWidget {
       child: Container(
         height: 44,
         width: double.maxFinite,
-        margin: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        margin: EdgeInsets.symmetric(horizontal: 45, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: AppColors.primary,
@@ -95,7 +95,7 @@ class GetStartedButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: MediaQuery.of(context).size.width * .3),
+            Container(width: MediaQuery.of(context).size.width * .25),
             BodyTextColors(
               title: "Get started",
               fontSize: 16,
@@ -138,7 +138,7 @@ class CustomOutlineButtonWithImage extends StatelessWidget {
         margin: EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: AppColors.scaffoldBackground,
+          // color: AppColors.scaffoldBackground,
           border: Border.all(color: GenericColors.borderGrey),
         ),
         child: Row(
@@ -258,7 +258,7 @@ class GetRewardButton extends StatelessWidget {
             title: title,
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColors.whiteText,
+            color: AppColors.darkText,
           ),
         ),
       ),

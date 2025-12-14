@@ -46,7 +46,7 @@ class HomeController extends ChangeNotifier {
     AppIcons.petrolP,
     AppIcons.spaP,
     AppIcons.hotelP,
-    AppIcons.shopP,
+    AppIcons.othersP,
   ];
 
   List<String> get categoriesImages => _categoriesImages;

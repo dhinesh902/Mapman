@@ -55,7 +55,7 @@ class _VideosState extends State<Videos> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AppColors.whiteText, AppColors.violet],
+                      colors: [AppColors.lightViolet, AppColors.violet],
                     ),
                   ),
             child: Column(
@@ -93,7 +93,6 @@ class _VideosState extends State<Videos> {
                           border: Border.all(color: GenericColors.darkYellow),
                           borderRadius: BorderRadiusGeometry.circular(20),
                         ),
-
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -191,9 +190,9 @@ class _VideosState extends State<Videos> {
 
           /// Particular Shop video list
           if (videoController.isShowParticularShopVideos) ...[
-            SizedBox(height: 10),
+            SizedBox(height: 15),
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 0, 10),
+              padding: const EdgeInsets.fromLTRB(10, 0, 0, 15),
               child: Row(
                 children: [
                   GestureDetector(

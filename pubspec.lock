@@ -696,6 +696,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
+  liquidglass_container:
+    dependency: "direct main"
+    description:
+      name: liquidglass_container
+      sha256: eecb1b63ca185a29ff81ed65e9188426979a7526124d0c64bbcba4d18850e291
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   logging:
     dependency: transitive
     description:
@@ -1021,6 +1029,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  smooth_corner:
+    dependency: transitive
+    description:
+      name: smooth_corner
+      sha256: "112d7331f82ead81ec870c5d1eb0624f2e7e367eccd166c2fffe4c11d4f87c4f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   source_span:
     dependency: transitive
     description:

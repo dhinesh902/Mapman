@@ -51,14 +51,12 @@ class _HomeState extends State<Home> {
       body: Column(
         children: [
           HomeTopCard(homeBanners: homeBanners, homeController: homeController),
+          SizedBox(height: 5),
           Expanded(
             child: ListView(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                     children: [
                       HeaderTextBlack(
@@ -71,13 +69,14 @@ class _HomeState extends State<Home> {
                     ],
                   ),
                 ),
+                SizedBox(height: 10),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
-                    mainAxisSpacing: 15,
+                    mainAxisSpacing: 12,
                     crossAxisSpacing: 3,
                     mainAxisExtent: 108,
                   ),
@@ -150,7 +149,7 @@ class _HomeState extends State<Home> {
                     );
                   },
                 ),
-                SizedBox(height: 80),
+                SizedBox(height: MediaQuery.of(context).size.height * .18),
                 BottomCarousalSlider(
                   images: [""],
                   homeController: homeController,
@@ -216,7 +215,7 @@ class HomeTopCard extends StatelessWidget {
                 CarouselSlider(
                   items: List.generate(homeBanners.length, (index) {
                     return Container(
-                      margin: EdgeInsets.fromLTRB(2, 0, 2, 10),
+                      margin: EdgeInsets.fromLTRB(2, 0, 0, 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: DecorationImage(
@@ -229,24 +228,25 @@ class HomeTopCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
+                              padding: const EdgeInsets.only(left: 20),
                               child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  SizedBox(height: 20),
                                   BodyTextColors(
                                     title: homeBanners[index]['title'],
-                                    fontSize: 20,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.whiteText,
                                   ),
+                                  SizedBox(height: 10),
                                   BodyTextColors(
                                     title: homeBanners[index]['body'],
                                     fontSize: 12,
                                     fontWeight: FontWeight.w200,
                                     color: AppColors.whiteText,
                                   ),
+                                  SizedBox(height: 15),
                                   InkWell(
                                     onTap: () {
                                       CustomDialogues().showRatingDialog(
@@ -277,11 +277,12 @@ class HomeTopCard extends StatelessWidget {
                             ),
                           ),
 
-                          Image.asset(
-                            homeBanners[index]['image'],
-                            height: 147,
-                            width: 151,
-                            fit: BoxFit.contain,
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Image.asset(
+                              homeBanners[index]['image'],
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ],
                       ),
@@ -428,7 +429,10 @@ class BottomCarousalSlider extends StatelessWidget {
               return Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
-                  image: DecorationImage(image: AssetImage(AppIcons.beerBgP)),
+                  image: DecorationImage(
+                    image: AssetImage(AppIcons.beerBgP),
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 clipBehavior: Clip.antiAlias,
                 margin: const EdgeInsets.symmetric(horizontal: 3),

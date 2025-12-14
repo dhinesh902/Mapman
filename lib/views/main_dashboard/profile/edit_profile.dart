@@ -10,11 +10,9 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
-import 'package:mapman/views/widgets/custom_drop_downs.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
-import 'package:mapman/views/widgets/custom_time_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditProfile extends StatefulWidget {
@@ -27,12 +25,9 @@ class EditProfile extends StatefulWidget {
 class _EditProfileState extends State<EditProfile> {
   final formKey = GlobalKey<FormState>();
   late ProfileController profileController;
-  late TextEditingController shopNameController,
-      descriptionController,
-      shopAddressController,
+  late TextEditingController userNameController,
       phoneNumberController,
-      openTimeController,
-      closeTimeController;
+      emailAddressController;
 
   final ValueNotifier<File?> profileImageNotifier = ValueNotifier(null);
 
@@ -40,24 +35,18 @@ class _EditProfileState extends State<EditProfile> {
   void initState() {
     // TODO: implement initState
     profileController = context.read<ProfileController>();
-    shopNameController = TextEditingController();
-    descriptionController = TextEditingController();
-    shopAddressController = TextEditingController();
+    userNameController = TextEditingController();
     phoneNumberController = TextEditingController();
-    openTimeController = TextEditingController();
-    closeTimeController = TextEditingController();
+    emailAddressController = TextEditingController();
     super.initState();
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
-    shopNameController.dispose();
-    descriptionController.dispose();
-    shopAddressController.dispose();
+    userNameController.dispose();
     phoneNumberController.dispose();
-    openTimeController.dispose();
-    closeTimeController.dispose();
+    emailAddressController.dispose();
     super.dispose();
   }
 
@@ -65,6 +54,11 @@ class _EditProfileState extends State<EditProfile> {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
     return DateFormat.jm().format(dt);
+  }
+
+  bool isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
   }
 
   @override
@@ -100,7 +94,7 @@ class _EditProfileState extends State<EditProfile> {
                           }
                           return const CustomNetworkImage(
                             imageUrl:
-                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkAJEkJQ1WumU0hXNpXdgBt9NUKc0QDVIiaw&s',
+                                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkAJEkJQ1WumU0hXNpXdgBt9NUKc0QDVIiaw&s',
                           );
                         },
                       ),
@@ -138,55 +132,15 @@ class _EditProfileState extends State<EditProfile> {
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 30),
               CustomTextField(
-                controller: shopNameController,
-                title: 'Shop Name',
-                hintText: 'Enter shop name',
+                controller: userNameController,
+                title: 'User Name',
+                hintText: 'Enter user name',
                 inputAction: TextInputAction.next,
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return "Please enter shop name";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomDropDownField(
-                title: "Category",
-                dropdownValue: null,
-                items: ["Bars", "Hospital"],
-                onChanged: (value) {},
-                hintText: "Select category",
-                validator: (value) {
-                  if (value == null) {
-                    return "Please select category";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                controller: descriptionController,
-                title: 'Description',
-                hintText: 'Enter description',
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter description";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                controller: shopAddressController,
-                title: 'Address',
-                hintText: 'Enter shop address',
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter shop address";
+                    return "Please enter user name";
                   }
                   return null;
                 },
@@ -194,86 +148,49 @@ class _EditProfileState extends State<EditProfile> {
               SizedBox(height: 15),
               CustomTextField(
                 controller: phoneNumberController,
-                isSameRegisterNumber: true,
                 inputType: TextInputType.number,
                 maxLength: 10,
-                isActive: profileController.isActive,
-                onChanged: (value) {
-                  profileController.setIsActive = value!;
-                },
-                title: 'Public/Shop Contact Number',
-                hintText: 'Enter shop contact number',
+                title: 'Register Number',
+                hintText: 'Enter register number',
                 inputAction: TextInputAction.next,
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return "Please enter shop contact number";
+                    return "Please enter register phone number";
                   }
                   if (value.length != 10) {
-                    return "Please enter 10 digit phone number";
+                    return "Please enter 10 digit register phone number";
                   }
                   return null;
                 },
               ),
               SizedBox(height: 15),
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: openTimeController,
-                      title: 'Open time',
-                      suffixIcon: CupertinoIcons.clock,
-                      inputAction: TextInputAction.done,
-                      hintText: 'Select time',
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please select open time";
-                        }
-                        return null;
-                      },
-                      onTap: () async {
-                        TimeOfDay? pickedTime =
-                        await CustomTimePicker.pickReturnTime(context);
-                        if (pickedTime != null) {
-                          openTimeController.text = formatTimeOfDay(pickedTime);
-                        }
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: closeTimeController,
-                      suffixIcon: CupertinoIcons.clock,
-                      title: 'Close time',
-                      hintText: 'Select time',
-                      inputAction: TextInputAction.done,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please select close time";
-                        }
-                        return null;
-                      },
-                      onTap: () async {
-                        TimeOfDay? pickedTime =
-                        await CustomTimePicker.pickReturnTime(context);
-                        if (pickedTime != null) {
-                          closeTimeController.text = formatTimeOfDay(
-                            pickedTime,
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+              CustomTextField(
+                controller: emailAddressController,
+                title: 'Email Address',
+                hintText: 'Enter email address',
+                inputType: TextInputType.emailAddress,
+                textCapitalization: TextCapitalization.none,
+                inputAction: TextInputAction.done,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter email address";
+                  }
+                  if (!isValidEmail(value.trim())) {
+                    return "Please enter valid email address";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 50),
+              CustomFullButton(
+                title: 'Update Profile',
+                isDialogue: true,
+                onTap: () {
+                  if (formKey.currentState!.validate()) {}
+                },
               ),
             ],
           ),
-        ),
-        bottomNavigationBar: CustomFullButton(
-          title: 'Update Profile',
-          onTap: () {
-            if (formKey.currentState!.validate()) {}
-          },
         ),
       ),
     );

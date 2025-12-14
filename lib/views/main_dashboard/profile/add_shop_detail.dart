@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -24,7 +25,34 @@ class _AddShopDetailState extends State<AddShopDetail> {
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Shop Details'),
+        appBar: ActionBar(
+          title: 'Shop Details',
+          action: TextButton(
+            onPressed: () {
+              context.pushNamed(AppRoutes.analytics);
+            },
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  AppIcons.eye,
+                  height: 12,
+                  colorFilter: ColorFilter.mode(
+                    GenericColors.darkGreen,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                BodyTextColors(
+                  title: 'analytics',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: GenericColors.darkGreen,
+                  textDecoration: TextDecoration.underline,
+                  decorationColor: GenericColors.darkGreen,
+                ),
+              ],
+            ),
+          ),
+        ),
         body: ListView(
           padding: EdgeInsets.all(10),
           children: [
@@ -123,7 +151,7 @@ Future<dynamic> showAddShopDetail(BuildContext context) async {
     context: context,
     builder: (context) {
       return Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 15),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           width: double.maxFinite,

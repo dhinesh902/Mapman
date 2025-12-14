@@ -6,17 +6,23 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 
 class ActionBar extends StatelessWidget implements PreferredSizeWidget {
-  const ActionBar({super.key, required this.title, this.action});
+  const ActionBar({
+    super.key,
+    required this.title,
+    this.action,
+    this.isCenterTitle = true,
+  });
 
   final String title;
   final Widget? action;
+  final bool isCenterTitle;
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       surfaceTintColor: AppColors.scaffoldBackgroundDark,
-      centerTitle: true,
+      centerTitle: isCenterTitle,
       toolbarHeight: 55,
       title: HeaderTextBlack(
         title: title,
