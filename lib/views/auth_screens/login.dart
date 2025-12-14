@@ -8,11 +8,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
 import 'package:phone_number_hint/phone_number_hint.dart';
@@ -236,6 +240,8 @@ class MobileNumberScreen extends StatefulWidget {
 }
 
 class _MobileNumberScreenState extends State<MobileNumberScreen> {
+  late AuthController authController;
+
   final FocusNode _focusNode = FocusNode();
   final _phoneNumberHintPlugin = PhoneNumberHint();
 
@@ -245,6 +251,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   @override
   void initState() {
     // TODO: implement initState
+    authController = context.read<AuthController>();
     mobileNumberController = TextEditingController();
     getPhoneNumber();
     super.initState();
@@ -292,8 +299,28 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     return digits;
   }
 
+  Future<void> sendOTP() async {
+    final response = await authController.sendOTP(
+      phoneNumber: '+91-${mobileNumberController.text.trim()}',
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      SessionManager.setMobile(phone: mobileNumberController.text.trim());
+      CustomToast.show(context, title: '${response.data}');
+      context.read<AuthController>().animateTo(2);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    authController = context.watch<AuthController>();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       color: AppColors.scaffoldBackgroundDark,
@@ -330,14 +357,16 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
             ),
             SizedBox(height: 70),
             Center(
-              child: AuthButton(
-                title: 'Get OTP',
-                onTap: () async {
-                  if (formKey.currentState!.validate()) {
-                    context.read<AuthController>().animateTo(2);
-                  }
-                },
-              ),
+              child: authController.response.status == Status.LOADING
+                  ? ButtonProgressBar(isLogin: true)
+                  : AuthButton(
+                      title: 'Get OTP',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await sendOTP();
+                        }
+                      },
+                    ),
             ),
           ],
         ),
@@ -356,6 +385,7 @@ class OTPScreen extends StatefulWidget {
 }
 
 class _OTPScreenState extends State<OTPScreen> {
+  late AuthController authController;
   final formKey = GlobalKey<FormState>();
   late TextEditingController otpController;
 
@@ -365,6 +395,7 @@ class _OTPScreenState extends State<OTPScreen> {
   @override
   void initState() {
     // TODO: implement initState
+    authController = context.read<AuthController>();
     otpController = TextEditingController();
     startTimer();
     super.initState();
@@ -406,8 +437,27 @@ class _OTPScreenState extends State<OTPScreen> {
     ),
   );
 
+  Future<void> verifyOTP() async {
+    final mobile = SessionManager.getMobile();
+    final response = await authController.verifyOTP(
+      phoneNumber: '+91-$mobile',
+      otp: int.parse(otpController.text.trim()),
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      context.goNamed(AppRoutes.mainDashboard, extra: true);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    authController = context.watch<AuthController>();
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 30),
       color: AppColors.scaffoldBackgroundDark,
@@ -472,27 +522,34 @@ class _OTPScreenState extends State<OTPScreen> {
                 ),
                 Spacer(),
                 InkWell(
-                  onTap: () {},
-                  child: HeaderTextPrimary(
+                  onTap: _remainingTime == 0 ? () {} : null,
+                  child: BodyTextColors(
                     title: "Resend",
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                     textDecoration: TextDecoration.underline,
-                    decorationColor: AppColors.primary,
+                    decorationColor: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
+                    color: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
                   ),
                 ),
               ],
             ),
             SizedBox(height: 40),
             Center(
-              child: AuthButton(
-                title: 'Proceed',
-                onTap: () async {
-                  if (formKey.currentState!.validate()) {
-                    context.goNamed(AppRoutes.mainDashboard);
-                  }
-                },
-              ),
+              child: authController.response.status == Status.LOADING
+                  ? ButtonProgressBar(isLogin: true)
+                  : AuthButton(
+                      title: 'Proceed',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await verifyOTP();
+                        }
+                      },
+                    ),
             ),
           ],
         ),

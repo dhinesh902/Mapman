@@ -1,11 +1,9 @@
-
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/place_controller.dart';
@@ -17,10 +15,9 @@ import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:provider/provider.dart';
 
-
 /// Flutter Local Notifications Plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 /// Local notification display
 Future<void> showLocalNotification(RemoteMessage message) async {
@@ -29,17 +26,18 @@ Future<void> showLocalNotification(RemoteMessage message) async {
 
   if (notification != null && android != null) {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-      'default_channel_id',
-      'Default Channel',
-      channelDescription: 'For showing order notifications',
-      importance: Importance.max,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-    );
+        AndroidNotificationDetails(
+          'default_channel_id',
+          'Default Channel',
+          channelDescription: 'For showing order notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        );
 
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
 
     await flutterLocalNotificationsPlugin.show(
       notification.hashCode,
@@ -54,14 +52,14 @@ Future<void> showLocalNotification(RemoteMessage message) async {
 /// Initialization for local notifications
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
   final DarwinInitializationSettings initializationSettingsDarwin =
-  DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
-  );
+      DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,

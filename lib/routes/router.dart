@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/views/auth_screens/login.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
@@ -44,7 +45,8 @@ class AppRouter {
       GoRoute(
         path: '/main_dashboard',
         name: AppRoutes.mainDashboard,
-        builder: (context, state) => MainDashboard(),
+        builder: (context, state) =>
+            MainDashboard(isLogin: state.extra as bool),
         routes: [
           GoRoute(
             path: '/notifications',
@@ -101,7 +103,8 @@ class AppRouter {
           GoRoute(
             path: '/edit_profile',
             name: AppRoutes.editProfile,
-            builder: (context, state) => EditProfile(),
+            builder: (context, state) =>
+                EditProfile(profileData: state.extra as ProfileData),
           ),
           GoRoute(
             path: '/chats',

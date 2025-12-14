@@ -1,7 +1,14 @@
 import 'package:flutter/cupertino.dart';
+import 'package:mapman/service/auth_service.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
+import 'package:mapman/utils/constants/strings.dart';
+import 'package:mapman/utils/handlers/api_response.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 
 class AuthController extends ChangeNotifier {
+  final AuthService authService = AuthService();
+
   bool _isShowSplashAnimation = false;
 
   bool get isShowSplashAnimation => _isShowSplashAnimation;
@@ -36,7 +43,7 @@ class AuthController extends ChangeNotifier {
 
   final PageController pageController = PageController();
 
-  /// ----------------------------- Login Page view -----------------------------
+  /// Login page page view
 
   int _currentPage = 0;
 
@@ -69,5 +76,61 @@ class AuthController extends ChangeNotifier {
     super.dispose();
   }
 
-  /// ----------------------------- Login Page view -----------------------------
+  /// --------------------------- API CONNECTIONS ---------------------------
+
+  ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get response => _apiResponse;
+
+  Future<ApiResponse> sendOTP({required String phoneNumber}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.sendOTP(phoneNumber: phoneNumber);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> verifyOTP({
+    required String phoneNumber,
+    required int otp,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.verifyOTP(
+        phoneNumber: phoneNumber,
+        otp: otp,
+      );
+      final String token = response[Keys.data][Keys.token] ?? '';
+      await SessionManager.setToken(token: token);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> addFcmToken() async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final fcmToken = SessionManager.getDeviceId() ?? '';
+      final response = await authService.addFcmToken(
+        token: token,
+        fcmToken: fcmToken,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
 }

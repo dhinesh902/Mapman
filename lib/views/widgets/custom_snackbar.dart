@@ -1,6 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
+
+class CustomToast {
+  static show(
+    BuildContext context, {
+    required String title,
+    bool isError = false,
+  }) {
+    FToast fToast = FToast();
+    fToast.init(context);
+
+    Widget toast = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(35.0),
+        color: isError ? GenericColors.darkRed : AppColors.primary,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isError) Icon(Icons.check, color: AppColors.whiteText, size: 18),
+          SizedBox(width: 12.0),
+          Flexible(
+            child: Text(
+              title.capitalize(),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.whiteText,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    fToast.showToast(
+      child: toast,
+      gravity: ToastGravity.BOTTOM,
+      toastDuration: Duration(seconds: 2),
+    );
+  }
+}
 
 class CustomLoadingIndicator extends StatelessWidget {
   const CustomLoadingIndicator({super.key, this.height = 60});
@@ -16,10 +60,12 @@ class CustomLoadingIndicator extends StatelessWidget {
         child: CircularProgressIndicator(
           color: AppColors.primary,
           strokeCap: StrokeCap.round,
+          backgroundColor: AppColors.primaryBorder.withValues(alpha: .2),
           strokeWidth: 8,
         ),
       ),
     );
+
   }
 }
 

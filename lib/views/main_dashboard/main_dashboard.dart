@@ -11,11 +11,14 @@ import 'package:mapman/views/main_dashboard/map/maps.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/profile/profile.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:provider/provider.dart';
 
 class MainDashboard extends StatefulWidget {
-  const MainDashboard({super.key});
+  const MainDashboard({super.key, this.isLogin = false});
+
+  final bool isLogin;
 
   @override
   State<MainDashboard> createState() => _MainDashboardState();
@@ -28,6 +31,15 @@ class _MainDashboardState extends State<MainDashboard> {
   @override
   void initState() {
     homeController = context.read<HomeController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.isLogin) {
+        CustomDialogues().showSuccessDialog(
+          context,
+          title: 'Login Successfully!!',
+          body: 'Welcome back!!.Your login was successful!',
+        );
+      }
+    });
     super.initState();
   }
 

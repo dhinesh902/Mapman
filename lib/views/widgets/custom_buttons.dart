@@ -4,23 +4,25 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class ButtonProgressBar extends StatelessWidget {
-  const ButtonProgressBar({super.key});
+  const ButtonProgressBar({super.key, this.isLogin = false});
+
+  final bool isLogin;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(vertical: isLogin ? 0 : 10),
         child: ElevatedButton(
           style: ButtonStyle(
-            minimumSize: WidgetStateProperty.all(const Size.fromRadius(25)),
+            minimumSize: WidgetStateProperty.all(const Size.fromRadius(23)),
             shape: WidgetStateProperty.all(const CircleBorder()),
             backgroundColor: WidgetStatePropertyAll(AppColors.primary),
           ),
           onPressed: null,
           child: const SizedBox(
-            height: 25,
-            width: 25,
+            height: 23,
+            width: 23,
             child: CircularProgressIndicator(
               strokeWidth: 2.0,
               color: AppColors.scaffoldBackground,

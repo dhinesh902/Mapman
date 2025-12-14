@@ -2,15 +2,19 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mapman/controller/profile_controller.dart';
+import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
-import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_drop_downs.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
@@ -18,14 +22,15 @@ import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:mapman/views/widgets/custom_time_picker.dart';
 import 'package:provider/provider.dart';
 
-class RegisterShopDetail extends StatefulWidget {
-  const RegisterShopDetail({super.key});
+class EditShopDetail extends StatefulWidget {
+  const EditShopDetail({super.key, required this.shopDetailData});
+  final ShopDetailData shopDetailData;
 
   @override
-  State<RegisterShopDetail> createState() => _RegisterShopDetailState();
+  State<EditShopDetail> createState() => _EditShopDetailState();
 }
 
-class _RegisterShopDetailState extends State<RegisterShopDetail> {
+class _EditShopDetailState extends State<EditShopDetail> {
   final formKey = GlobalKey<FormState>();
   late ProfileController profileController;
   late TextEditingController shopNameController,
@@ -83,7 +88,34 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Register Shop Details'),
+        appBar: ActionBar(
+          title: 'Edit Shop Details',
+          action: TextButton(
+            onPressed: () {
+              context.pushNamed(AppRoutes.analytics);
+            },
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  AppIcons.eye,
+                  height: 12,
+                  colorFilter: ColorFilter.mode(
+                    GenericColors.darkGreen,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                BodyTextColors(
+                  title: 'analytics',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: GenericColors.darkGreen,
+                  textDecoration: TextDecoration.underline,
+                  decorationColor: GenericColors.darkGreen,
+                ),
+              ],
+            ),
+          ),
+        ),
         body: ListView(
           padding: EdgeInsets.all(10),
           children: [
@@ -402,53 +434,5 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     } catch (e) {
       debugPrint("Error picking image: $e");
     }
-  }
-}
-
-class PhotoContainer extends StatelessWidget {
-  const PhotoContainer({
-    super.key,
-    required this.file,
-    required this.image,
-    required this.onTap,
-    required this.clearOnTap,
-  });
-
-  final File? file;
-  final String image;
-  final VoidCallback onTap, clearOnTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: file == null ? onTap : null,
-          child: Container(
-            height: 126,
-            width: double.maxFinite,
-            decoration: BoxDecoration(
-              color: GenericColors.placeHolderGrey,
-              borderRadius: BorderRadiusGeometry.circular(5),
-            ),
-            child: Builder(
-              builder: (context) {
-                if (file != null) {
-                  return Image.file(File(file!.path));
-                }
-                return PlaceHolderContainer();
-              },
-            ),
-          ),
-        ),
-        if (file != null) ...[
-          Positioned(
-            top: 0,
-            right: 0,
-            child: ClearCircleContainer(onTap: clearOnTap),
-          ),
-        ],
-      ],
-    );
   }
 }

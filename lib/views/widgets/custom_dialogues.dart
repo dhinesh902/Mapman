@@ -134,7 +134,19 @@ class CustomDialogues {
     );
   }
 
-  Future showSuccessDialog(BuildContext context) {
+  Future showSuccessDialog(
+    BuildContext context, {
+    required String title,
+    required String body,
+  }) {
+    Future.delayed(const Duration(milliseconds: 1550), () {
+      if (context.mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
+    });
+
     if (Platform.isIOS) {
       return showCupertinoDialog(
         context: context,
@@ -152,13 +164,13 @@ class CustomDialogues {
                 ),
                 SizedBox(height: 20),
                 HeaderTextBlack(
-                  title: 'Successfully Updated!!',
+                  title: title,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
                 SizedBox(height: 10),
                 BodyTextHint(
-                  title: 'Shop details successfully submitted by you',
+                  title: body,
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,
@@ -197,13 +209,13 @@ class CustomDialogues {
                 ),
                 SizedBox(height: 20),
                 HeaderTextBlack(
-                  title: 'Successfully Updated!!',
+                  title: title,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
                 SizedBox(height: 10),
                 BodyTextHint(
-                  title: 'Shop details successfully submitted by you',
+                  title: body,
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,

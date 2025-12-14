@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -25,10 +27,21 @@ class _SplashScreenState extends State<SplashScreen> {
       context.read<AuthController>().setSplashAnimation(true);
     });
 
-    Future.delayed(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      context.go('/main_dashboard');
-    });
+    handleNavigation();
+  }
+
+  Future<void> handleNavigation() async {
+    await Future.delayed(const Duration(seconds: 4));
+    final isFirstTime = !(SessionManager.containsKey(key: Keys.isFirstTime));
+    final hasToken = SessionManager.containsKey(key: Keys.token);
+    if (!mounted) return;
+    if (isFirstTime) {
+      context.go('/onboard_screen');
+    } else if (!hasToken) {
+      context.go('/login');
+    } else {
+      context.go('/main_dashboard', extra: false);
+    }
   }
 
   @override

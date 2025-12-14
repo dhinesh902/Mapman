@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 
 class CustomDropDownField extends StatelessWidget {
   const CustomDropDownField({
@@ -101,7 +102,7 @@ class CustomDropDownField extends StatelessWidget {
                 return DropdownMenuItem<String>(
                   value: item,
                   child: Text(
-                    item,
+                    item.capitalize(),
                     style: AppTextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -115,7 +116,7 @@ class CustomDropDownField extends StatelessWidget {
                   return Container(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      value,
+                      value.capitalize(),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: AppTextStyle(

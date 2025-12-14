@@ -1,7 +1,13 @@
 import 'package:flutter/cupertino.dart';
-import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/model/home_model.dart';
+import 'package:mapman/service/home_service.dart';
+import 'package:mapman/utils/constants/keys.dart';
+import 'package:mapman/utils/constants/strings.dart';
+import 'package:mapman/utils/handlers/api_response.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 
 class HomeController extends ChangeNotifier {
+  final HomeService homeService = HomeService();
   int _currentPage = 0;
 
   int get currentPage => _currentPage;
@@ -19,37 +25,6 @@ class HomeController extends ChangeNotifier {
     _nearByShopHeight = value;
     notifyListeners();
   }
-
-  final List<String> _categories = [
-    'Theater',
-    'Restaurant',
-    'Hospital',
-    'Bars',
-    'Grocery',
-    'Textile',
-    'Resort',
-    'Bunk',
-    'Spa',
-    'Hotel',
-    'Others',
-  ];
-
-  List<String> get categories => _categories;
-  final List<String> _categoriesImages = [
-    AppIcons.theaterP,
-    AppIcons.restaurantP,
-    AppIcons.hospitalP,
-    AppIcons.barsP,
-    AppIcons.shoppingP,
-    AppIcons.uniformP,
-    AppIcons.beachP,
-    AppIcons.petrolP,
-    AppIcons.spaP,
-    AppIcons.hotelP,
-    AppIcons.othersP,
-  ];
-
-  List<String> get categoriesImages => _categoriesImages;
 
   int _carousalCurrentIndex = 0;
 
@@ -127,5 +102,39 @@ class HomeController extends ChangeNotifier {
   void toggleBookmark(int index) {
     bookmarked[index] = !bookmarked[index];
     notifyListeners();
+  }
+
+  /// -------------------------- API FUNCTIONS --------------------------
+
+  List<String> _categories = [];
+
+  List<String> get categories => _categories;
+
+  ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get response => _apiResponse;
+
+  ApiResponse<HomeData> _homeData = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse<HomeData> get homeData => _homeData;
+
+  Future<ApiResponse<HomeData>> getHome() async {
+    _homeData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.getHome(token: token);
+      _homeData = ApiResponse.completed(
+        HomeData.fromJson(response[Keys.data] as Map<String, dynamic>),
+      );
+      _categories = (_homeData.data?.category ?? [])
+          .where((item) => item.categoryName?.isNotEmpty ?? false)
+          .map((item) => item.categoryName!)
+          .toList();
+    } catch (e) {
+      _homeData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _homeData;
   }
 }

@@ -3,20 +3,27 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mapman/controller/profile_controller.dart';
+import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 
 class EditProfile extends StatefulWidget {
-  const EditProfile({super.key});
+  const EditProfile({super.key, required this.profileData});
+
+  final ProfileData profileData;
 
   @override
   State<EditProfile> createState() => _EditProfileState();
@@ -38,6 +45,7 @@ class _EditProfileState extends State<EditProfile> {
     userNameController = TextEditingController();
     phoneNumberController = TextEditingController();
     emailAddressController = TextEditingController();
+    getProfileData();
     super.initState();
   }
 
@@ -48,6 +56,43 @@ class _EditProfileState extends State<EditProfile> {
     phoneNumberController.dispose();
     emailAddressController.dispose();
     super.dispose();
+  }
+
+  void getProfileData() {
+    final profileData = widget.profileData;
+    userNameController.text = profileData.userName ?? '';
+    phoneNumberController.text = profileData.phone?.split('-').last ?? '';
+    emailAddressController.text = profileData.email ?? '';
+  }
+
+  Future<void> updateProfile() async {
+    final ProfileData profile = ProfileData(
+      userName: userNameController.text.trim(),
+      email: emailAddressController.text.trim(),
+    );
+    final response = await profileController.updateProfile(
+      profileData: profile,
+      image:
+          profileImageNotifier.value ??
+          (widget.profileData.profilePic ?? '/images'),
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      await CustomDialogues().showSuccessDialog(
+        context,
+        title: 'SuccessFully Updated!',
+        body: 'Your profile updated successfully!',
+      );
+      if (!mounted) return;
+      context.pop();
+      await profileController.getProfile();
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
   }
 
   String formatTimeOfDay(TimeOfDay tod) {
@@ -92,9 +137,8 @@ class _EditProfileState extends State<EditProfile> {
                               fit: BoxFit.cover,
                             );
                           }
-                          return const CustomNetworkImage(
-                            imageUrl:
-                                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkAJEkJQ1WumU0hXNpXdgBt9NUKc0QDVIiaw&s',
+                          return CustomNetworkImage(
+                            imageUrl: widget.profileData.profilePic ?? '',
                           );
                         },
                       ),
@@ -150,6 +194,7 @@ class _EditProfileState extends State<EditProfile> {
                 controller: phoneNumberController,
                 inputType: TextInputType.number,
                 maxLength: 10,
+                isReadOnly: true,
                 title: 'Register Number',
                 hintText: 'Enter register number',
                 inputAction: TextInputAction.next,
@@ -182,13 +227,18 @@ class _EditProfileState extends State<EditProfile> {
                 },
               ),
               SizedBox(height: 50),
-              CustomFullButton(
-                title: 'Update Profile',
-                isDialogue: true,
-                onTap: () {
-                  if (formKey.currentState!.validate()) {}
-                },
-              ),
+              if (profileController.apiResponse.status == Status.LOADING)
+                ButtonProgressBar()
+              else
+                CustomFullButton(
+                  title: 'Update Profile',
+                  isDialogue: true,
+                  onTap: () async {
+                    if (formKey.currentState!.validate()) {
+                      await updateProfile();
+                    }
+                  },
+                ),
             ],
           ),
         ),

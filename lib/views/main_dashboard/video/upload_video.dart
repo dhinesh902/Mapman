@@ -1,13 +1,19 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_drop_downs.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
@@ -25,6 +31,7 @@ class _UploadVideoState extends State<UploadVideo> {
   late VideoController videoController;
 
   final ValueNotifier<File?> videoNotifier = ValueNotifier(null);
+  final ValueNotifier<bool> videoValidator = ValueNotifier(false);
   final formKey = GlobalKey<FormState>();
 
   late TextEditingController videoTitleController,
@@ -56,6 +63,34 @@ class _UploadVideoState extends State<UploadVideo> {
     super.dispose();
   }
 
+  Future<void> uploadVideo() async {
+    final MyVideosData videosData = MyVideosData(
+      shopName: shopNameController.text.trim(),
+      category: videoController.selectedVideoCategory,
+      description: videoDescriptionController.text.trim(),
+    );
+    final response = await videoController.uploadMyVideos(
+      video: videoNotifier.value!,
+      videoData: videosData,
+    );
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      CustomDialogues().showSuccessDialog(
+        context,
+        title: 'SuccessFully Updated!',
+        body: 'Your shop video updated successfully!',
+      );
+      context.pop();
+    } else {
+      if (!mounted) return;
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
@@ -81,6 +116,26 @@ class _UploadVideoState extends State<UploadVideo> {
                 },
               ),
               SizedBox(height: 5),
+
+              ValueListenableBuilder(
+                valueListenable: videoValidator,
+                builder: (context, isVideoSelect, _) {
+                  if (isVideoSelect) {
+                    return Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: BodyTextColors(
+                        title: 'Please select video',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.red.shade900,
+                      ),
+                    );
+                  } else {
+                    return SizedBox.shrink();
+                  }
+                },
+              ),
+
               if (videoController.isVideoFileSize) ...[
                 Align(
                   alignment: AlignmentGeometry.centerRight,
@@ -107,19 +162,6 @@ class _UploadVideoState extends State<UploadVideo> {
               ),
               SizedBox(height: 15),
               CustomTextField(
-                title: 'Description',
-                controller: videoDescriptionController,
-                hintText: "Enter video description",
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter video description";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
                 title: 'Shop Name',
                 controller: videoDescriptionController,
                 hintText: "Enter shop name",
@@ -132,11 +174,26 @@ class _UploadVideoState extends State<UploadVideo> {
                 },
               ),
               SizedBox(height: 15),
+              CustomTextField(
+                title: 'Description',
+                controller: videoDescriptionController,
+                hintText: "Enter video description",
+                inputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter video description";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 15),
               CustomDropDownField(
                 title: 'Category',
-                dropdownValue: null,
-                items: ["Bars", "Hotels"],
-                onChanged: (value) {},
+                dropdownValue: videoController.selectedVideoCategory,
+                items: context.watch<HomeController>().categories,
+                onChanged: (value) {
+                  videoController.setSelectedVideoCategory = value;
+                },
                 hintText: "Select category",
                 validator: (value) {
                   if (value == null) {
@@ -150,8 +207,15 @@ class _UploadVideoState extends State<UploadVideo> {
         ),
         bottomNavigationBar: CustomFullButton(
           title: 'Upload Video',
-          onTap: () {
-            if (formKey.currentState!.validate()) {}
+          onTap: () async {
+            if (videoNotifier.value == null) {
+              videoValidator.value = true;
+            } else {
+              videoValidator.value = false;
+            }
+            if (formKey.currentState!.validate()) {
+              await uploadVideo();
+            }
           },
         ),
       ),

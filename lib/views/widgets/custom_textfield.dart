@@ -21,6 +21,7 @@ class CustomTextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.sentences,
     this.maxLength,
     required this.inputAction,
+    this.isReadOnly = false,
   });
 
   final TextEditingController controller;
@@ -35,6 +36,7 @@ class CustomTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final int? maxLength;
   final TextInputAction inputAction;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +89,7 @@ class CustomTextField extends StatelessWidget {
             keyboardType: inputType,
             textCapitalization: textCapitalization,
             textInputAction: inputAction,
-            readOnly: onTap != null,
+            readOnly: isReadOnly,
             maxLength: maxLength,
             onTap: onTap,
             style: AppTextStyle(

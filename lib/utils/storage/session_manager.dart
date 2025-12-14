@@ -37,6 +37,22 @@ class SessionManager {
     return _sessionStorage!.getString(Keys.token);
   }
 
+  static Future<bool> setMobile({required String phone}) async {
+    return _sessionStorage!.setString(Keys.phone, phone);
+  }
+
+  static String? getMobile() {
+    return _sessionStorage!.getString(Keys.phone);
+  }
+
+  static Future<bool> setShopId({required int shopId}) async {
+    return _sessionStorage!.setInt(Keys.shopId, shopId);
+  }
+
+  static int? getShopId() {
+    return _sessionStorage!.getInt(Keys.shopId);
+  }
+
   static Future<bool> clearSession() async {
     final keys = _sessionStorage!.getKeys();
     const List<String> protectedKeys = [Keys.fcmToken, Keys.isFirstTime];

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 
@@ -37,6 +39,7 @@ class _OnboardScreenState extends State<OnboardScreen> {
             SizedBox(height: 20),
             GetStartedButton(
               onTap: () {
+                SessionManager.setString(key: Keys.isFirstTime, value: 'true');
                 context.go('/login');
               },
             ),
@@ -79,11 +82,7 @@ class BlurContainer extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         boxShadow: [
-          BoxShadow(
-            color: AppColors.whiteText,
-            blurRadius: 5,
-            spreadRadius:5,
-          ),
+          BoxShadow(color: AppColors.whiteText, blurRadius: 5, spreadRadius: 5),
         ],
       ),
       child: ClipRRect(
@@ -111,6 +110,7 @@ class BlurContainer extends StatelessWidget {
     );
   }
 }
+
 // class BlurContainer extends StatelessWidget {
 //   const BlurContainer({super.key});
 //

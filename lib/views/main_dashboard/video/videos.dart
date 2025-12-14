@@ -5,11 +5,14 @@ import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class Videos extends StatefulWidget {
@@ -26,7 +29,24 @@ class _VideosState extends State<Videos> {
   void initState() {
     // TODO: implement initState
     videoController = context.read<VideoController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (videoController.currentVideoIndex == 1) {
+        getMyVideos();
+      }
+    });
     super.initState();
+  }
+
+  Future<void> getMyVideos() async {
+    final response = await videoController.getMyVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
   }
 
   @override
@@ -154,9 +174,10 @@ class _VideosState extends State<Videos> {
                           icon: AppIcons.videoAppP,
                           isActive: videoController.currentVideoIndex == 1,
                           isLeft: false,
-                          onTap: () {
+                          onTap: () async {
                             videoController.setShowParticularShopVideos = false;
                             videoController.setCurrentVideoIndex = 1;
+                            await getMyVideos();
                           },
                         ),
                       ),
@@ -234,47 +255,71 @@ class _VideosState extends State<Videos> {
 
           /// MY VIDEOS
           if (videoController.currentVideoIndex == 1) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  HeaderTextBlack(
-                    title: 'Total Videos (12)',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  InkWell(
-                    onTap: () {
-                      context.pushNamed(AppRoutes.uploadVideo);
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(AppIcons.upload),
-                        BodyTextColors(
-                          title: 'Upload ',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w300,
-                          color: GenericColors.darkGreen,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 15),
-            Flexible(
-              child: MyVideos(
-                videoUrls: [
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                ],
-              ),
+            Builder(
+              builder: (context) {
+                switch (videoController.myVideosData.status) {
+                  case Status.INITIAL:
+                    return Flexible(child: CustomLoadingIndicator());
+                  case Status.LOADING:
+                    return Flexible(child: CustomLoadingIndicator());
+                  case Status.COMPLETED:
+                    final videoData = videoController.myVideosData.data ?? [];
+                    if (videoData.isNotEmpty) {
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                HeaderTextBlack(
+                                  title: 'Total Videos (12)',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                InkWell(
+                                  onTap: () {
+                                    context.pushNamed(AppRoutes.uploadVideo);
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SvgPicture.asset(AppIcons.upload),
+                                      BodyTextColors(
+                                        title: 'Upload ',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w300,
+                                        color: GenericColors.darkGreen,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 15),
+                          Flexible(
+                            child: MyVideos(
+                              videoUrls: [
+                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return NoVideoContainer();
+                    }
+                  case Status.ERROR:
+                    return CustomErrorTextWidget(
+                      title: '${videoController.myVideosData.message}',
+                    );
+                }
+              },
             ),
           ],
         ],

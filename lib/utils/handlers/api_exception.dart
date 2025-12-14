@@ -7,12 +7,10 @@ import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/handlers/app_exceptions.dart';
-
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 
 class ExceptionHandler {
-  static AppException handleApiException(
-    DioException e,
-  ) {
+  static AppException handleApiException(DioException e) {
     if (e.error.runtimeType == SocketException) {
       throw DataFetchException('No Internet');
     } else if (e.response?.statusCode == 400) {
@@ -50,26 +48,26 @@ class ExceptionHandler {
       }
       if ((message?.contains(Strings.unauthorizedException) ?? false) ||
           (message?.contains(Strings.tokenExpired) ?? false)) {
-        // CustomToast.show(
-        //   context,
-        //   title: message ?? 'Token Expired',
-        //   isError: true,
-        // );
+        CustomToast.show(
+          context,
+          title: message ?? 'Token Expired',
+          isError: true,
+        );
         context.goNamed(AppRoutes.login);
       } else if (message == Strings.noInternet) {
         //TODO: Design No internet page
         // context.goNamed(noInternetRoute);
-        // CustomToast.show(
-        //   context,
-        //   title: message ?? 'No Internet',
-        //   isError: true,
-        // );
+        CustomToast.show(
+          context,
+          title: message ?? 'No Internet',
+          isError: true,
+        );
       } else if (showDataNotFound ?? true) {
-        // CustomToast.show(
-        //   context,
-        //   title: message ?? 'Unknown Error',
-        //   isError: true,
-        // );
+        CustomToast.show(
+          context,
+          title: message ?? 'Unknown Error',
+          isError: true,
+        );
       }
     }
   }

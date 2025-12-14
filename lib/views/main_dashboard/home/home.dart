@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/model/home_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
@@ -25,6 +31,9 @@ class _HomeState extends State<Home> {
   void initState() {
     // TODO: implement initState
     homeController = context.read<HomeController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getHome();
+    });
     super.initState();
   }
 
@@ -43,128 +52,174 @@ class _HomeState extends State<Home> {
     },
   ];
 
+  Future<void> getHome() async {
+    final response = await homeController.getHome();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Column(
-        children: [
-          HomeTopCard(homeBanners: homeBanners, homeController: homeController),
-          SizedBox(height: 5),
-          Expanded(
-            child: ListView(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Row(
-                    children: [
-                      HeaderTextBlack(
-                        title: 'Category',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      SizedBox(width: 50),
-                      Expanded(child: Divider(color: Color(0XFFE0E0E0))),
-                    ],
+      body: Builder(
+        builder: (context) {
+          switch (homeController.homeData.status) {
+            case Status.INITIAL:
+              return CustomLoadingIndicator();
+            case Status.LOADING:
+              return CustomLoadingIndicator();
+            case Status.COMPLETED:
+              final categories = homeController.homeData.data?.category ?? [];
+              return Column(
+                children: [
+                  HomeTopCard(
+                    homeBanners: homeBanners,
+                    homeController: homeController,
+                    homeData: homeController.homeData.data ?? HomeData(),
                   ),
-                ),
-                SizedBox(height: 10),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 3,
-                    mainAxisExtent: 108,
-                  ),
-                  itemCount: homeController.categories.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        homeController.setCurrentPage = 1;
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Column(
+                  SizedBox(height: 5),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
                             children: [
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        AppColors.whiteText,
-                                        GenericColors.lightPrimary.withValues(
-                                          alpha: .6,
-                                        ),
-                                      ],
-                                    ),
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(6),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      homeController.categoriesImages[index],
-                                      height: 40,
-                                      width: 40,
-                                      filterQuality: FilterQuality.high,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
+                              HeaderTextBlack(
+                                title: 'Category',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
                               ),
-
-                              Container(
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AppColors.scaffoldBackground,
-                                  borderRadius: const BorderRadius.vertical(
-                                    bottom: Radius.circular(6),
-                                  ),
-                                ),
-                                child: Center(
-                                  child: BodyTextColors(
-                                    title: homeController.categories[index],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: const Color(0XFF1F1F1F),
-                                  ),
-                                ),
+                              SizedBox(width: 50),
+                              Expanded(
+                                child: Divider(color: Color(0XFFE0E0E0)),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * .18),
-                BottomCarousalSlider(
-                  images: [""],
-                  homeController: homeController,
-                  height: 74,
-                ),
-                Container(
-                  height: 153,
-                  color: AppColors.scaffoldBackgroundDark,
-                  padding: EdgeInsets.symmetric(horizontal: 30),
-                  child: EndMessageSection(title: 'MAP MAN'),
-                ),
-              ],
-            ),
-          ),
-        ],
+                        SizedBox(height: 10),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 3,
+                            mainAxisExtent: 108,
+                          ),
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                homeController.setCurrentPage = 1;
+                              },
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                AppColors.whiteText,
+                                                GenericColors.lightPrimary
+                                                    .withValues(alpha: .6),
+                                              ],
+                                            ),
+                                            borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(6),
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Image.network(
+                                              '${ApiRoutes
+                                                  .baseUrl}${categories[index]
+                                                  .categoryImage ?? ''}',
+                                              height: 40,
+                                              width: 40,
+                                              filterQuality: FilterQuality.high,
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      Container(
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.scaffoldBackground,
+                                          borderRadius:
+                                          const BorderRadius.vertical(
+                                            bottom: Radius.circular(6),
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: BodyTextColors(
+                                            title:
+                                            categories[index].categoryName
+                                                ?.capitalize() ??
+                                                '',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: const Color(0XFF1F1F1F),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(
+                          height: MediaQuery
+                              .of(context)
+                              .size
+                              .height * .18,
+                        ),
+                        BottomCarousalSlider(
+                          images: [""],
+                          homeController: homeController,
+                          height: 74,
+                        ),
+                        Container(
+                          height: 153,
+                          color: AppColors.scaffoldBackgroundDark,
+                          padding: EdgeInsets.symmetric(horizontal: 30),
+                          child: EndMessageSection(title: 'MAP MAN'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            case Status.ERROR:
+              return CustomErrorTextWidget(
+                title: '${homeController.homeData.message}',
+              );
+          }
+        },
       ),
     );
   }
@@ -175,10 +230,12 @@ class HomeTopCard extends StatelessWidget {
     super.key,
     required this.homeBanners,
     required this.homeController,
+    required this.homeData,
   });
 
   final List<Map<String, dynamic>> homeBanners;
   final HomeController homeController;
+  final HomeData homeData;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +260,11 @@ class HomeTopCard extends StatelessWidget {
                   bottomRight: Radius.circular(30),
                 ),
               ),
-              child: HomeTopListTile(homeController: homeController),
+              child: HomeTopListTile(
+                homeController: homeController,
+                name: homeData.userName ?? 'Profile Name',
+                profileImage: homeData.profile ?? '',
+              ),
             ),
           ),
           Positioned(
@@ -324,9 +385,15 @@ class HomeTopCard extends StatelessWidget {
 }
 
 class HomeTopListTile extends StatelessWidget {
-  const HomeTopListTile({super.key, required this.homeController});
+  const HomeTopListTile({
+    super.key,
+    required this.homeController,
+    required this.name,
+    required this.profileImage,
+  });
 
   final HomeController homeController;
+  final String name, profileImage;
 
   @override
   Widget build(BuildContext context) {
@@ -344,14 +411,14 @@ class HomeTopListTile extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadiusGeometry.circular(50),
               child: CustomNetworkImage(
-                imageUrl:
-                    'https://cdn6.f-cdn.com/files/download/38546484/28140e.jpg',
+                isProfile: true,
+                imageUrl: profileImage,
               ),
             ),
           ),
         ),
         title: HeaderTextBlack(
-          title: 'Hi Nithya!!',
+          title: name.capitalize(),
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
@@ -525,18 +592,19 @@ class CustomIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         itemCount,
-        (index) => AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          height: borderHeight,
-          width: currentIndex == index ? activeWidth : inactiveWidth,
-          margin: const EdgeInsets.only(right: 3),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            color: currentIndex == index
-                ? AppColors.whiteText
-                : GenericColors.borderGrey,
-          ),
-        ),
+            (index) =>
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: borderHeight,
+              width: currentIndex == index ? activeWidth : inactiveWidth,
+              margin: const EdgeInsets.only(right: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: currentIndex == index
+                    ? AppColors.whiteText
+                    : GenericColors.borderGrey,
+              ),
+            ),
       ),
     );
   }
