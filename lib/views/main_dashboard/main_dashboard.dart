@@ -164,7 +164,7 @@ class _MainDashboardState extends State<MainDashboard> {
               gapLocation: GapLocation.center,
               notchSmoothness: NotchSmoothness.softEdge,
               elevation: 0,
-              borderWidth: .5,
+              borderWidth: 1.5,
               onTap: (index) {
                 homeController.setCurrentPage = index;
               },

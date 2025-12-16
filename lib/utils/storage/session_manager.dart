@@ -61,6 +61,22 @@ class SessionManager {
     return _sessionStorage!.getBool(Keys.isVideoVideo) ?? false;
   }
 
+  static Future<bool> setShopName({required String shopName}) async {
+    return _sessionStorage!.setString(Keys.shopName, shopName);
+  }
+
+  static String? getShopName() {
+    return _sessionStorage!.getString(Keys.shopName);
+  }
+
+  static Future<bool> setShopCategory({required String shopCategory}) async {
+    return _sessionStorage!.setString(Keys.shopCategory, shopCategory);
+  }
+
+  static String? getShopCategory() {
+    return _sessionStorage!.getString(Keys.shopCategory);
+  }
+
   static Future<bool> clearSession() async {
     final keys = _sessionStorage!.getKeys();
     const List<String> protectedKeys = [Keys.fcmToken, Keys.isFirstTime];

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +30,7 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-  late VideoPlayerController _controller;
+  late final CachedVideoPlayerPlus _player;
 
   final ValueNotifier<bool> bookMarkNotifier = ValueNotifier(false);
   bool _isInitialized = false;
@@ -50,22 +51,22 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (!_isInitialized) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      _controller.pause();
+      _player.controller.pause();
     } else if (state == AppLifecycleState.resumed) {
-      _controller.play();
+      _player.controller.play();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _controller.dispose();
+    _player.dispose();
     bookMarkNotifier.dispose();
     super.dispose();
   }
 
   Future<void> _initializeVideo() async {
-    _controller = VideoPlayerController.networkUrl(
+    _player = CachedVideoPlayerPlus.networkUrl(
       Uri.parse(ApiRoutes.baseUrl + (widget.videosData.video ?? '')),
       videoPlayerOptions: VideoPlayerOptions(
         allowBackgroundPlayback: false,
@@ -73,10 +74,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       ),
     );
     try {
-      await _controller.initialize();
+      await _player.initialize();
       if (!mounted) return;
       setState(() => _isInitialized = true);
-      _controller
+      _player.controller
         ..setLooping(true)
         ..play();
     } catch (e) {
@@ -99,8 +100,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       body: Stack(
         children: [
           Container(
-            child: _controller.value.isInitialized
-                ? ClipRRect(child: VideoPlayer(_controller))
+            child: _player.isInitialized
+                ? ClipRRect(child: VideoPlayer(_player.controller))
                 : CustomLoadingIndicator(),
           ),
           Positioned(
@@ -118,7 +119,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                   Spacer(),
                   ShopDetailsButton(
                     onTap: () {
-                      _controller.pause();
+                      _player.controller.pause();
                       context.pushNamed(AppRoutes.shopDetail);
                     },
                   ),
@@ -229,8 +230,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           valueListenable: bookMarkNotifier,
                           builder: (context, isActive, _) {
                             return CircleContainer(
-                              onTap: () {
+                              onTap: () async {
                                 bookMarkNotifier.value = !isActive;
+                                await videoController.addSavedVideos(
+                                  videoId: widget.videosData.id ?? 0,
+                                );
                               },
                               child: isActive
                                   ? Image.asset(

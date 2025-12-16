@@ -1,19 +1,27 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
-import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/upload_video.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class ReplaceVideo extends StatefulWidget {
-  const ReplaceVideo({super.key});
+  const ReplaceVideo({super.key, required this.videosData});
+
+  final VideosData videosData;
 
   @override
   State<ReplaceVideo> createState() => _ReplaceVideoState();
@@ -38,6 +46,31 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
     // TODO: implement dispose
     videoNotifier.dispose();
     super.dispose();
+  }
+
+  Future<void> replaceMyVideo() async {
+    final response = await videoController.replaceMyVideo(
+      video: videoNotifier.value!,
+      videoId: widget.videosData.id ?? 0,
+    );
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      await CustomDialogues.showSuccessDialog(
+        context,
+        title: 'SuccessFully Updated!',
+        body: 'Your shop video updated successfully!',
+      );
+      if (!mounted) return;
+      context.pop();
+      await videoController.getMyVideos();
+    } else {
+      if (!mounted) return;
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
   }
 
   @override
@@ -65,24 +98,14 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
                     valueListenable: videoNotifier,
                     builder: (context, file, _) {
                       if (file != null) {
-                        return UploadVideoContainer(videoFile: file);
+                        return UploadVideoFileContainer(
+                          key: ValueKey(file.path),
+                          videoFile: file,
+                        );
                       } else {
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              AppIcons.videoUploadP,
-                              height: 80,
-                              width: 80,
-                              color: AppColors.darkGrey,
-                            ),
-                            SizedBox(height: 15),
-                            BodyTextHint(
-                              title: 'Upload Video for your shop',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ],
+                        return UploadVideoUrlContainer(
+                          videoUrl:
+                              '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
                         );
                       }
                     },
@@ -103,11 +126,26 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
               ),
             ],
             SizedBox(height: 40),
-            CustomFullButton(
-              title: 'Replace  Video',
-              isDialogue: true,
-              onTap: () {},
-            ),
+            if (videoController.response.status == Status.LOADING) ...[
+              ButtonProgressBar(),
+            ] else ...[
+              CustomFullButton(
+                title: 'Replace  Video',
+                isDialogue: true,
+                onTap: () async {
+                  if (videoNotifier.value == null) {
+                    CustomToast.show(
+                      context,
+                      title: 'Please select upload video',
+                      isError: true,
+                    );
+                    return;
+                  } else {
+                    await replaceMyVideo();
+                  }
+                },
+              ),
+            ],
           ],
         ),
       ),
@@ -115,18 +153,16 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
   }
 
   Future<void> pickVideo() async {
-    final pickedFile = await ImagePicker().pickVideo(
+    final XFile? pickedFile = await ImagePicker().pickVideo(
       source: ImageSource.gallery,
     );
-    if (pickedFile != null) {
-      int fileSizeInBytes = await pickedFile.length();
-      double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-      if (fileSizeInMB > 10.00) {
-        videoController.setVideoFileSize = true;
-      } else {
-        videoController.setVideoFileSize = false;
-        videoNotifier.value = File(pickedFile.path);
-      }
+    if (pickedFile == null) return;
+    final int size = await pickedFile.length();
+    final double sizeMB = size / (1024 * 1024);
+    if (sizeMB > 10) {
+      videoController.setVideoFileSize = true;
+      return;
     }
+    videoNotifier.value = File(pickedFile.path);
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
@@ -7,7 +8,10 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 
 class VideoBottomSheet {
-  Future<dynamic> showEditBottomSheet(BuildContext context) async {
+  Future<dynamic> showEditBottomSheet(
+    BuildContext context, {
+    required VideosData videoData,
+  }) async {
     return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -38,7 +42,10 @@ class VideoBottomSheet {
                       Navigator.pop(context);
                       Future.microtask(() {
                         if (!context.mounted) return;
-                        context.pushNamed(AppRoutes.uploadVideo);
+                        context.pushNamed(
+                          AppRoutes.uploadVideo,
+                          extra: videoData,
+                        );
                       });
                     },
                   ),
@@ -51,7 +58,10 @@ class VideoBottomSheet {
                       Navigator.pop(context);
                       Future.microtask(() {
                         if (!context.mounted) return;
-                        context.pushNamed(AppRoutes.replaceVideo);
+                        context.pushNamed(
+                          AppRoutes.replaceVideo,
+                          extra: videoData,
+                        );
                       });
                     },
                   ),

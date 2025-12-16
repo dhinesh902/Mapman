@@ -1,3 +1,4 @@
+import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mapman/controller/video_controller.dart';
@@ -5,6 +6,7 @@ import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
@@ -94,7 +96,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
               case Status.COMPLETED:
                 final viewedVideos = videoController.filteredViewedVideos;
                 if (viewedVideos.isEmpty) {
-                  return NoDataText(title: 'No data found');
+                  return NoDataText(title: Strings.noDataFound);
                 }
                 return Column(
                   children: [
@@ -135,7 +137,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
                                   right: 0,
                                   child: VideoTitleBlurContainer(
                                     isShopDetail: true,
-                                    title: viewedVideos[index].videoTitle ?? '',
+                                    videosData: viewedVideos[index],
                                   ),
                                 ),
                               ],
@@ -177,23 +179,26 @@ class ViewedVideoCard extends StatefulWidget {
 
 class _ViewedVideoCardState extends State<ViewedVideoCard>
     with AutomaticKeepAliveClientMixin {
-  late VideoPlayerController _controller;
+  late final CachedVideoPlayerPlus _player;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+    _player =
+        CachedVideoPlayerPlus.networkUrl(
+            Uri.parse(widget.videoUrl),
+            invalidateCacheIfOlderThan: const Duration(minutes: 69),
+          )
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {});
+            }
+          });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -207,8 +212,8 @@ class _ViewedVideoCardState extends State<ViewedVideoCard>
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadiusGeometry.circular(6),
-              child: _controller.value.isInitialized
-                  ? VideoPlayer(_controller)
+              child: _player.isInitialized
+                  ? VideoPlayer(_player.controller)
                   : Container(color: AppColors.bgGrey),
             ),
           ),

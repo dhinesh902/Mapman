@@ -9,6 +9,7 @@ import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
@@ -170,7 +171,7 @@ class _EnterLocationState extends State<EnterLocation> {
                   return CustomLoadingIndicator(height: 40);
                 }
                 if (predictions.isEmpty) {
-                  return NoDataText(title: "No result found");
+                  return NoDataText(title: Strings.noDataFound);
                 }
                 return ListView.builder(
                   padding: EdgeInsets.zero,

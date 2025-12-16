@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +54,7 @@ class MyVideos extends StatelessWidget {
                 right: 0,
                 child: VideoTitleBlurContainer(
                   isEditIcon: true,
-                  title: myVideos[index].shopName ?? '',
+                  videosData: myVideos[index],
                 ),
               ),
             ],
@@ -71,11 +72,11 @@ class VideoTitleBlurContainer extends StatelessWidget {
     this.isEditIcon = false,
     this.isShopDetail = false,
     this.isViews = false,
-    required this.title,
+    required this.videosData,
   });
 
   final bool isWatched, isEditIcon, isShopDetail, isViews;
-  final String title;
+  final VideosData videosData;
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +104,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
             children: [
               Flexible(
                 child: BodyTextColors(
-                  title: title.capitalize(),
+                  title: videosData.videoTitle?.capitalize() ?? '',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.whiteText,
@@ -111,7 +112,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 50),
-              if (isWatched) ...[
+              if (videosData.watched == true) ...[
                 Container(
                   height: 23,
                   width: 64,
@@ -132,7 +133,10 @@ class VideoTitleBlurContainer extends StatelessWidget {
               if (isEditIcon) ...[
                 GestureDetector(
                   onTap: () {
-                    VideoBottomSheet().showEditBottomSheet(context);
+                    VideoBottomSheet().showEditBottomSheet(
+                      context,
+                      videoData: videosData,
+                    );
                   },
                   child: Container(
                     height: 28,
@@ -178,7 +182,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
                         SvgPicture.asset(AppIcons.eye),
                         SizedBox(width: 5),
                         BodyTextColors(
-                          title: '100k views',
+                          title: '${videosData.viewCount} views',
                           fontSize: 10,
                           fontWeight: FontWeight.w300,
                           color: AppColors.whiteText,
@@ -212,13 +216,13 @@ class MyVideoContainer extends StatefulWidget {
 
 class _MyVideoContainerState extends State<MyVideoContainer>
     with AutomaticKeepAliveClientMixin {
-  late VideoPlayerController _controller;
+  late final CachedVideoPlayerPlus _player;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+    _player = CachedVideoPlayerPlus.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
         if (mounted) {
           setState(() {});
@@ -228,7 +232,7 @@ class _MyVideoContainerState extends State<MyVideoContainer>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -242,8 +246,8 @@ class _MyVideoContainerState extends State<MyVideoContainer>
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadiusGeometry.circular(6),
-              child: _controller.value.isInitialized
-                  ? VideoPlayer(_controller)
+              child: _player.isInitialized
+                  ? VideoPlayer(_player.controller)
                   : Container(color: AppColors.bgGrey),
             ),
           ),
@@ -322,7 +326,7 @@ class NoVideoContainer extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 if (SessionManager.getShopId() != null) {
-                  context.pushNamed(AppRoutes.uploadVideo);
+                  context.pushNamed(AppRoutes.uploadVideo, extra: VideosData());
                 } else {
                   await showAddShopDetail(context);
                 }

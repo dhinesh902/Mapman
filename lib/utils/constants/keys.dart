@@ -7,5 +7,7 @@ class Keys{
   static const String isFirstTime = 'isFirstTime';
   static const String shopId = 'shopId';
   static const String isVideoVideo = 'isVideoVideo';
+  static const String shopName = 'shopName';
+  static const String shopCategory = 'shopCategory';
 
 }

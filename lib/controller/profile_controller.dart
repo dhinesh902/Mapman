@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapman/model/analytics_model.dart';
+import 'package:mapman/model/analytics_model.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/service/profile_service.dart';
@@ -64,6 +66,12 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse<ShopDetailData> get shopDetailData => _shopDetailData;
 
+  ApiResponse<AnalyticsData> _analyticsData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<AnalyticsData> get analyticsData => _analyticsData;
+
   Future<ApiResponse<ProfileData>> getProfile() async {
     _profileData = ApiResponse.loading(Strings.loading);
     notifyListeners();
@@ -109,7 +117,6 @@ class ProfileController extends ChangeNotifier {
     required ShopDetailImages shopImages,
     required ShopDetailData shopDetail,
   }) async {
-
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
 
@@ -141,6 +148,12 @@ class ProfileController extends ChangeNotifier {
       if (data != null && data is Map<String, dynamic>) {
         _shopDetailData = ApiResponse.completed(ShopDetailData.fromJson(data));
         SessionManager.setShopId(shopId: _shopDetailData.data?.id ?? 0);
+        SessionManager.setShopName(
+          shopName: _shopDetailData.data?.shopName ?? '',
+        );
+        SessionManager.setShopCategory(
+          shopCategory: _shopDetailData.data?.category ?? '',
+        );
       } else {
         _shopDetailData = ApiResponse.completed(null);
       }
@@ -149,5 +162,24 @@ class ProfileController extends ChangeNotifier {
     }
     notifyListeners();
     return _shopDetailData;
+  }
+
+  Future<ApiResponse<AnalyticsData?>> getAnalytics() async {
+    _analyticsData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.getAnalytics(token: token);
+      final data = response[Keys.data];
+      if (data != null && data is Map<String, dynamic>) {
+        _analyticsData = ApiResponse.completed(AnalyticsData.fromJson(data));
+      } else {
+        _analyticsData = ApiResponse.completed(null);
+      }
+    } catch (e) {
+      _analyticsData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _analyticsData;
   }
 }

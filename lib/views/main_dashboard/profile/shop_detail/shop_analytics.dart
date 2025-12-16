@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/profile_controller.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/constants/themes.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
 
 class ShopAnalytics extends StatefulWidget {
   const ShopAnalytics({super.key});
@@ -16,16 +23,34 @@ class ShopAnalytics extends StatefulWidget {
 }
 
 class _ShopAnalyticsState extends State<ShopAnalytics> {
-  List<String> videoUrls = [
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-  ];
+  late ProfileController profileController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    profileController = context.read<ProfileController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getAnalytics();
+    });
+    super.initState();
+  }
+
+  Future<void> getAnalytics() async {
+    final response = await profileController.getAnalytics();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    profileController = context.watch<ProfileController>();
+    final videoData = profileController.analyticsData.data?.totalVideos ?? [];
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Stack(
@@ -49,7 +74,7 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
             ),
           ),
 
-          Positioned.fill(
+          Positioned(
             child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,16 +88,23 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                         Expanded(
                           child: AnalyticsTopContainer(
                             title: 'Total Videos',
-                            count: '32',
+                            count: '${videoData.length}',
                             icon: AppIcons.videoClipP,
+                            isLoading:
+                                profileController.analyticsData.status ==
+                                Status.LOADING,
                           ),
                         ),
                         SizedBox(width: 15),
                         Expanded(
                           child: AnalyticsTopContainer(
                             title: 'Views',
-                            count: '2,00,426',
+                            count:
+                                '${profileController.analyticsData.data?.totalViews ?? 0}',
                             icon: AppIcons.eyeViewP,
+                            isLoading:
+                                profileController.analyticsData.status ==
+                                Status.LOADING,
                           ),
                         ),
                       ],
@@ -80,41 +112,74 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                   ),
                   SizedBox(height: 20),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: videoUrls.length,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.only(bottom: 20),
-                      itemBuilder: (context, index) {
-                        return Container(
-                          height: 174,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
-                          child: Stack(
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  context.pushNamed(
-                                    AppRoutes.singleVideoScreen,
-                                    extra: videoUrls[index],
+                    child: Builder(
+                      builder: (context) {
+                        switch (profileController.analyticsData.status) {
+                          case Status.INITIAL:
+                            return CustomLoadingIndicator();
+                          case Status.LOADING:
+                            return CustomLoadingIndicator();
+                          case Status.COMPLETED:
+                            final videos =
+                                profileController
+                                    .analyticsData
+                                    .data
+                                    ?.totalVideos ??
+                                [];
+                            if (videos.isEmpty) {
+                              return NoDataText(title: Strings.noDataFound);
+                            } else {
+                            return  ListView.builder(
+                                itemCount: videos.length,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.only(bottom: 20),
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    height: 174,
+                                    width: double.maxFinite,
+                                    clipBehavior: Clip.antiAlias,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
+                                    child: Stack(
+                                      children: [
+                                        InkWell(
+                                          onTap: () {
+                                            context.pushNamed(
+                                              AppRoutes.singleVideoScreen,
+                                              extra: videos[index],
+                                            );
+                                          },
+                                          child: MyVideoContainer(
+                                            videoUrl:
+                                            ApiRoutes.baseUrl +
+                                                (videos[index].video ?? ''),
+                                            isViews: false,
+                                          ),
+                                        ),
+                                        // Positioned(
+                                        //   bottom: 0,
+                                        //   left: 0,
+                                        //   right: 0,
+                                        //   child: VideoTitleBlurContainer(
+                                        //     isViews: true,
+                                        //     videosData: videos[index],
+                                        //   ),
+                                        // ),
+                                      ],
+                                    ),
                                   );
                                 },
-                                child: MyVideoContainer(
-                                  videoUrl: videoUrls[index],
-                                  isViews: false,
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: VideoTitleBlurContainer(isViews: true,title: 'Video Title',),
-                              ),
-                            ],
-                          ),
-                        );
+                              );
+
+                            }
+                          case Status.ERROR:
+                            return CustomErrorTextWidget(
+                              title:
+                                  '${profileController.analyticsData.message}',
+                            );
+                        }
                       },
                     ),
                   ),
@@ -134,9 +199,11 @@ class AnalyticsTopContainer extends StatelessWidget {
     required this.title,
     required this.count,
     required this.icon,
+    required this.isLoading,
   });
 
   final String title, count, icon;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -155,13 +222,15 @@ class AnalyticsTopContainer extends StatelessWidget {
           SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: HeaderTextBlack(
+              if (isLoading)
+                CustomLoadingIndicator(height: 25, strokeWidth: 4)
+              else
+                HeaderTextBlack(
                   title: count,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
+              Spacer(),
               Image.asset(icon, height: 24, width: 24),
             ],
           ),

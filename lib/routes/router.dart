@@ -83,12 +83,14 @@ class AppRouter {
           GoRoute(
             path: '/upload_video',
             name: AppRoutes.uploadVideo,
-            builder: (context, state) => UploadVideo(),
+            builder: (context, state) =>
+                UploadVideo(videosData: state.extra as VideosData),
           ),
           GoRoute(
             path: '/replace_video',
             name: AppRoutes.replaceVideo,
-            builder: (context, state) => ReplaceVideo(),
+            builder: (context, state) =>
+                ReplaceVideo(videosData: state.extra as VideosData),
           ),
           GoRoute(
             path: '/single_video_screen',

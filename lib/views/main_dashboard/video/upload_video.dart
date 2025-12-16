@@ -3,25 +3,28 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
-import 'package:mapman/views/widgets/custom_drop_downs.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class UploadVideo extends StatefulWidget {
-  const UploadVideo({super.key});
+  const UploadVideo({super.key, required this.videosData});
+
+  final VideosData videosData;
 
   @override
   State<UploadVideo> createState() => _UploadVideoState();
@@ -36,6 +39,7 @@ class _UploadVideoState extends State<UploadVideo> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController videoTitleController,
       videoDescriptionController,
+      categoryController,
       shopNameController;
 
   @override
@@ -44,11 +48,16 @@ class _UploadVideoState extends State<UploadVideo> {
     videoController = context.read<VideoController>();
     videoTitleController = TextEditingController();
     videoDescriptionController = TextEditingController();
-    shopNameController = TextEditingController();
+    categoryController = TextEditingController(
+      text: SessionManager.getShopCategory()?.capitalize() ?? '',
+    );
+    shopNameController = TextEditingController(
+      text: SessionManager.getShopName()?.capitalize() ?? '',
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       videoController.setVideoFileSize = false;
-      videoController.setSelectedVideoCategory = null;
+      getVideoDetails();
     });
 
     super.initState();
@@ -62,14 +71,23 @@ class _UploadVideoState extends State<UploadVideo> {
     videoTitleController.dispose();
     videoDescriptionController.dispose();
     shopNameController.dispose();
+    categoryController.dispose();
     super.dispose();
+  }
+
+  void getVideoDetails() {
+    final videoDetail = widget.videosData;
+    if (videoDetail.videoTitle != null) {
+      videoTitleController.text = videoDetail.videoTitle ?? '';
+      videoDescriptionController.text = videoDetail.description ?? '';
+    }
   }
 
   Future<void> uploadVideo() async {
     final VideosData videosData = VideosData(
       videoTitle: videoTitleController.text.trim(),
       shopName: shopNameController.text.trim(),
-      category: videoController.selectedVideoCategory,
+      category: categoryController.text.trim().toLowerCase(),
       description: videoDescriptionController.text.trim(),
     );
     final response = await videoController.uploadMyVideos(
@@ -82,6 +100,38 @@ class _UploadVideoState extends State<UploadVideo> {
         context,
         title: 'SuccessFully Updated!',
         body: 'Your shop video updated successfully!',
+      );
+      if (!mounted) return;
+      context.pop();
+      await videoController.getMyVideos();
+    } else {
+      if (!mounted) return;
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  Future<void> updateMyVideoDetail() async {
+    final VideosData videosData = VideosData(
+      id: widget.videosData.id,
+      shopId: widget.videosData.shopId,
+      videoTitle: videoTitleController.text.trim(),
+      shopName: shopNameController.text.trim(),
+      category: categoryController.text.trim(),
+      description: videoDescriptionController.text.trim(),
+    );
+    final response = await videoController.updateMyVideo(
+      videosData: videosData,
+    );
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      await CustomDialogues.showSuccessDialog(
+        context,
+        title: 'SuccessFully Updated!',
+        body: 'Your shop video detail successfully!',
       );
       if (!mounted) return;
       context.pop();
@@ -112,6 +162,21 @@ class _UploadVideoState extends State<UploadVideo> {
               ValueListenableBuilder(
                 valueListenable: videoNotifier,
                 builder: (context, file, _) {
+                  if (widget.videosData.video != null) {
+                    return Container(
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: GenericColors.placeHolderGrey,
+                        borderRadius: BorderRadiusGeometry.circular(10),
+                      ),
+                      child: Center(
+                        child: UploadVideoUrlContainer(
+                          videoUrl:
+                              '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
+                        ),
+                      ),
+                    );
+                  }
                   return EmptyVideoUploadContainer(
                     file: file,
                     onTap: () async {
@@ -164,23 +229,10 @@ class _UploadVideoState extends State<UploadVideo> {
               ),
               SizedBox(height: 15),
               CustomTextField(
-                title: 'Shop Name',
-                controller: shopNameController,
-                hintText: "Enter shop name",
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter shop name";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
                 title: 'Description',
                 controller: videoDescriptionController,
                 hintText: "Enter video description",
-                inputAction: TextInputAction.next,
+                inputAction: TextInputAction.done,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter video description";
@@ -189,20 +241,21 @@ class _UploadVideoState extends State<UploadVideo> {
                 },
               ),
               SizedBox(height: 15),
-              CustomDropDownField(
+              CustomTextField(
+                title: 'Shop Name',
+                controller: shopNameController,
+                hintText: "Enter shop name",
+                inputAction: TextInputAction.done,
+                isReadOnly: true,
+              ),
+
+              SizedBox(height: 15),
+              CustomTextField(
                 title: 'Category',
-                dropdownValue: videoController.selectedVideoCategory,
-                items: context.watch<HomeController>().categories,
-                onChanged: (value) {
-                  videoController.setSelectedVideoCategory = value;
-                },
-                hintText: "Select category",
-                validator: (value) {
-                  if (value == null) {
-                    return "Please select category";
-                  }
-                  return null;
-                },
+                controller: categoryController,
+                hintText: "Enter shop name",
+                inputAction: TextInputAction.done,
+                isReadOnly: true,
               ),
             ],
           ),
@@ -216,12 +269,17 @@ class _UploadVideoState extends State<UploadVideo> {
               CustomFullButton(
                 title: 'Upload Video',
                 onTap: () async {
-                  final bool isFormValid =
-                      formKey.currentState?.validate() ?? false;
-                  final bool hasVideo = videoNotifier.value != null;
-                  videoValidator.value = !hasVideo;
-                  if (isFormValid && hasVideo) {
-                    await uploadVideo();
+                  if (widget.videosData.videoTitle != null) {
+                    await updateMyVideoDetail();
+                    return;
+                  } else {
+                    final bool isFormValid =
+                        formKey.currentState?.validate() ?? false;
+                    final bool hasVideo = videoNotifier.value != null;
+                    videoValidator.value = !hasVideo;
+                    if (isFormValid && hasVideo) {
+                      await uploadVideo();
+                    }
                   }
                 },
               ),
@@ -271,7 +329,10 @@ class EmptyVideoUploadContainer extends StatelessWidget {
         ),
         child: Center(
           child: file != null
-              ? UploadVideoContainer(videoFile: file!)
+              ? UploadVideoFileContainer(
+                  key: ValueKey(file!.path),
+                  videoFile: file!,
+                )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -295,22 +356,99 @@ class EmptyVideoUploadContainer extends StatelessWidget {
   }
 }
 
-class UploadVideoContainer extends StatefulWidget {
-  const UploadVideoContainer({super.key, required this.videoFile});
+class UploadVideoFileContainer extends StatefulWidget {
+  const UploadVideoFileContainer({super.key, required this.videoFile});
 
   final File videoFile;
 
   @override
-  State<UploadVideoContainer> createState() => _UploadVideoContainerState();
+  State<UploadVideoFileContainer> createState() =>
+      _UploadVideoFileContainerState();
 }
 
-class _UploadVideoContainerState extends State<UploadVideoContainer> {
+class _UploadVideoFileContainerState extends State<UploadVideoFileContainer> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeController();
+  }
+
+  void _initializeController() {
+    _controller = VideoPlayerController.file(widget.videoFile)
+      ..initialize().then((_) {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: _controller.value.isInitialized
+              ? AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                )
+              : const Center(child: CircularProgressIndicator()),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _controller.value.isPlaying
+                      ? _controller.pause()
+                      : _controller.play();
+                });
+              },
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: Icon(
+                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  size: 16,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class UploadVideoUrlContainer extends StatefulWidget {
+  const UploadVideoUrlContainer({super.key, required this.videoUrl});
+
+  final String videoUrl;
+
+  @override
+  State<UploadVideoUrlContainer> createState() =>
+      _UploadVideoUrlContainerState();
+}
+
+class _UploadVideoUrlContainerState extends State<UploadVideoUrlContainer> {
   late VideoPlayerController _controller;
 
   @override
   void initState() {
     // TODO: implement initState
-    _controller = VideoPlayerController.file(widget.videoFile)
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
         if (mounted) setState(() {});
       });

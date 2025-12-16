@@ -37,4 +37,12 @@ abstract class ApiRoutes {
   static const String myVideos = '/shop/myVideos';
   static const String viewedVideos = '/shop/viewedVideos';
   static const String fetchMyViewedVideos = '/shop/fetchMyViewedVideos';
+  static const String updateVideoDetails = '/shop/updateVideoDetails';
+  static const String replaceVideo = '/shop/replaceVideo';
+  static const String deleteVideo = '/shop/deleteVideo';
+  static const String saveOthersVideos = '/shop/saveOthersVideos';
+  static const String fetchMySavedVideos = '/shop/fetchMySavedVideos';
+  static const String getCategoryVideos = '/shop/getCategoryVideos';
+  static const String allVideos = '/shop/allVideos';
+  static const String analytics = '/shop/analytics';
 }

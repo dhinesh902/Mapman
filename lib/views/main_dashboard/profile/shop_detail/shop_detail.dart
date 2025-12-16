@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
@@ -275,7 +276,7 @@ class ShopVideosList extends StatelessWidget {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: VideoTitleBlurContainer(title: 'Video Title'),
+                    child: VideoTitleBlurContainer(videosData: VideosData()),
                   ),
                 ],
               ),

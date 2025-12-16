@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
+import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class AllVideos extends StatelessWidget {
-  const AllVideos({super.key, required this.videoUrls});
+  const AllVideos({super.key, required this.categoryVideoData});
 
-  final List<String> videoUrls;
+  final List<CategoryVideosData> categoryVideoData;
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +28,16 @@ class AllVideos extends StatelessWidget {
         mainAxisSpacing: 10,
       ),
       padding: const EdgeInsets.fromLTRB(10, 0, 10, 100),
-      itemCount: videoUrls.length,
+      itemCount: categoryVideoData.length,
       itemBuilder: (context, index) {
         return InkWell(
-          onTap: () {
+          onTap: () async {
             context.read<VideoController>().setShowParticularShopVideos = true;
+            context.read<VideoController>().setSelectedCategory =
+                categoryVideoData[index].categoryName?.capitalize() ?? '';
+            await context.read<VideoController>().getAllVideos(
+              category: categoryVideoData[index].categoryName!.toLowerCase(),
+            );
           },
           child: Container(
             clipBehavior: Clip.hardEdge,
@@ -38,13 +47,32 @@ class AllVideos extends StatelessWidget {
             ),
             child: Column(
               children: [
-                VideoContainer(videoUrl: videoUrls[index]),
+                SizedBox(
+                  height: 163,
+                  child: Stack(
+                    children: [
+                      CustomNetworkImage(
+                        imageUrl:
+                            (categoryVideoData[index].categoryVideo ?? ''),
+                      ),
+                      Positioned.fill(
+                        child: Center(
+                          child: VideoPausePlayCircleContainer(
+                            icon: Icons.play_arrow,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Container(
                   height: 43,
                   color: Colors.black,
-                  child: const Center(
+                  child: Center(
                     child: BodyTextColors(
-                      title: 'Hotels',
+                      title:
+                          categoryVideoData[index].categoryName?.capitalize() ??
+                          '',
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
@@ -122,14 +150,14 @@ class _VideoContainerState extends State<VideoContainer>
 }
 
 class ParticularShopVideoList extends StatelessWidget {
-  const ParticularShopVideoList({super.key, required this.videoUrls});
+  const ParticularShopVideoList({super.key, required this.videosData});
 
-  final List<String> videoUrls;
+  final List<VideosData> videosData;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: videoUrls.length,
+      itemCount: videosData.length,
       shrinkWrap: true,
       padding: EdgeInsets.only(bottom: 20),
       itemBuilder: (context, index) {
@@ -144,11 +172,11 @@ class ParticularShopVideoList extends StatelessWidget {
                 onTap: () {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
-                    extra: videoUrls[index],
+                    extra: videosData[index],
                   );
                 },
                 child: MyVideoContainer(
-                  videoUrl: videoUrls[index],
+                  videoUrl: ApiRoutes.baseUrl + (videosData[index].video ?? ''),
                   isViews: false,
                 ),
               ),
@@ -158,7 +186,7 @@ class ParticularShopVideoList extends StatelessWidget {
                 right: 0,
                 child: VideoTitleBlurContainer(
                   isWatched: true,
-                  title: 'Video Title',
+                  videosData: videosData[index],
                 ),
               ),
             ],

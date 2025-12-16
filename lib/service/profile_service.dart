@@ -113,4 +113,16 @@ class ProfileService extends ApiRoutes {
       throw ExceptionHandler.handleApiException(e);
     }
   }
+
+  Future<Map<String, dynamic>> getAnalytics({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.analytics,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 }

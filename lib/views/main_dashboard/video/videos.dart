@@ -3,10 +3,12 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/all_videos.dart';
@@ -33,12 +35,39 @@ class _VideosState extends State<Videos> {
       if (videoController.currentVideoIndex == 1) {
         getMyVideos();
       }
+      if (videoController.currentVideoIndex == 0) {
+        getCategoryVideos();
+      }
     });
     super.initState();
   }
 
   Future<void> getMyVideos() async {
     final response = await videoController.getMyVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  Future<void> getCategoryVideos() async {
+    final response = await videoController.getCategoryVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  Future<void> getAllVideos({required String category}) async {
+    final response = await videoController.getAllVideos(category: category);
     if (!mounted) return;
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
@@ -163,8 +192,9 @@ class _VideosState extends State<Videos> {
                           icon: AppIcons.p24,
                           isActive: videoController.currentVideoIndex == 0,
                           isLeft: true,
-                          onTap: () {
+                          onTap: () async {
                             videoController.setCurrentVideoIndex = 0;
+                            await getCategoryVideos();
                           },
                         ),
                       ),
@@ -193,18 +223,24 @@ class _VideosState extends State<Videos> {
               !videoController.isShowParticularShopVideos) ...[
             SizedBox(height: 15),
             Expanded(
-              child: AllVideos(
-                videoUrls: [
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                  "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
-                  "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-                ],
+              child: Builder(
+                builder: (context) {
+                  switch (videoController.categoryVideoData.status) {
+                    case Status.INITIAL:
+                      return CustomLoadingIndicator();
+                    case Status.LOADING:
+                      return CustomLoadingIndicator();
+                    case Status.COMPLETED:
+                      return AllVideos(
+                        categoryVideoData:
+                            videoController.categoryVideoData.data ?? [],
+                      );
+                    case Status.ERROR:
+                      return CustomErrorTextWidget(
+                        title: '${videoController.categoryVideoData.message}',
+                      );
+                  }
+                },
               ),
             ),
           ],
@@ -212,43 +248,59 @@ class _VideosState extends State<Videos> {
           /// Particular Shop video list
           if (videoController.isShowParticularShopVideos) ...[
             SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 0, 15),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      videoController.setShowParticularShopVideos = false;
-                    },
-                    child: Container(
-                      height: 30,
-                      width: 30,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.scaffoldBackground,
-                        border: Border.all(color: GenericColors.borderGrey),
+            if (videoController.allVideosData.status == Status.COMPLETED) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 0, 0, 15),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        videoController.setShowParticularShopVideos = false;
+                      },
+                      child: Container(
+                        height: 30,
+                        width: 30,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.scaffoldBackground,
+                          border: Border.all(color: GenericColors.borderGrey),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(AppIcons.backIcon),
+                        ),
                       ),
-                      child: Center(child: SvgPicture.asset(AppIcons.backIcon)),
                     ),
-                  ),
-                  SizedBox(width: 10),
-                  HeaderTextBlack(
-                    title: 'Textiles Videos (12)',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ],
+                    SizedBox(width: 10),
+                    HeaderTextBlack(
+                      title:
+                          '${videoController.selectedCategory} Videos (${videoController.allVideosData.data?.length})',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             Expanded(
-              child: ParticularShopVideoList(
-                videoUrls: [
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                ],
+              child: Builder(
+                builder: (context) {
+                  switch (videoController.allVideosData.status) {
+                    case Status.INITIAL:
+                      return CustomLoadingIndicator();
+                    case Status.LOADING:
+                      return CustomLoadingIndicator();
+                    case Status.COMPLETED:
+                      final allVideo = videoController.allVideosData.data ?? [];
+                      if (allVideo.isEmpty) {
+                        return NoDataText(title: Strings.noDataFound);
+                      }
+                      return ParticularShopVideoList(videosData: allVideo);
+                    case Status.ERROR:
+                      return CustomErrorTextWidget(
+                        title: '${videoController.allVideosData.message}',
+                      );
+                  }
+                },
               ),
             ),
           ],
@@ -269,18 +321,24 @@ class _VideosState extends State<Videos> {
                         child: Column(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   HeaderTextBlack(
-                                    title: 'Total Videos (12)',
+                                    title: 'Total Videos (${videoData.length})',
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   InkWell(
                                     onTap: () {
-                                      context.pushNamed(AppRoutes.uploadVideo);
+                                      context.pushNamed(
+                                        AppRoutes.uploadVideo,
+                                        extra: VideosData(),
+                                      );
                                     },
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -299,11 +357,7 @@ class _VideosState extends State<Videos> {
                               ),
                             ),
                             SizedBox(height: 15),
-                            Flexible(
-                              child: MyVideos(
-                                myVideos: videoData,
-                              ),
-                            ),
+                            Flexible(child: MyVideos(myVideos: videoData)),
                           ],
                         ),
                       );

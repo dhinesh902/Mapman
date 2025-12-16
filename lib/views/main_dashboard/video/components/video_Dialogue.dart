@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
@@ -412,7 +413,10 @@ class VideoDialogues {
                   Navigator.pop(context);
                   Future.microtask(() {
                     if (!context.mounted) return;
-                    context.pushNamed(AppRoutes.uploadVideo);
+                    context.pushNamed(
+                      AppRoutes.uploadVideo,
+                      extra: VideosData(),
+                    );
                   });
                 },
                 child: BodyTextColors(
@@ -489,7 +493,10 @@ class VideoDialogues {
                             Navigator.pop(context);
                             Future.microtask(() {
                               if (!context.mounted) return;
-                              context.pushNamed(AppRoutes.uploadVideo);
+                              context.pushNamed(
+                                AppRoutes.uploadVideo,
+                                extra: VideosData(),
+                              );
                             });
                           },
                         ),

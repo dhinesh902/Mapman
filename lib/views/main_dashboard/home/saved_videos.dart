@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
 
 class SavedVideos extends StatefulWidget {
   const SavedVideos({super.key});
@@ -14,20 +22,34 @@ class SavedVideos extends StatefulWidget {
 }
 
 class _SavedVideosState extends State<SavedVideos> {
-  final List<String> videoUrls = [
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-  ];
+  late VideoController videoController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    videoController = context.read<VideoController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getMySavedVideos();
+    });
+    super.initState();
+  }
+
+  Future<void> getMySavedVideos() async {
+    final response = await videoController.getMySavedVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    videoController = context.watch<VideoController>();
+    final videoData = videoController.savedVideoData.data ?? [];
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Stack(
@@ -59,21 +81,45 @@ class _SavedVideosState extends State<SavedVideos> {
                 children: [
                   const ActionBarComponent(title: 'Saved Videos'),
                   TopPromoBanner(),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 10, top: 15, bottom: 15),
-                    child: HeaderTextBlack(
-                      title: 'Total Saved Videos (6)',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                  if (videoData.isNotEmpty) ...[
+                    Padding(
+                      padding: EdgeInsets.only(left: 10, top: 15, bottom: 15),
+                      child: HeaderTextBlack(
+                        title: 'Total Saved Videos (${videoData.length})',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-
+                  ],
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      itemCount: videoUrls.length,
-                      itemBuilder: (context, index) {
-                        return SavedVideoCard(url: videoUrls[index]);
+                    child: Builder(
+                      builder: (context) {
+                        switch (videoController.savedVideoData.status) {
+                          case Status.INITIAL:
+                            return CustomLoadingIndicator();
+                          case Status.LOADING:
+                            return CustomLoadingIndicator();
+                          case Status.COMPLETED:
+                            final savedVideos =
+                                videoController.savedVideoData.data ?? [];
+                            if (savedVideos.isEmpty) {
+                              return NoDataText(title: Strings.noDataFound);
+                            }
+                            return ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                              itemCount: savedVideos.length,
+                              itemBuilder: (context, index) {
+                                return SavedVideoCard(
+                                  videosData: savedVideos[index],
+                                );
+                              },
+                            );
+                          case Status.ERROR:
+                            return CustomErrorTextWidget(
+                              title:
+                                  '${videoController.savedVideoData.message}',
+                            );
+                        }
                       },
                     ),
                   ),
@@ -167,9 +213,9 @@ class TopPromoBanner extends StatelessWidget {
 }
 
 class SavedVideoCard extends StatelessWidget {
-  const SavedVideoCard({super.key, required this.url});
+  const SavedVideoCard({super.key, required this.videosData});
 
-  final String url;
+  final VideosData videosData;
 
   @override
   Widget build(BuildContext context) {
@@ -179,17 +225,17 @@ class SavedVideoCard extends StatelessWidget {
         child: Stack(
           children: [
             ViewedVideoCard(
-              videoUrl: url,
+              videoUrl: ApiRoutes.baseUrl + (videosData.video ?? ''),
               isBookMark: true,
               bookMarkOnTap: () {},
             ),
-            const Positioned(
+            Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: VideoTitleBlurContainer(
                 isShopDetail: true,
-                title: 'Video Title',
+                videosData: videosData,
               ),
             ),
           ],

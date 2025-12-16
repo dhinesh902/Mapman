@@ -47,9 +47,14 @@ class CustomToast {
 }
 
 class CustomLoadingIndicator extends StatelessWidget {
-  const CustomLoadingIndicator({super.key, this.height = 60});
+  const CustomLoadingIndicator({
+    super.key,
+    this.height = 60,
+    this.strokeWidth = 8,
+  });
 
   final double height;
+  final double strokeWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +66,10 @@ class CustomLoadingIndicator extends StatelessWidget {
           color: AppColors.primary,
           strokeCap: StrokeCap.round,
           backgroundColor: AppColors.primaryBorder.withValues(alpha: .2),
-          strokeWidth: 8,
+          strokeWidth: strokeWidth,
         ),
       ),
     );
-
   }
 }
 

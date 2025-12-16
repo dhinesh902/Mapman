@@ -10,6 +10,10 @@ class VideosData {
   String? status;
   String? createdAt;
   String? updatedAt;
+  bool? watched;
+  bool? savedAlready;
+  int? views;
+  int? viewCount;
 
   VideosData({
     this.id,
@@ -23,6 +27,10 @@ class VideosData {
     this.status,
     this.createdAt,
     this.updatedAt,
+    this.watched,
+    this.savedAlready,
+    this.views,
+    this.viewCount,
   });
 
   VideosData.fromJson(Map<String, dynamic> json) {
@@ -37,19 +45,40 @@ class VideosData {
     status = json['status'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+    watched = json['watched'];
+    savedAlready = json['savedAlready'];
+    views = json['views'];
+    viewCount = json['viewCount'];
   }
 }
 
-class ViewedVideoData {
+/// ALL VIDEOS
+class CategoryVideosData {
   int? id;
-  String? videoTitle;
-  String? video;
+  int? categoryId;
+  String? categoryVideo;
+  String? status;
+  String? categoryName;
+  String? createdAt;
+  String? updatedAt;
 
-  ViewedVideoData({this.id, this.videoTitle, this.video});
+  CategoryVideosData({
+    this.id,
+    this.categoryId,
+    this.categoryVideo,
+    this.categoryName,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+  });
 
-  ViewedVideoData.fromJson(Map<String, dynamic> json) {
+  CategoryVideosData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    videoTitle = json['videoTitle'];
-    video = json['video'];
+    categoryId = json['categoryId'];
+    categoryVideo = json['categoryVideo'];
+    categoryName = json['categoryName'];
+    status = json['status'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
   }
 }
