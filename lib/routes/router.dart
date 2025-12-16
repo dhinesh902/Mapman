@@ -1,5 +1,7 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/model/profile_model.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/views/auth_screens/login.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
@@ -24,7 +26,13 @@ import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/upload_video.dart';
 
 class AppRouter {
+  static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
+    analytics: analytics,
+  );
+
   static final router = GoRouter(
+    observers: [observer],
     initialLocation: '/',
     routes: [
       GoRoute(
@@ -63,11 +71,6 @@ class AppRouter {
                     name: AppRoutes.viewedVideos,
                     builder: (context, state) => ViewedVideos(),
                   ),
-                  GoRoute(
-                    path: '/viewed_videos_shop_detail',
-                    name: AppRoutes.viewedVideosShopDetail,
-                    builder: (context, state) => ShopDetail(),
-                  ),
                 ],
               ),
             ],
@@ -91,7 +94,7 @@ class AppRouter {
             path: '/single_video_screen',
             name: AppRoutes.singleVideoScreen,
             builder: (context, state) =>
-                SingleVideoScreen(videoUrl: state.extra as String),
+                SingleVideoScreen(videosData: state.extra as VideosData),
             routes: [
               GoRoute(
                 path: '/shop_detail',

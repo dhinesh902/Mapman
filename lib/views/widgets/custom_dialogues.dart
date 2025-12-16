@@ -134,7 +134,7 @@ class CustomDialogues {
     );
   }
 
-  Future showSuccessDialog(
+  static Future showSuccessDialog(
     BuildContext context, {
     required String title,
     required String body,

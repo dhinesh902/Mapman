@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 
 class VideoDialogues {
@@ -257,7 +260,11 @@ class VideoDialogues {
               ),
               CupertinoDialogAction(
                 isDefaultAction: true,
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  await SessionManager.setVideoVideo(isVideoVideo: turnOn);
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                },
                 child: BodyTextColors(
                   title: turnOn ? 'Turn On' : 'Turn Off',
                   fontSize: 14,
@@ -336,7 +343,155 @@ class VideoDialogues {
                           color: turnOn
                               ? GenericColors.darkGreen
                               : GenericColors.darkRed,
-                          onTap: () {},
+                          onTap: () async {
+                            await SessionManager.setVideoVideo(
+                              isVideoVideo: turnOn,
+                            );
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  Future<dynamic> showVideoUploadDialogue(BuildContext context) async {
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: Column(
+              children: [
+                Image.asset(
+                  AppIcons.multiMediaP,
+                  fit: BoxFit.cover,
+                  height: 80,
+                  width: 80,
+                ),
+                const SizedBox(height: 10),
+                HeaderTextBlack(
+                  title: 'Upload your Video File',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ],
+            ),
+            content: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Center(
+                child: BodyTextHint(
+                  title: 'Please ensure the file size does not exceed 10MB',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.pop(context),
+                child: BodyTextHint(
+                  title: 'Not Now',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () {
+                  Navigator.pop(context);
+                  Future.microtask(() {
+                    if (!context.mounted) return;
+                    context.pushNamed(AppRoutes.uploadVideo);
+                  });
+                },
+                child: BodyTextColors(
+                  title: 'Upload',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      return showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Container(
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBackground,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      AppIcons.multiMediaP,
+                      height: 130,
+                      width: 130,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  HeaderTextBlack(
+                    title: 'Upload your Video File',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  BodyTextHint(
+                    title: 'Please ensure the file size does not exceed 10MB',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomOutlineButton(
+                          title: 'Not Now',
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                      SizedBox(width: 15),
+                      Expanded(
+                        child: CustomFullButton(
+                          title: 'Upload',
+                          isDialogue: true,
+                          color: AppColors.primary,
+                          onTap: () {
+                            Navigator.pop(context);
+                            Future.microtask(() {
+                              if (!context.mounted) return;
+                              context.pushNamed(AppRoutes.uploadVideo);
+                            });
+                          },
                         ),
                       ),
                     ],

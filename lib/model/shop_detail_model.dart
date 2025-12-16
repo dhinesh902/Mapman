@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class ShopDetailData {
   int? id;
   int? profileId;
@@ -12,7 +14,10 @@ class ShopDetailData {
   String? shopNumber;
   String? openTime;
   String? closeTime;
-  List<String>? images;
+  String? image1;
+  String? image2;
+  String? image3;
+  String? image4;
   dynamic imageApprove;
   String? status;
   String? createdAt;
@@ -32,7 +37,10 @@ class ShopDetailData {
     this.shopNumber,
     this.openTime,
     this.closeTime,
-    this.images,
+    this.image1,
+    this.image2,
+    this.image3,
+    this.image4,
     this.imageApprove,
     this.status,
     this.createdAt,
@@ -53,10 +61,29 @@ class ShopDetailData {
     shopNumber = json['shopNumber'];
     openTime = json['openTime'];
     closeTime = json['closeTime'];
-    images = json['images'].cast<String>();
+    image1 = json['image1'];
+    image2 = json['image2'];
+    image3 = json['image3'];
+    image4 = json['image4'];
     imageApprove = json['imageApprove'];
     status = json['status'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
   }
+}
+
+class ShopDetailImages {
+  File? shopImage;
+  File? image1;
+  File? image2;
+  File? image3;
+  File? image4;
+
+  ShopDetailImages({
+    this.shopImage,
+    this.image1,
+    this.image2,
+    this.image3,
+    this.image4,
+  });
 }

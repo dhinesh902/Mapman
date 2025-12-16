@@ -37,7 +37,10 @@ class CustomNetworkImage extends StatelessWidget {
           child: Center(
             child: isProfile
                 ? Image.asset(AppIcons.profilePlaceholderP)
-                : SvgPicture.asset(AppIcons.galleryPlaceholder),
+                : SvgPicture.asset(
+                    AppIcons.galleryPlaceholder,
+                    height: placeHolderHeight,
+                  ),
           ),
         );
       },
@@ -51,7 +54,10 @@ class CustomNetworkImage extends StatelessWidget {
           child: Center(
             child: isProfile
                 ? Image.asset(AppIcons.profilePlaceholderP)
-                : SvgPicture.asset(AppIcons.galleryPlaceholder),
+                : SvgPicture.asset(
+                    AppIcons.galleryPlaceholder,
+                    height: placeHolderHeight,
+                  ),
           ),
         );
       },

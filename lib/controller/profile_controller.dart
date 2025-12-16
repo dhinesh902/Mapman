@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/service/profile_service.dart';
@@ -18,6 +19,34 @@ class ProfileController extends ChangeNotifier {
     _isActive = value;
     notifyListeners();
   }
+
+  /// SHOP DETAILS UPDATE
+
+  LatLng? _selectedLatLong;
+
+  LatLng? get selectedLatLong => _selectedLatLong;
+
+  set setSelectedLatLong(LatLng? value) {
+    _selectedLatLong = value;
+    notifyListeners();
+  }
+
+  List<String?> _shopImages = List.generate(4, (index) => null);
+
+  List<String?> get shopImages => _shopImages;
+
+  set setShopImages(List<String?> value) {
+    _shopImages = value;
+    notifyListeners();
+  }
+
+  void removeShopImageAt(int index) {
+    if (index < 0 || index >= _shopImages.length) return;
+    _shopImages[index] = null;
+    notifyListeners();
+  }
+
+  /// ----------------------------- API FUNCTIONS -----------------------------
 
   ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
 
@@ -76,14 +105,37 @@ class ProfileController extends ChangeNotifier {
     return _apiResponse;
   }
 
+  Future<ApiResponse> registerShop({
+    required ShopDetailImages shopImages,
+    required ShopDetailData shopDetail,
+  }) async {
+
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+
+    try {
+      final token = SessionManager.getToken() ?? '';
+
+      final response = await profileService.registerShop(
+        token: token,
+        shopImages: shopImages,
+        shopDetail: shopDetail,
+      );
+
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+
+    notifyListeners();
+    return _apiResponse;
+  }
+
   Future<ApiResponse<ShopDetailData?>> getShopDetail() async {
     _shopDetailData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final token = SessionManager.getToken();
-      if (token == null || token.isEmpty) {
-        throw Exception('Token not found');
-      }
+      final token = SessionManager.getToken() ?? '';
       final response = await profileService.getShopDetail(token: token);
       final data = response[Keys.data];
       if (data != null && data is Map<String, dynamic>) {

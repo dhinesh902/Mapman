@@ -88,6 +88,7 @@ class AppIcons {
   static const String nearByShopP = 'assets/images/png/near_by_shop.png';
   static const String clockP = 'assets/images/png/clock.png';
   static const String eyeViewP = 'assets/images/png/eye_view.png';
+  static const String multiMediaP = 'assets/images/png/multi_media.png';
   static const String profilePlaceholderP =
       'assets/images/png/profile_placeholder.png';
   static const String ratingStarOutlineP =

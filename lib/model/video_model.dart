@@ -1,4 +1,4 @@
-class MyVideosData {
+class VideosData {
   int? id;
   int? profileId;
   int? shopId;
@@ -11,7 +11,7 @@ class MyVideosData {
   String? createdAt;
   String? updatedAt;
 
-  MyVideosData({
+  VideosData({
     this.id,
     this.profileId,
     this.shopId,
@@ -25,7 +25,7 @@ class MyVideosData {
     this.updatedAt,
   });
 
-  MyVideosData.fromJson(Map<String, dynamic> json) {
+  VideosData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     profileId = json['profileId'];
     shopId = json['shopId'];
@@ -37,5 +37,19 @@ class MyVideosData {
     status = json['status'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+  }
+}
+
+class ViewedVideoData {
+  int? id;
+  String? videoTitle;
+  String? video;
+
+  ViewedVideoData({this.id, this.videoTitle, this.video});
+
+  ViewedVideoData.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    videoTitle = json['videoTitle'];
+    video = json['video'];
   }
 }

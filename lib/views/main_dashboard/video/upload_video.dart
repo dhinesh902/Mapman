@@ -30,10 +30,10 @@ class UploadVideo extends StatefulWidget {
 class _UploadVideoState extends State<UploadVideo> {
   late VideoController videoController;
 
-  final ValueNotifier<File?> videoNotifier = ValueNotifier(null);
-  final ValueNotifier<bool> videoValidator = ValueNotifier(false);
-  final formKey = GlobalKey<FormState>();
+  final ValueNotifier<File?> videoNotifier = ValueNotifier<File?>(null);
+  final ValueNotifier<bool> videoValidator = ValueNotifier<bool>(false);
 
+  final formKey = GlobalKey<FormState>();
   late TextEditingController videoTitleController,
       videoDescriptionController,
       shopNameController;
@@ -48,6 +48,7 @@ class _UploadVideoState extends State<UploadVideo> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       videoController.setVideoFileSize = false;
+      videoController.setSelectedVideoCategory = null;
     });
 
     super.initState();
@@ -57,6 +58,7 @@ class _UploadVideoState extends State<UploadVideo> {
   void dispose() {
     // TODO: implement dispose
     videoNotifier.dispose();
+    videoValidator.dispose();
     videoTitleController.dispose();
     videoDescriptionController.dispose();
     shopNameController.dispose();
@@ -64,7 +66,8 @@ class _UploadVideoState extends State<UploadVideo> {
   }
 
   Future<void> uploadVideo() async {
-    final MyVideosData videosData = MyVideosData(
+    final VideosData videosData = VideosData(
+      videoTitle: videoTitleController.text.trim(),
       shopName: shopNameController.text.trim(),
       category: videoController.selectedVideoCategory,
       description: videoDescriptionController.text.trim(),
@@ -75,12 +78,14 @@ class _UploadVideoState extends State<UploadVideo> {
     );
     if (response.status == Status.COMPLETED) {
       if (!mounted) return;
-      CustomDialogues().showSuccessDialog(
+      await CustomDialogues.showSuccessDialog(
         context,
         title: 'SuccessFully Updated!',
         body: 'Your shop video updated successfully!',
       );
+      if (!mounted) return;
       context.pop();
+      await videoController.getMyVideos();
     } else {
       if (!mounted) return;
       ExceptionHandler.handleUiException(
@@ -119,20 +124,17 @@ class _UploadVideoState extends State<UploadVideo> {
 
               ValueListenableBuilder(
                 valueListenable: videoValidator,
-                builder: (context, isVideoSelect, _) {
-                  if (isVideoSelect) {
-                    return Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: BodyTextColors(
-                        title: 'Please select video',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.red.shade900,
-                      ),
-                    );
-                  } else {
-                    return SizedBox.shrink();
-                  }
+                builder: (context, hasError, _) {
+                  if (!hasError) return const SizedBox.shrink();
+                  return Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: BodyTextColors(
+                      title: 'Please select video',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red.shade900,
+                    ),
+                  );
                 },
               ),
 
@@ -163,7 +165,7 @@ class _UploadVideoState extends State<UploadVideo> {
               SizedBox(height: 15),
               CustomTextField(
                 title: 'Shop Name',
-                controller: videoDescriptionController,
+                controller: shopNameController,
                 hintText: "Enter shop name",
                 inputAction: TextInputAction.next,
                 validator: (value) {
@@ -205,18 +207,25 @@ class _UploadVideoState extends State<UploadVideo> {
             ],
           ),
         ),
-        bottomNavigationBar: CustomFullButton(
-          title: 'Upload Video',
-          onTap: () async {
-            if (videoNotifier.value == null) {
-              videoValidator.value = true;
-            } else {
-              videoValidator.value = false;
-            }
-            if (formKey.currentState!.validate()) {
-              await uploadVideo();
-            }
-          },
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (videoController.response.status == Status.LOADING)
+              ButtonProgressBar()
+            else
+              CustomFullButton(
+                title: 'Upload Video',
+                onTap: () async {
+                  final bool isFormValid =
+                      formKey.currentState?.validate() ?? false;
+                  final bool hasVideo = videoNotifier.value != null;
+                  videoValidator.value = !hasVideo;
+                  if (isFormValid && hasVideo) {
+                    await uploadVideo();
+                  }
+                },
+              ),
+          ],
         ),
       ),
     );
@@ -234,6 +243,7 @@ class _UploadVideoState extends State<UploadVideo> {
       } else {
         videoController.setVideoFileSize = false;
         videoNotifier.value = File(pickedFile.path);
+        videoValidator.value = false;
       }
     }
   }

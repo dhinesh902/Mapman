@@ -10,7 +10,7 @@ class VideoService extends ApiRoutes {
   Future<Map<String, dynamic>> uploadMyVideos({
     required String token,
     required File video,
-    required MyVideosData videoData,
+    required VideosData videoData,
   }) async {
     try {
       final FormData formData = FormData.fromMap({
@@ -25,7 +25,7 @@ class VideoService extends ApiRoutes {
         'description': videoData.description,
       });
 
-      final response = await dio.get(
+      final response = await dio.post(
         ApiRoutes.videoRegister,
         options: headerWithToken(token),
         data: formData,
@@ -40,6 +40,36 @@ class VideoService extends ApiRoutes {
     try {
       final response = await dio.get(
         ApiRoutes.myVideos,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> addViewedVideos({
+    required String token,
+    required int videoId,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.viewedVideos,
+        options: headerWithToken(token),
+        data: {'videoId': videoId},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getMyViewedVideos({
+    required String token,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.fetchMyViewedVideos,
         options: headerWithToken(token),
       );
       return response.data;

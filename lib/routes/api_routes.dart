@@ -35,4 +35,6 @@ abstract class ApiRoutes {
   static const String fetchShop = '/shop/fetchShop';
   static const String videoRegister = '/shop/videoRegister';
   static const String myVideos = '/shop/myVideos';
+  static const String viewedVideos = '/shop/viewedVideos';
+  static const String fetchMyViewedVideos = '/shop/fetchMyViewedVideos';
 }

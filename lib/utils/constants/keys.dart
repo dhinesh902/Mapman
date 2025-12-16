@@ -6,5 +6,6 @@ class Keys{
   static const String fcmToken = 'fcmtoken';
   static const String isFirstTime = 'isFirstTime';
   static const String shopId = 'shopId';
+  static const String isVideoVideo = 'isVideoVideo';
 
 }

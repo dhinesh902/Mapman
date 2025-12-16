@@ -265,51 +265,47 @@ class _VideosState extends State<Videos> {
                   case Status.COMPLETED:
                     final videoData = videoController.myVideosData.data ?? [];
                     if (videoData.isNotEmpty) {
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                HeaderTextBlack(
-                                  title: 'Total Videos (12)',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                InkWell(
-                                  onTap: () {
-                                    context.pushNamed(AppRoutes.uploadVideo);
-                                  },
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SvgPicture.asset(AppIcons.upload),
-                                      BodyTextColors(
-                                        title: 'Upload ',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w300,
-                                        color: GenericColors.darkGreen,
-                                      ),
-                                    ],
+                      return Flexible(
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  HeaderTextBlack(
+                                    title: 'Total Videos (12)',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ],
+                                  InkWell(
+                                    onTap: () {
+                                      context.pushNamed(AppRoutes.uploadVideo);
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SvgPicture.asset(AppIcons.upload),
+                                        BodyTextColors(
+                                          title: 'Upload ',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w300,
+                                          color: GenericColors.darkGreen,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 15),
-                          Flexible(
-                            child: MyVideos(
-                              videoUrls: [
-                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-                                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                              ],
+                            SizedBox(height: 15),
+                            Flexible(
+                              child: MyVideos(
+                                myVideos: videoData,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     } else {
                       return NoVideoContainer();

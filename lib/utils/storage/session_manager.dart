@@ -50,7 +50,15 @@ class SessionManager {
   }
 
   static int? getShopId() {
-    return _sessionStorage!.getInt(Keys.shopId);
+    return _sessionStorage?.getInt(Keys.shopId);
+  }
+
+  static Future<bool> setVideoVideo({required bool isVideoVideo}) async {
+    return _sessionStorage!.setBool(Keys.isVideoVideo, isVideoVideo);
+  }
+
+  static bool getVideoVideo() {
+    return _sessionStorage!.getBool(Keys.isVideoVideo) ?? false;
   }
 
   static Future<bool> clearSession() async {

@@ -111,12 +111,12 @@ class _HomeState extends State<Home> {
                           physics: const NeverScrollableScrollPhysics(),
                           padding: EdgeInsets.symmetric(horizontal: 10),
                           gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 3,
-                            mainAxisExtent: 108,
-                          ),
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 3,
+                                mainAxisExtent: 110,
+                              ),
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
                             return GestureDetector(
@@ -146,15 +146,13 @@ class _HomeState extends State<Home> {
                                               ],
                                             ),
                                             borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(6),
-                                            ),
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(6),
+                                                ),
                                           ),
                                           child: Center(
                                             child: Image.network(
-                                              '${ApiRoutes
-                                                  .baseUrl}${categories[index]
-                                                  .categoryImage ?? ''}',
+                                              '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
                                               height: 40,
                                               width: 40,
                                               filterQuality: FilterQuality.high,
@@ -169,15 +167,15 @@ class _HomeState extends State<Home> {
                                         decoration: BoxDecoration(
                                           color: AppColors.scaffoldBackground,
                                           borderRadius:
-                                          const BorderRadius.vertical(
-                                            bottom: Radius.circular(6),
-                                          ),
+                                              const BorderRadius.vertical(
+                                                bottom: Radius.circular(6),
+                                              ),
                                         ),
                                         child: Center(
                                           child: BodyTextColors(
                                             title:
-                                            categories[index].categoryName
-                                                ?.capitalize() ??
+                                                categories[index].categoryName
+                                                    ?.capitalize() ??
                                                 '',
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
@@ -193,10 +191,7 @@ class _HomeState extends State<Home> {
                           },
                         ),
                         SizedBox(
-                          height: MediaQuery
-                              .of(context)
-                              .size
-                              .height * .18,
+                          height: MediaQuery.of(context).size.height * .18,
                         ),
                         BottomCarousalSlider(
                           images: [""],
@@ -421,6 +416,7 @@ class HomeTopListTile extends StatelessWidget {
           title: name.capitalize(),
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: BodyTextHint(
           title: 'Have a nice day',
@@ -592,19 +588,18 @@ class CustomIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         itemCount,
-            (index) =>
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: borderHeight,
-              width: currentIndex == index ? activeWidth : inactiveWidth,
-              margin: const EdgeInsets.only(right: 3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(5),
-                color: currentIndex == index
-                    ? AppColors.whiteText
-                    : GenericColors.borderGrey,
-              ),
-            ),
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: borderHeight,
+          width: currentIndex == index ? activeWidth : inactiveWidth,
+          margin: const EdgeInsets.only(right: 3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: currentIndex == index
+                ? AppColors.whiteText
+                : GenericColors.borderGrey,
+          ),
+        ),
       ),
     );
   }

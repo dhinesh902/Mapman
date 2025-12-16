@@ -4,56 +4,104 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class SingleVideoScreen extends StatefulWidget {
-  const SingleVideoScreen({super.key, required this.videoUrl});
+  const SingleVideoScreen({super.key, required this.videosData});
 
-  final String videoUrl;
+  final VideosData videosData;
 
   @override
   State<SingleVideoScreen> createState() => _SingleVideoScreenState();
 }
 
-class _SingleVideoScreenState extends State<SingleVideoScreen> {
+class _SingleVideoScreenState extends State<SingleVideoScreen>
+    with WidgetsBindingObserver {
+  late VideoController videoController;
   late VideoPlayerController _controller;
+
   final ValueNotifier<bool> bookMarkNotifier = ValueNotifier(false);
+  bool _isInitialized = false;
 
   @override
   void initState() {
+    // TODO: implement initState
+    WidgetsBinding.instance.addObserver(this);
+    videoController = context.read<VideoController>();
+
+    _initializeVideo();
+    addViewedVideos();
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _controller.play();
-            _controller.setLooping(true);
-          });
-        }
-      });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isInitialized) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _controller.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      _controller.play();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     bookMarkNotifier.dispose();
     super.dispose();
   }
 
+  Future<void> _initializeVideo() async {
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(ApiRoutes.baseUrl + (widget.videosData.video ?? '')),
+      videoPlayerOptions: VideoPlayerOptions(
+        allowBackgroundPlayback: false,
+        mixWithOthers: false,
+      ),
+    );
+    try {
+      await _controller.initialize();
+      if (!mounted) return;
+      setState(() => _isInitialized = true);
+      _controller
+        ..setLooping(true)
+        ..play();
+    } catch (e) {
+      debugPrint('Video init error: $e');
+    }
+  }
+
+  void addViewedVideos() {
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!mounted) return;
+      videoController.addViewedVideos(videoId: widget.videosData.id ?? 0);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    videoController = context.watch<VideoController>();
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Stack(
         children: [
           Container(
             child: _controller.value.isInitialized
                 ? ClipRRect(child: VideoPlayer(_controller))
-                : Container(color: AppColors.bgGrey),
+                : CustomLoadingIndicator(),
           ),
           Positioned(
             top: 0,
@@ -114,7 +162,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen> {
                             children: [
                               Flexible(
                                 child: HeaderTextBlack(
-                                  title: 'Shop Name',
+                                  title:
+                                      widget.videosData.shopName
+                                          ?.capitalize() ??
+                                      '',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
                                   textDecoration: TextDecoration.underline,
@@ -146,9 +197,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen> {
                           ),
                           SizedBox(height: 8),
                           BodyTextHint(
-                            title: 'Description of video',
+                            title:
+                                widget.videosData.description?.capitalize() ??
+                                '',
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
+                            maxLines: 4,
                           ),
                           SizedBox(height: 8),
                           BodyTextHint(

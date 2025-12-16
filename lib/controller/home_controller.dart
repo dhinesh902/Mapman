@@ -82,25 +82,14 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Viewed Video page
-  bool _isViewedVideo = true;
 
-  bool get isViewedVideo => _isViewedVideo;
 
-  set setIsViewedVideo(bool value) {
-    _isViewedVideo = value;
-    notifyListeners();
-  }
+  String? _category;
 
-  List<bool> bookmarked = [];
+  String? get category => _category;
 
-  void initializeBookmarks(int length) {
-    bookmarked = List.generate(length, (index) => true);
-    notifyListeners();
-  }
-
-  void toggleBookmark(int index) {
-    bookmarked[index] = !bookmarked[index];
+  set setSelectedCategory(String? value) {
+    _category = value;
     notifyListeners();
   }
 

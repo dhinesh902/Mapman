@@ -20,6 +20,5 @@ class AppRoutes {
   static String notifications = 'notifications';
   static String notificationSettings = 'notification_settings';
   static String viewedVideos = 'viewed_videos';
-  static String viewedVideosShopDetail = 'viewed_videos_shop_detail';
   static String savedVideos = 'saved_videos';
 }

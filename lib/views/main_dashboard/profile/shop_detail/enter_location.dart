@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -34,9 +35,9 @@ class _EnterLocationState extends State<EnterLocation> {
   void initState() {
     // TODO: implement initState
     placeController = context.read<PlaceController>();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   placeController.setConfirmedPrediction = null;
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      placeController.setConfirmedPrediction = null;
+    });
     loadPredictions();
     super.initState();
   }
@@ -174,18 +175,52 @@ class _EnterLocationState extends State<EnterLocation> {
                 return ListView.builder(
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: predictions.length,
                   itemBuilder: (context, index) {
                     final item = predictions[index];
+
                     return SearchResultContainer(
                       prediction: item,
-                      clearOnTap: () async {
-                        await SessionManager().removePlaceDetail(
-                          item.placeId ?? '',
+                      onTap: () async {
+                        final placeId = item.placeId;
+                        if (placeId == null || placeId.isEmpty) {
+                          CustomToast.show(
+                            context,
+                            title: 'Invalid place selected',
+                          );
+                          return;
+                        }
+                        await placeController.fetchPlaceDetails(
+                          placeId,
+                          context,
                         );
+                        final location = placeController.placeDetails?.location;
+                        final lat = location?.lat;
+                        final lng = location?.lng;
+                        if (!context.mounted) return;
+                        if (lat == null || lng == null) {
+                          CustomToast.show(
+                            context,
+                            title: 'Unable to get location',
+                          );
+                          return;
+                        }
+                        context.pop({
+                          'address': item.description ?? '',
+                          'latlong': LatLng(lat, lng),
+                        });
+                      },
+                      clearOnTap: () async {
+                        final placeId = item.placeId;
+                        if (placeId != null) {
+                          await SessionManager().removePlaceDetail(placeId);
+                        }
+                        if (!mounted) return;
                         setState(() {
-                          predictions.removeAt(index);
+                          if (index < predictions.length) {
+                            predictions.removeAt(index);
+                          }
                         });
                       },
                     );
@@ -197,7 +232,32 @@ class _EnterLocationState extends State<EnterLocation> {
             CustomFullButton(
               title: 'Save Location Details',
               isDialogue: true,
-              onTap: () {},
+              onTap: () {
+                final prediction = placeController.confirmedPrediction;
+                if (prediction == null) {
+                  CustomToast.show(
+                    context,
+                    title: 'Please select address',
+                    isError: true,
+                  );
+                  return;
+                }
+                final lat =
+                    placeController.placeDetails?.location?.lat ??
+                    placeController.currentLocationLatLng.data?.latitude;
+
+                final lng =
+                    placeController.placeDetails?.location?.lng ??
+                    placeController.currentLocationLatLng.data?.longitude;
+                if (lat == null || lng == null) {
+                  CustomToast.show(context, title: 'Unable to get location');
+                  return;
+                }
+                context.pop({
+                  'address': prediction.description ?? '',
+                  'latlong': LatLng(lat, lng),
+                });
+              },
             ),
           ],
         ),
@@ -348,48 +408,52 @@ class SearchResultContainer extends StatelessWidget {
     super.key,
     required this.prediction,
     required this.clearOnTap,
+    required this.onTap,
   });
 
   final CustomPrediction prediction;
-  final VoidCallback clearOnTap;
+  final VoidCallback clearOnTap, onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadiusGeometry.circular(4),
-        color: AppColors.scaffoldBackground,
-      ),
-      margin: EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(width: 15),
-            SvgPicture.asset(AppIcons.locationArrow),
-            SizedBox(width: 10),
-            Expanded(
-              child: BodyTextColors(
-                title: prediction.title ?? '',
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkText,
-                overflow: TextOverflow.ellipsis,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadiusGeometry.circular(4),
+          color: AppColors.scaffoldBackground,
+        ),
+        margin: EdgeInsets.only(bottom: 10),
+        child: ListTile(
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 15),
+              SvgPicture.asset(AppIcons.locationArrow),
+              SizedBox(width: 10),
+              Expanded(
+                child: BodyTextColors(
+                  title: prediction.title ?? '',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkText,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(left: 15, top: 5),
-          child: BodyTextHint(
-            title: prediction.description ?? '',
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
+            ],
           ),
-        ),
-        trailing: InkWell(
-          onTap: clearOnTap,
-          child: SvgPicture.asset(AppIcons.clearOutline),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(left: 15, top: 5),
+            child: BodyTextHint(
+              title: prediction.description ?? '',
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          trailing: InkWell(
+            onTap: clearOnTap,
+            child: SvgPicture.asset(AppIcons.clearOutline),
+          ),
         ),
       ),
     );

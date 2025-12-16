@@ -78,7 +78,7 @@ class _EditProfileState extends State<EditProfile> {
     );
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
-      await CustomDialogues().showSuccessDialog(
+      await CustomDialogues.showSuccessDialog(
         context,
         title: 'SuccessFully Updated!',
         body: 'Your profile updated successfully!',

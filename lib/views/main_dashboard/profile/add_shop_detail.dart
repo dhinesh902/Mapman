@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
@@ -40,7 +39,7 @@ class _AddShopDetailState extends State<AddShopDetail> {
     profileController = context.read<ProfileController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getShopDetail();
-      // getHome();
+      getHome();
     });
     super.initState();
   }
@@ -48,13 +47,7 @@ class _AddShopDetailState extends State<AddShopDetail> {
   Future<void> getHome() async {
     final response = await homeController.getHome();
     if (!mounted) return;
-    if (response.status == Status.COMPLETED) {
-      final data = response.data;
-      categories = (data?.category ?? [])
-          .where((item) => item.categoryName?.isNotEmpty ?? false)
-          .map((item) => item.categoryName!)
-          .toList();
-    } else {
+    if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
         context: context,
         status: response.status,
@@ -177,7 +170,10 @@ Future<dynamic> showAddShopDetail(BuildContext context) async {
               isDefaultAction: true,
               onPressed: () {
                 Navigator.pop(context);
-                context.pushNamed(AppRoutes.registerShopDetail);
+                Future.microtask(() {
+                  if (!context.mounted) return;
+                  context.pushNamed(AppRoutes.registerShopDetail);
+                });
               },
               child: HeaderTextPrimary(
                 title: 'Register',
@@ -237,7 +233,10 @@ Future<dynamic> showAddShopDetail(BuildContext context) async {
                       isDialogue: true,
                       onTap: () {
                         Navigator.pop(context);
-                        context.pushNamed(AppRoutes.registerShopDetail);
+                        Future.microtask(() {
+                          if (!context.mounted) return;
+                          context.pushNamed(AppRoutes.registerShopDetail);
+                        });
                       },
                     ),
                   ),

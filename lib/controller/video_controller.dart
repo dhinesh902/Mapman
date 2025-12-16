@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
-import 'package:mapman/model/home_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/service/video_service.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -18,6 +17,28 @@ class VideoController extends ChangeNotifier {
 
   set setVideoFileSize(bool value) {
     _isVideoFileSize = value;
+    notifyListeners();
+  }
+
+  /// Viewed Video
+  bool _isViewedVideo = true;
+
+  bool get isViewedVideo => _isViewedVideo;
+
+  set setIsViewedVideo(bool value) {
+    _isViewedVideo = value;
+    notifyListeners();
+  }
+
+  List<bool> bookmarked = [];
+
+  void initializeBookmarks(int length) {
+    bookmarked = List.generate(length, (index) => true);
+    notifyListeners();
+  }
+
+  void toggleBookmark(int index) {
+    bookmarked[index] = !bookmarked[index];
     notifyListeners();
   }
 
@@ -64,15 +85,30 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse get response => _apiResponse;
 
-  ApiResponse<List<MyVideosData>> _myVideosData = ApiResponse.initial(
+  /// My Videos
+  ApiResponse<List<VideosData>> _myVideosData = ApiResponse.initial(
     Strings.noDataFound,
   );
 
-  ApiResponse<List<MyVideosData>> get myVideosData => _myVideosData;
+  ApiResponse<List<VideosData>> get myVideosData => _myVideosData;
+
+  /// Viewed Videos
+  ApiResponse<List<ViewedVideoData>> _viewedVideoData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<List<ViewedVideoData>> get viewedVideoData => _viewedVideoData;
+
+  List<ViewedVideoData> _filteredViewedVideos = [];
+
+  List<ViewedVideoData> get filteredViewedVideos =>
+      _filteredViewedVideos.isNotEmpty
+      ? _filteredViewedVideos
+      : (_viewedVideoData.data ?? []);
 
   Future<ApiResponse> uploadMyVideos({
     required File video,
-    required MyVideosData videoData,
+    required VideosData videoData,
   }) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
@@ -91,7 +127,7 @@ class VideoController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<MyVideosData>>> getMyVideos() async {
+  Future<ApiResponse<List<VideosData>>> getMyVideos() async {
     _myVideosData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
@@ -101,7 +137,7 @@ class VideoController extends ChangeNotifier {
       if (data != null && data is List) {
         _myVideosData = ApiResponse.completed(
           data
-              .map((e) => MyVideosData.fromJson(e as Map<String, dynamic>))
+              .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
               .toList(),
         );
       } else {
@@ -112,5 +148,61 @@ class VideoController extends ChangeNotifier {
     }
     notifyListeners();
     return _myVideosData;
+  }
+
+  Future<ApiResponse> addViewedVideos({required int videoId}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await videoService.addViewedVideos(
+        token: token,
+        videoId: videoId,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse<List<ViewedVideoData>>> getMyViewedVideos() async {
+    _viewedVideoData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await videoService.getMyViewedVideos(token: token);
+      final data = response[Keys.data];
+      if (data != null && data is List) {
+        _viewedVideoData = ApiResponse.completed(
+          data
+              .map((e) => ViewedVideoData.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        );
+        initializeBookmarks(_viewedVideoData.data?.length ?? 0);
+      } else {
+        _viewedVideoData = ApiResponse.completed([]);
+      }
+    } catch (e) {
+      _viewedVideoData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _viewedVideoData;
+  }
+
+  void filterViewedVideosByTitle(String query) {
+    if (query.isEmpty) {
+      _filteredViewedVideos = [];
+    } else {
+      _filteredViewedVideos = _viewedVideoData.data!
+          .where(
+            (video) => (video.videoTitle ?? '').toLowerCase().contains(
+              query.toLowerCase(),
+            ),
+          )
+          .toList();
+    }
+    notifyListeners();
   }
 }

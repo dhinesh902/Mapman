@@ -1,13 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -20,28 +24,42 @@ class ViewedVideos extends StatefulWidget {
 }
 
 class _ViewedVideosState extends State<ViewedVideos> {
-  late HomeController homeController;
-  List<String> videoUrls = [
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-  ];
+  late VideoController videoController;
+  late TextEditingController searchController;
 
   @override
   void initState() {
     // TODO: implement initState
-    homeController = context.read<HomeController>();
+    videoController = context.read<VideoController>();
+    searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      homeController.initializeBookmarks(videoUrls.length);
+      getMyViewedVideos();
     });
     super.initState();
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> getMyViewedVideos() async {
+    final response = await videoController.getMyViewedVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    homeController = context.watch<HomeController>();
+    videoController = context.watch<VideoController>();
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -53,10 +71,10 @@ class _ViewedVideosState extends State<ViewedVideos> {
               scaleX: .9,
               scaleY: 0.8,
               child: CupertinoSwitch(
-                value: homeController.isViewedVideo,
+                value: videoController.isViewedVideo,
                 activeTrackColor: GenericColors.darkGreen,
                 onChanged: (value) {
-                  homeController.setIsViewedVideo = value;
+                  videoController.setIsViewedVideo = value;
                   VideoDialogues().showViewedVideoDialogue(
                     context,
                     turnOn: value,
@@ -66,45 +84,74 @@ class _ViewedVideosState extends State<ViewedVideos> {
             ),
           ),
         ),
-        body: Column(
-          children: [
-            SizedBox(height: 20),
-            CustomSearchField(
-              controller: TextEditingController(),
-              hintText: 'Search by Video title',
-              clearOnTap: () {},
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: videoUrls.length,
-                shrinkWrap: true,
-                padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 15),
-                    child: Stack(
-                      children: [
-                        ViewedVideoCard(
-                          videoUrl: videoUrls[index],
-                          isBookMark: homeController.bookmarked[index],
-                          bookMarkOnTap: () {
-                            homeController.toggleBookmark(index);
-                          },
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: VideoTitleBlurContainer(isShopDetail: true),
-                        ),
-                      ],
+        body: Builder(
+          builder: (context) {
+            switch (videoController.viewedVideoData.status) {
+              case Status.INITIAL:
+                return CustomLoadingIndicator();
+              case Status.LOADING:
+                return CustomLoadingIndicator();
+              case Status.COMPLETED:
+                final viewedVideos = videoController.filteredViewedVideos;
+                if (viewedVideos.isEmpty) {
+                  return NoDataText(title: 'No data found');
+                }
+                return Column(
+                  children: [
+                    SizedBox(height: 20),
+                    CustomSearchField(
+                      controller: searchController,
+                      hintText: 'Search by Video title',
+                      onChanged: (value) {
+                        videoController.filterViewedVideosByTitle(value!);
+                      },
+                      clearOnTap: () {
+                        searchController.clear();
+                        videoController.filterViewedVideosByTitle('');
+                      },
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
+                    SizedBox(height: 20),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: viewedVideos.length,
+                        shrinkWrap: true,
+                        padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 15),
+                            child: Stack(
+                              children: [
+                                ViewedVideoCard(
+                                  videoUrl:
+                                      '${ApiRoutes.baseUrl}${viewedVideos[index].video ?? ''}',
+                                  isBookMark: videoController.bookmarked[index],
+                                  bookMarkOnTap: () {
+                                    videoController.toggleBookmark(index);
+                                  },
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: VideoTitleBlurContainer(
+                                    isShopDetail: true,
+                                    title: viewedVideos[index].videoTitle ?? '',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              case Status.ERROR:
+                return CustomErrorTextWidget(
+                  title: '${videoController.viewedVideoData.message}',
+                );
+            }
+          },
         ),
       ),
     );

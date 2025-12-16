@@ -67,12 +67,15 @@ class PlaceController extends ChangeNotifier {
   }
 
   void getPredictions(String query) {
+    if (query.isEmpty) {
+      clearPredictions();
+      return;
+    }
     _placesService.getPredictions(query);
-    notifyListeners();
   }
 
   void clearPredictions() {
-    _predictions = [];
+    _predictions.clear();
     notifyListeners();
   }
 
@@ -89,8 +92,7 @@ class PlaceController extends ChangeNotifier {
       final details = await _placesService.getPredictionDetail(placeId);
       _placeDetails = details;
       notifyListeners();
-    } catch (e) {
-      if (!context.mounted) return;
+    } catch (_) {
     } finally {
       _isDetailsLoading = false;
       notifyListeners();

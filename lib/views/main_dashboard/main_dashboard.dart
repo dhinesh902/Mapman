@@ -6,10 +6,12 @@ import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/home/home.dart';
 import 'package:mapman/views/main_dashboard/map/maps.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/profile/profile.dart';
+import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
@@ -33,7 +35,7 @@ class _MainDashboardState extends State<MainDashboard> {
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.isLogin) {
-        CustomDialogues().showSuccessDialog(
+        CustomDialogues.showSuccessDialog(
           context,
           title: 'Login Successfully!!',
           body: 'Welcome back!!.Your login was successful!',
@@ -68,7 +70,11 @@ class _MainDashboardState extends State<MainDashboard> {
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: InkWell(
           onTap: () async {
-            await showAddShopDetail(context);
+            if (SessionManager.getShopId() != null) {
+              VideoDialogues().showVideoUploadDialogue(context);
+            } else {
+              await showAddShopDetail(context);
+            }
           },
           child: Container(
             height: 68,
@@ -107,6 +113,7 @@ class _MainDashboardState extends State<MainDashboard> {
             AnimatedBottomNavigationBar.builder(
               height: 65,
               itemCount: 4,
+              notchMargin: 8,
               rightCornerRadius: 6,
               leftCornerRadius: 6,
               gapWidth: 100,
@@ -155,8 +162,9 @@ class _MainDashboardState extends State<MainDashboard> {
               borderColor: AppColors.primaryBorder,
               activeIndex: homeController.currentPage,
               gapLocation: GapLocation.center,
-              notchSmoothness: NotchSmoothness.defaultEdge,
+              notchSmoothness: NotchSmoothness.softEdge,
               elevation: 0,
+              borderWidth: .5,
               onTap: (index) {
                 homeController.setCurrentPage = index;
               },
@@ -164,7 +172,7 @@ class _MainDashboardState extends State<MainDashboard> {
             Positioned(
               bottom: 1,
               child: HeaderTextPrimary(
-                title: "Upload",
+                title: SessionManager.getShopId() != null ? "Upload" : "Create",
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

@@ -117,6 +117,8 @@ class NotificationCard extends StatelessWidget {
                 child: const CustomNetworkImage(
                   imageUrl:
                       'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkAJEkJQ1WumU0hXNpXdgBt9NUKc0QDVIiaw&s',
+                  isProfile: true,
+                  // placeHolderHeight: 20,
                 ),
               ),
               title: const HeaderTextBlack(

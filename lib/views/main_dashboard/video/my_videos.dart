@@ -2,24 +2,29 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:video_player/video_player.dart';
 
 class MyVideos extends StatelessWidget {
-  const MyVideos({super.key, required this.videoUrls});
+  const MyVideos({super.key, required this.myVideos});
 
-  final List<String> videoUrls;
+  final List<VideosData> myVideos;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: videoUrls.length,
+      itemCount: myVideos.length,
       shrinkWrap: true,
       padding: EdgeInsets.only(bottom: 20),
       itemBuilder: (context, index) {
@@ -34,16 +39,22 @@ class MyVideos extends StatelessWidget {
                 onTap: () {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
-                    extra: videoUrls[index],
+                    extra: myVideos[index],
                   );
                 },
-                child: MyVideoContainer(videoUrl: videoUrls[index]),
+                child: MyVideoContainer(
+                  videoUrl:
+                      '${ApiRoutes.baseUrl}${myVideos[index].video ?? ''}',
+                ),
               ),
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: VideoTitleBlurContainer(isEditIcon: true),
+                child: VideoTitleBlurContainer(
+                  isEditIcon: true,
+                  title: myVideos[index].shopName ?? '',
+                ),
               ),
             ],
           ),
@@ -60,12 +71,11 @@ class VideoTitleBlurContainer extends StatelessWidget {
     this.isEditIcon = false,
     this.isShopDetail = false,
     this.isViews = false,
+    required this.title,
   });
 
-  final bool isWatched;
-  final bool isEditIcon;
-  final bool isShopDetail;
-  final bool isViews;
+  final bool isWatched, isEditIcon, isShopDetail, isViews;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -91,12 +101,16 @@ class VideoTitleBlurContainer extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              BodyTextColors(
-                title: "Video Title",
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.whiteText,
+              Flexible(
+                child: BodyTextColors(
+                  title: title.capitalize(),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.whiteText,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              SizedBox(width: 50),
               if (isWatched) ...[
                 Container(
                   height: 23,
@@ -140,7 +154,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
               if (isShopDetail) ...[
                 ShopDetailsButton(
                   onTap: () {
-                    context.pushNamed(AppRoutes.viewedVideosShopDetail);
+                    context.pushNamed(AppRoutes.shopDetail);
                   },
                 ),
               ],
@@ -306,8 +320,12 @@ class NoVideoContainer extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
             TextButton(
-              onPressed: () {
-                context.pushNamed(AppRoutes.uploadVideo);
+              onPressed: () async {
+                if (SessionManager.getShopId() != null) {
+                  context.pushNamed(AppRoutes.uploadVideo);
+                } else {
+                  await showAddShopDetail(context);
+                }
               },
               child: HeaderTextPrimary(
                 title: 'Upload video',

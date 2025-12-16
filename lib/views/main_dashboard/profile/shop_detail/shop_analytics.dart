@@ -110,7 +110,7 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
-                                child: VideoTitleBlurContainer(isViews: true),
+                                child: VideoTitleBlurContainer(isViews: true,title: 'Video Title',),
                               ),
                             ],
                           ),
