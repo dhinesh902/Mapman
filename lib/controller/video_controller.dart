@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/service/video_service.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -101,9 +102,8 @@ class VideoController extends ChangeNotifier {
 
   List<VideosData> _filteredViewedVideos = [];
 
-  List<VideosData> get filteredViewedVideos => _filteredViewedVideos.isNotEmpty
-      ? _filteredViewedVideos
-      : (_viewedVideoData.data ?? []);
+  List<VideosData> get filteredViewedVideos =>
+      _filteredViewedVideos.isEmpty ? [] : (_viewedVideoData.data ?? []);
 
   /// Saved Videos
   ApiResponse<List<VideosData>> _savedVideoData = ApiResponse.initial(
@@ -125,6 +125,14 @@ class VideoController extends ChangeNotifier {
   );
 
   ApiResponse<List<VideosData>> get allVideosData => _allVideosData;
+
+  /// Shop detail
+  ApiResponse<SingleShopDetailData> _singleShopDetailData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<SingleShopDetailData> get singleShopDetailData =>
+      _singleShopDetailData;
 
   Future<ApiResponse> uploadMyVideos({
     required File video,
@@ -373,5 +381,31 @@ class VideoController extends ChangeNotifier {
     }
     notifyListeners();
     return _allVideosData;
+  }
+
+  Future<ApiResponse<SingleShopDetailData>> getShopById({
+    required int shopId,
+  }) async {
+    _singleShopDetailData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await videoService.getShopById(
+        token: token,
+        shopId: shopId,
+      );
+      final data = response[Keys.data];
+      if (data != null && (data as Map).isNotEmpty) {
+        _singleShopDetailData = ApiResponse.completed(
+          SingleShopDetailData.fromJson(data as Map<String, dynamic>),
+        );
+      } else {
+        _singleShopDetailData = ApiResponse.completed(null);
+      }
+    } catch (e) {
+      _singleShopDetailData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _singleShopDetailData;
   }
 }

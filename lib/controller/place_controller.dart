@@ -66,12 +66,22 @@ class PlaceController extends ChangeNotifier {
     _placesService.initialize();
   }
 
-  void getPredictions(String query) {
+  Future<void> getPredictions(String query) async {
     if (query.isEmpty) {
       clearPredictions();
       return;
     }
-    _placesService.getPredictions(query);
+    _isPredictionLoading = true;
+    notifyListeners();
+
+    try {
+      _placesService.getPredictions(query);
+    } catch (e) {
+      debugPrint("Prediction error: $e");
+    } finally {
+      _isPredictionLoading = false;
+      notifyListeners();
+    }
   }
 
   void clearPredictions() {
@@ -84,7 +94,7 @@ class PlaceController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchPlaceDetails(String placeId, BuildContext context) async {
+  Future<void> fetchPlaceDetails(String placeId) async {
     _isDetailsLoading = true;
     notifyListeners();
 

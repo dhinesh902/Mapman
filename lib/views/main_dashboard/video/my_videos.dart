@@ -27,7 +27,7 @@ class MyVideos extends StatelessWidget {
     return ListView.builder(
       itemCount: myVideos.length,
       shrinkWrap: true,
-      padding: EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(bottom: 100),
       itemBuilder: (context, index) {
         return Container(
           height: 174,
@@ -46,6 +46,7 @@ class MyVideos extends StatelessWidget {
                 child: MyVideoContainer(
                   videoUrl:
                       '${ApiRoutes.baseUrl}${myVideos[index].video ?? ''}',
+                  views: myVideos[index].views.toString(),
                 ),
               ),
               Positioned(
@@ -64,6 +65,141 @@ class MyVideos extends StatelessWidget {
     );
   }
 }
+
+// class VideoTitleBlurContainer extends StatelessWidget {
+//   const VideoTitleBlurContainer({
+//     super.key,
+//     this.isWatched = false,
+//     this.isEditIcon = false,
+//     this.isShopDetail = false,
+//     this.isViews = false,
+//     required this.videosData,
+//   });
+//
+//   final bool isWatched, isEditIcon, isShopDetail, isViews;
+//   final VideosData videosData;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return ClipRRect(
+//       borderRadius: const BorderRadius.only(
+//         bottomLeft: Radius.circular(6),
+//         bottomRight: Radius.circular(6),
+//       ),
+//       child: BackdropFilter(
+//         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+//         child: Container(
+//           height: 48,
+//           padding: const EdgeInsets.symmetric(horizontal: 15),
+//           decoration: BoxDecoration(
+//             color: AppColors.darkText.withOpacity(0.2),
+//             border: Border(
+//               top: BorderSide(
+//                 color: AppColors.whiteText.withValues(alpha: .2),
+//                 width: .5,
+//               ),
+//             ),
+//           ),
+//           child: Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               Flexible(
+//                 child: BodyTextColors(
+//                   title: videosData.videoTitle?.capitalize() ?? '',
+//                   fontSize: 16,
+//                   fontWeight: FontWeight.w600,
+//                   color: AppColors.whiteText,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//               SizedBox(width: 50),
+//               if (videosData.watched == true) ...[
+//                 Container(
+//                   height: 23,
+//                   width: 64,
+//                   decoration: BoxDecoration(
+//                     color: AppColors.darkText,
+//                     borderRadius: BorderRadiusGeometry.circular(20),
+//                   ),
+//                   child: Center(
+//                     child: BodyTextColors(
+//                       title: 'Watched',
+//                       fontSize: 12,
+//                       fontWeight: FontWeight.w400,
+//                       color: AppColors.whiteText,
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//               if (isEditIcon) ...[
+//                 GestureDetector(
+//                   onTap: () {
+//                     VideoBottomSheet().showEditBottomSheet(
+//                       context,
+//                       videoData: videosData,
+//                     );
+//                   },
+//                   child: Container(
+//                     height: 28,
+//                     width: 28,
+//                     decoration: const BoxDecoration(
+//                       shape: BoxShape.circle,
+//                       color: Colors.white,
+//                     ),
+//                     child: Center(
+//                       child: Icon(
+//                         Icons.more_horiz,
+//                         color: AppColors.primary,
+//                         size: 18,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//               if (isShopDetail) ...[
+//                 ShopDetailsButton(
+//                   onTap: () {
+//                     context.pushNamed(AppRoutes.shopDetail, extra: videosData);
+//                   },
+//                 ),
+//               ],
+//
+//               if (isViews) ...[
+//                 Positioned(
+//                   top: 10,
+//                   right: 10,
+//                   child: Container(
+//                     height: 21,
+//                     decoration: BoxDecoration(
+//                       color: AppColors.darkText,
+//                       borderRadius: BorderRadiusGeometry.circular(20),
+//                     ),
+//                     padding: EdgeInsetsGeometry.symmetric(
+//                       horizontal: 5,
+//                       vertical: 2,
+//                     ),
+//                     child: Row(
+//                       children: [
+//                         SvgPicture.asset(AppIcons.eye),
+//                         SizedBox(width: 5),
+//                         BodyTextColors(
+//                           title: '${videosData.viewCount} views',
+//                           fontSize: 10,
+//                           fontWeight: FontWeight.w300,
+//                           color: AppColors.whiteText,
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class VideoTitleBlurContainer extends StatelessWidget {
   const VideoTitleBlurContainer({
@@ -89,7 +225,6 @@ class VideoTitleBlurContainer extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 15),
           decoration: BoxDecoration(
             color: AppColors.darkText.withOpacity(0.2),
             border: Border(
@@ -99,88 +234,105 @@ class VideoTitleBlurContainer extends StatelessWidget {
               ),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+          child: Stack(
+            alignment: Alignment.centerLeft,
             children: [
-              Flexible(
-                child: BodyTextColors(
-                  title: videosData.videoTitle?.capitalize() ?? '',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.whiteText,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: 50),
-              if (videosData.watched == true) ...[
-                Container(
-                  height: 23,
-                  width: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.darkText,
-                    borderRadius: BorderRadiusGeometry.circular(20),
-                  ),
-                  child: Center(
-                    child: BodyTextColors(
-                      title: 'Watched',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.whiteText,
-                    ),
-                  ),
-                ),
-              ],
-              if (isEditIcon) ...[
-                GestureDetector(
-                  onTap: () {
-                    VideoBottomSheet().showEditBottomSheet(
-                      context,
-                      videoData: videosData,
-                    );
-                  },
-                  child: Container(
-                    height: 28,
-                    width: 28,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.more_horiz,
-                        color: AppColors.primary,
-                        size: 18,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: BodyTextColors(
+                        title: videosData.videoTitle?.capitalize() ?? '',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.whiteText,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ),
-              ],
-              if (isShopDetail) ...[
-                ShopDetailsButton(
-                  onTap: () {
-                    context.pushNamed(AppRoutes.shopDetail);
-                  },
-                ),
-              ],
 
-              if (isViews) ...[
+                    if (videosData.watched == true)
+                      Container(
+                        height: 23,
+                        width: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.darkText,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Center(
+                          child: BodyTextColors(
+                            title: 'Watched',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.whiteText,
+                          ),
+                        ),
+                      ),
+
+                    if (isEditIcon)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            VideoBottomSheet().showEditBottomSheet(
+                              context,
+                              videoData: videosData,
+                            );
+                          },
+                          child: Container(
+                            height: 28,
+                            width: 28,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.more_horiz,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    if (isShopDetail)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: ShopDetailsButton(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRoutes.shopDetail,
+                              extra: videosData.shopId,
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              if (isViews)
                 Positioned(
                   top: 10,
                   right: 10,
                   child: Container(
                     height: 21,
-                    decoration: BoxDecoration(
-                      color: AppColors.darkText,
-                      borderRadius: BorderRadiusGeometry.circular(20),
-                    ),
-                    padding: EdgeInsetsGeometry.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 5,
                       vertical: 2,
                     ),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkText,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         SvgPicture.asset(AppIcons.eye),
-                        SizedBox(width: 5),
+                        const SizedBox(width: 5),
                         BodyTextColors(
                           title: '${videosData.viewCount} views',
                           fontSize: 10,
@@ -191,7 +343,6 @@ class VideoTitleBlurContainer extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -205,10 +356,12 @@ class MyVideoContainer extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.isViews = true,
+    this.views,
   });
 
   final String videoUrl;
   final bool isViews;
+  final String? views;
 
   @override
   State<MyVideoContainer> createState() => _MyVideoContainerState();
@@ -276,7 +429,7 @@ class _MyVideoContainerState extends State<MyVideoContainer>
                     SvgPicture.asset(AppIcons.eye),
                     SizedBox(width: 5),
                     BodyTextColors(
-                      title: '100k views',
+                      title: '${widget.views} views',
                       fontSize: 10,
                       fontWeight: FontWeight.w300,
                       color: AppColors.whiteText,
@@ -325,7 +478,7 @@ class NoVideoContainer extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                if (SessionManager.getShopId() != null) {
+                if (SessionManager.getShopId() != 0) {
                   context.pushNamed(AppRoutes.uploadVideo, extra: VideosData());
                 } else {
                   await showAddShopDetail(context);

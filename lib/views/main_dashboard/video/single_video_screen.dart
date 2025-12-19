@@ -32,15 +32,16 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   late VideoController videoController;
   late final CachedVideoPlayerPlus _player;
 
-  final ValueNotifier<bool> bookMarkNotifier = ValueNotifier(false);
+  late ValueNotifier<bool> bookMarkNotifier;
+
   bool _isInitialized = false;
 
   @override
   void initState() {
     // TODO: implement initState
+    bookMarkNotifier = ValueNotifier(widget.videosData.savedAlready ?? false);
     WidgetsBinding.instance.addObserver(this);
     videoController = context.read<VideoController>();
-
     _initializeVideo();
     addViewedVideos();
     super.initState();
@@ -79,6 +80,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       setState(() => _isInitialized = true);
       _player.controller
         ..setLooping(true)
+        ..setVolume(1.0)
         ..play();
     } catch (e) {
       debugPrint('Video init error: $e');
@@ -120,7 +122,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                   ShopDetailsButton(
                     onTap: () {
                       _player.controller.pause();
-                      context.pushNamed(AppRoutes.shopDetail);
+                      context.pushNamed(
+                        AppRoutes.shopDetail,
+                        extra: widget.videosData.shopId,
+                      );
                     },
                   ),
                   SizedBox(width: 15),
@@ -176,24 +181,25 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Center(
-                                  child: BodyTextColors(
-                                    title: 'Watched',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.whiteText,
+                              if (widget.videosData.watched == true)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Center(
+                                    child: BodyTextColors(
+                                      title: 'Watched',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppColors.whiteText,
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                           SizedBox(height: 8),

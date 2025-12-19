@@ -80,7 +80,7 @@ class AuthController extends ChangeNotifier {
 
   ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
 
-  ApiResponse get response => _apiResponse;
+  ApiResponse get apiResponse => _apiResponse;
 
   Future<ApiResponse> sendOTP({required String phoneNumber}) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
@@ -108,6 +108,35 @@ class AuthController extends ChangeNotifier {
       );
       final String token = response[Keys.data][Keys.token] ?? '';
       await SessionManager.setToken(token: token);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      await addFcmToken();
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> logout() async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await authService.logout(token: token);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> deleteAccount() async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await authService.deleteAccount(token: token);
       _apiResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
       _apiResponse = ApiResponse.error(e.toString());

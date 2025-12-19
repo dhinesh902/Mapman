@@ -30,6 +30,30 @@ class AuthService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> logout({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.logout,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAccount({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.deleteAccount,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> addFcmToken({
     required String token,
     required String fcmToken,

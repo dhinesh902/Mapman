@@ -27,12 +27,15 @@ abstract class ApiRoutes {
   static const String sendOTP = '/shop/auth/sendOtp';
   static const String verifyOTP = '/shop/auth/verifyOtp';
   static const String logout = '/shop/auth/logout';
-  static const String addFcmToken = '/member/addFcmToken';
+  static const String deleteAccount = '/shop/deleteAccount';
+  static const String addFcmToken = '/shop/auth/addFcmToken';
   static const String updateProfile = '/shop/updateProfile';
   static const String getProfile = '/shop/getProfile';
   static const String shopRegister = '/shop/shopRegister';
   static const String home = '/shop/home';
+  static const String searchShops = '/shop/search';
   static const String fetchShop = '/shop/fetchShop';
+  static const String deleteShopImage = '/shop/deleteShopImage';
   static const String videoRegister = '/shop/videoRegister';
   static const String myVideos = '/shop/myVideos';
   static const String viewedVideos = '/shop/viewedVideos';
@@ -45,4 +48,5 @@ abstract class ApiRoutes {
   static const String getCategoryVideos = '/shop/getCategoryVideos';
   static const String allVideos = '/shop/allVideos';
   static const String analytics = '/shop/analytics';
+  static const String getShopById = '/shop/getShopById';
 }

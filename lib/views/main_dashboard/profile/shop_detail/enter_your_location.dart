@@ -44,6 +44,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       placeController.setSelectedPrediction = null;
+      placeController.resetAddress();
       getCurrentLocation();
     });
 
@@ -174,8 +175,234 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
     if (!mounted || _controller == null) return;
     await _controller!.getScreenCoordinate(latLng);
   }
+}
 
+class LocationAutoCompleteSearchField extends StatelessWidget {
+  const LocationAutoCompleteSearchField({
+    super.key,
+    required this.placeController,
+  });
 
+  final PlaceController placeController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PlaceController>(
+      builder: (context, placeCtrl, _) {
+        return Autocomplete<Prediction>(
+          displayStringForOption: (Prediction option) =>
+              option.title ?? option.description ?? "",
+
+          optionsBuilder: (TextEditingValue textValue) {
+            if (textValue.text.isEmpty) {
+              return const Iterable<Prediction>.empty();
+            }
+            return placeCtrl.predictions;
+          },
+
+          onSelected: (Prediction value) {
+            placeCtrl.setSelectedPrediction = value;
+            FocusScope.of(context).unfocus();
+          },
+
+          fieldViewBuilder:
+              (context, textController, focusNode, onFieldSubmitted) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: CustomSearchField(
+                    controller: textController,
+                    focusNode: focusNode,
+                    hintText: 'Location Search by Name',
+
+                    clearOnTap: () {
+                      textController.clear();
+                      placeCtrl.clearPredictions();
+                      placeCtrl.setSelectedPrediction = null;
+                    },
+
+                    onChanged: (value) {
+                      placeCtrl.getPredictions(value!);
+                    },
+                  ),
+                );
+              },
+          optionsViewBuilder:
+              (
+                context,
+                AutocompleteOnSelected<Prediction> onSelected,
+                options,
+              ) {
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: Material(
+                    elevation: 4,
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width - 20,
+                      child: Builder(
+                        builder: (_) {
+                          if (placeCtrl.isPredictionLoading) {
+                            return SizedBox(
+                              height: 150,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: CustomLoadingIndicator(
+                                  strokeWidth: 6,
+                                  height: 40,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final item = options.elementAt(index);
+
+                              return InkWell(
+                                onTap: () async {
+                                  onSelected(item);
+
+                                  await placeCtrl.fetchPlaceDetails(
+                                    item.placeId ?? '',
+                                  );
+
+                                  await SessionManager().addPlaceDetail(
+                                    CustomPrediction(
+                                      title: item.title,
+                                      placeId: item.placeId,
+                                      description: item.description,
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        AppIcons.mapP,
+                                        height: 25,
+                                        width: 25,
+                                      ),
+                                      const SizedBox(width: 15),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            HeaderTextBlack(
+                                              title: item.title ?? "",
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            BodyTextHint(
+                                              title: item.description ?? "",
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+        );
+      },
+    );
+  }
+}
+
+class LocationPickContainer extends StatelessWidget {
+  const LocationPickContainer({super.key, required this.prediction});
+
+  final Prediction prediction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: Themes.searchFieldDecoration(borderRadius: 6),
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: Column(
+        children: [
+          Container(
+            height: 25,
+            width: double.maxFinite,
+            padding: EdgeInsets.only(left: 15),
+            decoration: BoxDecoration(
+              color: GenericColors.lightPrimary.withValues(alpha: .5),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(6),
+              ),
+            ),
+            alignment: Alignment.centerLeft,
+            child: BodyTextColors(
+              title: 'Shop Location will be pin here',
+              fontSize: 12,
+              fontWeight: FontWeight.w300,
+              color: GenericColors.darkGeryHeading,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsetsGeometry.fromLTRB(15, 15, 15, 5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset(AppIcons.mapP, height: 24, width: 24),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: HeaderTextBlack(
+                        title: prediction.title?.capitalize() ?? '',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: prediction.description?.capitalize() ?? '',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+                SizedBox(height: 10),
+                CustomFullButton(
+                  title: 'Confirm & Proceed',
+                  onTap: () async {
+                    context.read<PlaceController>().setConfirmedPrediction =
+                        prediction;
+                    await CustomDialogues.showSuccessDialog(
+                      context,
+                      title: 'SuccessFully Updated!',
+                      body: 'Your location updated successfully!',
+                    );
+                    if (!context.mounted) return;
+                    context.pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // class LocationAutoCompleteSearchField extends StatelessWidget {
@@ -318,246 +545,3 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 //     );
 //   }
 // }
-
-class LocationAutoCompleteSearchField extends StatelessWidget {
-  const LocationAutoCompleteSearchField({
-    super.key,
-    required this.placeController,
-  });
-
-  final PlaceController placeController;
-
-  @override
-  Widget build(BuildContext context) {
-    final predictions = context.watch<PlaceController>().predictions;
-
-    return Autocomplete<Prediction>(
-      displayStringForOption: (Prediction option) =>
-          option.title ?? option.description ?? "",
-
-      optionsBuilder: (TextEditingValue textValue) {
-        if (textValue.text.isEmpty) {
-          return const Iterable<Prediction>.empty();
-        }
-        final query = textValue.text.toLowerCase();
-        return predictions.where((p) {
-          final title = (p.title ?? "").toLowerCase();
-          final desc = (p.description ?? "").toLowerCase();
-          return title.contains(query) || desc.contains(query);
-        });
-      },
-
-      onSelected: (Prediction value) {
-        placeController.setSelectedPrediction = value;
-        FocusScope.of(context).unfocus();
-      },
-
-      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 15),
-          child: CustomSearchField(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: 'Location Search by Name',
-
-            clearOnTap: () {
-              controller.clear();
-              placeController.clearPredictions();
-              placeController.setSelectedPrediction = null;
-            },
-
-            onChanged: (value) {
-              placeController.getPredictions(value!);
-            },
-          ),
-        );
-      },
-
-      optionsViewBuilder:
-          (context, AutocompleteOnSelected<Prediction> onSelected, options) {
-            final placeCtrl = context.watch<PlaceController>();
-
-            return Align(
-              alignment: Alignment.topCenter,
-              child: Material(
-                color: Colors.white,
-                elevation: 4,
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width - 20,
-                  child: Builder(
-                    builder: (_) {
-                      /// 🔄 LOADING STATE
-                      if (placeCtrl.isPredictionLoading) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        );
-                      }
-
-                      /// ❌ EMPTY STATE
-                      if (options.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          child: Center(
-                            child: Text(
-                              'No results found',
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        );
-                      }
-
-                      /// ✅ RESULTS STATE
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        shrinkWrap: true,
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final item = options.elementAt(index);
-
-                          return InkWell(
-                            onTap: () async {
-                              onSelected(item);
-
-                              await context
-                                  .read<PlaceController>()
-                                  .fetchPlaceDetails(
-                                    item.placeId ?? '',
-                                    context,
-                                  );
-
-                              await SessionManager().addPlaceDetail(
-                                CustomPrediction(
-                                  title: item.title,
-                                  placeId: item.placeId,
-                                  description: item.description,
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  Image.asset(
-                                    AppIcons.mapP,
-                                    height: 25,
-                                    width: 25,
-                                  ),
-                                  const SizedBox(width: 15),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        HeaderTextBlack(
-                                          title: item.title ?? "",
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        BodyTextHint(
-                                          title: item.description ?? "",
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-    );
-  }
-}
-
-class LocationPickContainer extends StatelessWidget {
-  const LocationPickContainer({super.key, required this.prediction});
-
-  final Prediction prediction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: Themes.searchFieldDecoration(borderRadius: 6),
-      margin: EdgeInsets.symmetric(horizontal: 10),
-      child: Column(
-        children: [
-          Container(
-            height: 25,
-            width: double.maxFinite,
-            padding: EdgeInsets.only(left: 15),
-            decoration: BoxDecoration(
-              color: GenericColors.lightPrimary.withValues(alpha: .5),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(6),
-                topRight: Radius.circular(6),
-              ),
-            ),
-            alignment: Alignment.centerLeft,
-            child: BodyTextColors(
-              title: 'Shop Location will be pin here',
-              fontSize: 12,
-              fontWeight: FontWeight.w300,
-              color: GenericColors.darkGeryHeading,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsetsGeometry.fromLTRB(15, 15, 15, 5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(AppIcons.mapP, height: 24, width: 24),
-                    SizedBox(width: 15),
-                    Expanded(
-                      child: HeaderTextBlack(
-                        title: prediction.title?.capitalize() ?? '',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                BodyTextHint(
-                  title: prediction.description?.capitalize() ?? '',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-                SizedBox(height: 10),
-                CustomFullButton(
-                  title: 'Confirm & Proceed',
-                  onTap: () async {
-                    context.read<PlaceController>().setConfirmedPrediction =
-                        prediction;
-                    await CustomDialogues.showSuccessDialog(
-                      context,
-                      title: 'SuccessFully Updated!',
-                      body: 'Your location updated successfully!',
-                    );
-                    if (!context.mounted) return;
-                    context.pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

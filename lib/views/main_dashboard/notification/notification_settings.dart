@@ -144,6 +144,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                             CustomDialogues().showLogoutDialog(
                               context,
                               title: 'Delete Account',
+                              isDeleteAccount: true,
                             );
                           },
                         ),

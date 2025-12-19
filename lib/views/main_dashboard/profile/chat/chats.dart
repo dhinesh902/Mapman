@@ -19,6 +19,7 @@ class Chats extends StatefulWidget {
 }
 
 class _ChatsState extends State<Chats> {
+
   Stream<List<ChatModel>> fetchUserChatList({required String userId}) {
     return FirebaseFirestore.instance
         .collection('chats')

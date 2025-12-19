@@ -14,4 +14,20 @@ class HomeService extends ApiRoutes {
       throw ExceptionHandler.handleApiException(e);
     }
   }
+
+  Future<Map<String, dynamic>> getSearchShops({
+    required String token,
+    required String input,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.searchShops,
+        options: headerWithToken(token),
+        queryParameters: {'input': input},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 }

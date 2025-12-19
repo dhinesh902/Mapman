@@ -265,6 +265,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 hintText: 'Enter register number',
                 inputType: TextInputType.number,
                 maxLength: 10,
+                isReadOnly: true,
                 inputAction: TextInputAction.next,
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -377,7 +378,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                             children: [
                               Expanded(
                                 child: PhotoContainer(
-                                  image: "",
+                                  image: null,
                                   file: file1,
                                   clearOnTap: () {
                                     removeImage('photo1');
@@ -406,7 +407,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                               SizedBox(width: 15),
                               Expanded(
                                 child: PhotoContainer(
-                                  image: "",
+                                  image: null,
                                   file: file2,
                                   clearOnTap: () {
                                     removeImage('photo2');
@@ -439,7 +440,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                             children: [
                               Expanded(
                                 child: PhotoContainer(
-                                  image: "",
+                                  image: null,
                                   file: file3,
                                   clearOnTap: () {
                                     removeImage('photo3');
@@ -468,7 +469,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                               SizedBox(width: 15),
                               Expanded(
                                 child: PhotoContainer(
-                                  image: "",
+                                  image: null,
                                   file: file4,
                                   clearOnTap: () {
                                     removeImage('photo4');
@@ -580,7 +581,7 @@ class PhotoContainer extends StatelessWidget {
     return Stack(
       children: [
         GestureDetector(
-          onTap: file == null ? onTap : null,
+          onTap: (file == null && image == null) ? onTap : null,
           child: Container(
             height: 126,
             width: double.maxFinite,

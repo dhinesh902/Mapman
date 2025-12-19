@@ -89,6 +89,8 @@ class AppIcons {
   static const String clockP = 'assets/images/png/clock.png';
   static const String eyeViewP = 'assets/images/png/eye_view.png';
   static const String multiMediaP = 'assets/images/png/multi_media.png';
+  static const String appLogoP = 'assets/images/png/app_logo.png';
+  static const String analyticsP = 'assets/images/png/analytics.png';
   static const String profilePlaceholderP =
       'assets/images/png/profile_placeholder.png';
   static const String ratingStarOutlineP =

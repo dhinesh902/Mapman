@@ -1,10 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
@@ -13,10 +18,13 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class ShopDetail extends StatefulWidget {
-  const ShopDetail({super.key});
+  const ShopDetail({super.key, required this.shopId});
+
+  final int shopId;
 
   @override
   State<ShopDetail> createState() => _ShopDetailState();
@@ -29,12 +37,29 @@ class _ShopDetailState extends State<ShopDetail> {
   void initState() {
     // TODO: implement initState
     videoController = context.read<VideoController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getShopById();
+    });
     super.initState();
+  }
+
+  Future<void> getShopById() async {
+    final response = await videoController.getShopById(shopId: widget.shopId);
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
+    final lat = videoController.singleShopDetailData.data?.shop?.lat ?? '0.0';
+    final long = videoController.singleShopDetailData.data?.shop?.long ?? '0.0';
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -43,8 +68,8 @@ class _ShopDetailState extends State<ShopDetail> {
           action: ShopLocationButton(
             onTap: () async {
               await CustomLaunchers.openGoogleMaps(
-                latitude: 10.9974,
-                longitude: 76.9589,
+                latitude: double.parse(lat),
+                longitude: double.parse(long),
               );
             },
           ),
@@ -89,26 +114,47 @@ class _ShopDetailState extends State<ShopDetail> {
               ),
             ),
 
-            /// Shop Details
-            if (videoController.currentShopDetailIndex == 0) ...[
-              Expanded(child: ShopDetailContainer()),
-            ],
+            Builder(
+              builder: (context) {
+                switch (videoController.singleShopDetailData.status) {
+                  case Status.INITIAL:
+                  case Status.LOADING:
+                    return Expanded(child: const CustomLoadingIndicator());
+                  case Status.COMPLETED:
+                    if (videoController.singleShopDetailData.data != null) {
+                      return videoController.currentShopDetailIndex == 0
+                          ? ShopDetailContainer(
+                              shop:
+                                  videoController
+                                      .singleShopDetailData
+                                      .data
+                                      ?.shop ??
+                                  Shop(),
+                            )
+                          : ShopVideosList(
+                              shopVideos:
+                                  videoController
+                                      .singleShopDetailData
+                                      .data
+                                      ?.shopVideos ??
+                                  [],
+                            );
+                    } else {
+                      return Expanded(
+                        child: NoDataText(title: Strings.noDataFound),
+                      );
+                    }
 
-            /// Videos
-            if (videoController.currentShopDetailIndex == 1) ...[
-              SizedBox(height: 15),
-              Flexible(
-                child: ShopVideosList(
-                  videoUrls: [
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                  ],
-                ),
-              ),
-            ],
+                  case Status.ERROR:
+                    return Expanded(
+                      child: CustomErrorTextWidget(
+                        title:
+                            '${videoController.singleShopDetailData.message}',
+                      ),
+                    );
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -117,7 +163,9 @@ class _ShopDetailState extends State<ShopDetail> {
 }
 
 class ShopDetailContainer extends StatelessWidget {
-  const ShopDetailContainer({super.key});
+  const ShopDetailContainer({super.key, required this.shop});
+
+  final Shop shop;
 
   @override
   Widget build(BuildContext context) {
@@ -130,20 +178,19 @@ class ShopDetailContainer extends StatelessWidget {
             borderRadius: BorderRadiusGeometry.circular(10),
           ),
           clipBehavior: Clip.hardEdge,
-          child: CustomNetworkImage(
-            imageUrl:
-                'https://m.media-amazon.com/images/X/bxt1/M/Lbxt1B41JxtQJru._SL640_QL75_FMwebp_.jpg',
-          ),
+          child: CustomNetworkImage(imageUrl: shop.shopImage ?? ''),
         ),
-        Expanded(
+        SizedBox(
+          height: MediaQuery.of(context).size.height * .6,
           child: ListView(
+            shrinkWrap: true,
             padding: EdgeInsets.fromLTRB(10, 0, 10, 15),
             children: [
               SizedBox(height: 15),
               CustomTextFieldContainer(
                 title: 'Shop Name',
                 child: HeaderTextBlack(
-                  title: 'South Indian Restaurant',
+                  title: shop.shopName ?? '',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -152,8 +199,7 @@ class ShopDetailContainer extends StatelessWidget {
               CustomTextFieldContainer(
                 title: 'Address',
                 child: HeaderTextBlack(
-                  title:
-                      'new no 17 old no 5 5 somu chetty 1st street,  Chinnathambi St, Royapuram, Chennai, Tamil Nadu 600013',
+                  title: shop.address ?? '',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -166,7 +212,7 @@ class ShopDetailContainer extends StatelessWidget {
                       title: 'Chat with me',
                       onTap: () async {
                         await CustomLaunchers.sendSms(
-                          phoneNumber: '9791543756',
+                          phoneNumber: '${shop.shopNumber}',
                         );
                       },
                       child: Center(
@@ -184,7 +230,7 @@ class ShopDetailContainer extends StatelessWidget {
                       title: 'Direct Call',
                       onTap: () async {
                         await CustomLaunchers.makePhoneCall(
-                          phoneNumber: '9791543756',
+                          phoneNumber: '${shop.registerNumber}',
                         );
                       },
                       child: Center(
@@ -202,8 +248,8 @@ class ShopDetailContainer extends StatelessWidget {
                       title: 'Get Direction',
                       onTap: () async {
                         await CustomLaunchers.openGoogleMaps(
-                          latitude: 10.9974,
-                          longitude: 76.9589,
+                          latitude: double.parse(shop.lat ?? '0.0'),
+                          longitude: double.parse(shop.long ?? '0.0'),
                         );
                       },
                       child: Center(
@@ -220,15 +266,18 @@ class ShopDetailContainer extends StatelessWidget {
               SizedBox(height: 35),
               ImageSliderWithArrows(
                 images: [
-                  'https://images.unsplash.com/photo-1503387762-592deb58ef4e',
-                  'https://img.freepik.com/free-photo/smiling-little-girl-holding-big-teddy-bear_171337-2360.jpg?semt=ais_hybrid&w=740&q=80',
-                ],
+                  shop.image1,
+                  shop.image2,
+                  shop.image3,
+                  shop.image4,
+                ].whereType<String>().toList(),
               ),
+
               SizedBox(height: 15),
               CustomTextFieldContainer(
                 title: 'Opening- Closing Time',
                 child: HeaderTextBlack(
-                  title: '10 Am - 10 Pm',
+                  title: '${shop.openTime} - ${shop.closeTime}',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -246,17 +295,18 @@ class ShopDetailContainer extends StatelessWidget {
 }
 
 class ShopVideosList extends StatelessWidget {
-  const ShopVideosList({super.key, required this.videoUrls});
+  const ShopVideosList({super.key, required this.shopVideos});
 
-  final List<String> videoUrls;
+  final List<VideosData> shopVideos;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       shrinkWrap: true,
       children: [
+        SizedBox(height: 15),
         ListView.builder(
-          itemCount: videoUrls.length,
+          itemCount: shopVideos.length,
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           padding: EdgeInsets.only(bottom: 10),
@@ -270,13 +320,19 @@ class ShopVideosList extends StatelessWidget {
                 children: [
                   InkWell(
                     onTap: () {},
-                    child: MyVideoContainer(videoUrl: videoUrls[index]),
+                    child: MyVideoContainer(
+                      videoUrl:
+                          ApiRoutes.baseUrl + (shopVideos[index].video ?? ''),
+                      views: '${shopVideos[index].views ?? 0}',
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: VideoTitleBlurContainer(videosData: VideosData()),
+                    child: VideoTitleBlurContainer(
+                      videosData: shopVideos[index],
+                    ),
                   ),
                 ],
               ),
@@ -379,8 +435,8 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
                     color: AppColors.scaffoldBackground,
                     borderRadius: BorderRadius.circular(2),
                   ),
-                  child: const BodyTextHint(
-                    title: 'Image uploaded (4)',
+                  child: BodyTextHint(
+                    title: 'Image uploaded (${widget.images.length})',
                     fontSize: 10,
                     fontWeight: FontWeight.w300,
                   ),

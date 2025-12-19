@@ -185,7 +185,7 @@ class ParticularShopVideoList extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: VideoTitleBlurContainer(
-                  isWatched: true,
+                  isWatched: videosData[index].watched ?? false,
                   videosData: videosData[index],
                 ),
               ),

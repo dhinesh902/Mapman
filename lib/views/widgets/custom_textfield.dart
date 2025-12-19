@@ -135,6 +135,7 @@ class CustomSearchField extends StatelessWidget {
     required this.clearOnTap,
     this.onChanged,
     this.focusNode,
+     this.ontTap,
   });
 
   final TextEditingController controller;
@@ -142,6 +143,7 @@ class CustomSearchField extends StatelessWidget {
   final VoidCallback clearOnTap;
   final FocusNode? focusNode;
   final Function(String?)? onChanged;
+  final VoidCallback? ontTap;
 
   @override
   Widget build(BuildContext context) {
@@ -158,6 +160,7 @@ class CustomSearchField extends StatelessWidget {
               focusNode: focusNode,
               textCapitalization: TextCapitalization.sentences,
               cursorColor: AppColors.primary,
+              onTap: ontTap,
               style: AppTextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,

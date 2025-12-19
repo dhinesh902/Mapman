@@ -2,18 +2,53 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:provider/provider.dart';
 
 class CustomDialogues {
-  Future showLogoutDialog(BuildContext context, {required String title}) {
+  static Future<void> showLoadingDialogue(BuildContext context) async {
+    return showDialog(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (context) {
+        if (Platform.isIOS) {
+          return CupertinoAlertDialog(
+            content: CupertinoActivityIndicator(
+              radius: 15,
+              color: AppColors.primary,
+            ),
+          );
+        } else {
+          return PopScope(
+            canPop: false,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              child: ButtonProgressBar(),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Future showLogoutDialog(
+    BuildContext context, {
+    required String title,
+    required bool isDeleteAccount,
+  }) {
     if (Platform.isIOS) {
       return showCupertinoDialog(
         context: context,
-        builder: (context) {
+        builder: (ctx) {
           return CupertinoAlertDialog(
             content: Column(
               children: [
@@ -52,7 +87,25 @@ class CustomDialogues {
               ),
               CupertinoDialogAction(
                 isDestructiveAction: true,
-                onPressed: () {},
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  CustomDialogues.showLoadingDialogue(context);
+                  try {
+                    if (isDeleteAccount) {
+                      await context.read<AuthController>().deleteAccount();
+                    } else {
+                      await context.read<AuthController>().logout();
+                    }
+                    SessionManager.clearSession();
+                    if (!context.mounted) return;
+                  } finally {
+                    Navigator.of(context).pop();
+                    Future.microtask(() {
+                      if (!context.mounted) return;
+                      context.goNamed(AppRoutes.login);
+                    });
+                  }
+                },
                 child: BodyTextColors(
                   title: "Logout",
                   fontSize: 14,
@@ -68,7 +121,7 @@ class CustomDialogues {
 
     return showDialog(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
@@ -121,7 +174,27 @@ class CustomDialogues {
                         title: 'Logout',
                         isDialogue: true,
                         color: GenericColors.darkRed,
-                        onTap: () {},
+                        onTap: () async {
+                          Navigator.of(ctx).pop();
+                          CustomDialogues.showLoadingDialogue(context);
+                          try {
+                            if (isDeleteAccount) {
+                              await context
+                                  .read<AuthController>()
+                                  .deleteAccount();
+                            } else {
+                              await context.read<AuthController>().logout();
+                            }
+                            SessionManager.clearSession();
+                            if (!context.mounted) return;
+                          } finally {
+                            Navigator.of(context).pop();
+                            Future.microtask(() {
+                              if (!context.mounted) return;
+                              context.goNamed(AppRoutes.login);
+                            });
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -150,6 +223,7 @@ class CustomDialogues {
     if (Platform.isIOS) {
       return showCupertinoDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) {
           return CupertinoAlertDialog(
             content: Column(
@@ -184,6 +258,7 @@ class CustomDialogues {
 
     return showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -229,9 +304,17 @@ class CustomDialogues {
   }
 
   Future showDeleteDialog(BuildContext context) {
+    Future.delayed(const Duration(milliseconds: 1550), () {
+      if (context.mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
+    });
     if (Platform.isIOS) {
       return showCupertinoDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) {
           return CupertinoAlertDialog(
             content: Column(
@@ -262,6 +345,7 @@ class CustomDialogues {
 
     return showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 20),

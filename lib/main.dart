@@ -125,7 +125,7 @@ Future<void> main() async {
   firebaseMessaging.onTokenRefresh.listen((fcmToken) async {
     print("FCM token available: $fcmToken");
     await sharedPrefs.setString(Keys.fcmToken, fcmToken);
-    // await AuthController().addFcmToken();
+    await AuthController().addFcmToken();
   });
 
   /// Retry fetching token after a short delay for iOS
@@ -136,7 +136,7 @@ Future<void> main() async {
         if (initialToken != null) {
           print("DEEPAK:Initial FCM token: $initialToken");
           await sharedPrefs.setString(Keys.fcmToken, initialToken);
-          // await AuthController().addFcmToken();
+          await AuthController().addFcmToken();
         }
       } catch (e) {
         print("DEEPAK TOKEN FAILED: $e");

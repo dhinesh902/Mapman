@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -357,7 +358,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
             ),
             SizedBox(height: 70),
             Center(
-              child: authController.response.status == Status.LOADING
+              child: authController.apiResponse.status == Status.LOADING
                   ? ButtonProgressBar(isLogin: true)
                   : AuthButton(
                       title: 'Get OTP',
@@ -445,6 +446,7 @@ class _OTPScreenState extends State<OTPScreen> {
     );
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
+      context.read<HomeController>().setCurrentPage = 0;
       context.goNamed(AppRoutes.mainDashboard, extra: true);
     } else {
       ExceptionHandler.handleUiException(
@@ -540,7 +542,7 @@ class _OTPScreenState extends State<OTPScreen> {
             ),
             SizedBox(height: 40),
             Center(
-              child: authController.response.status == Status.LOADING
+              child: authController.apiResponse.status == Status.LOADING
                   ? ButtonProgressBar(isLogin: true)
                   : AuthButton(
                       title: 'Proceed',

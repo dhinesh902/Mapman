@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapman/model/analytics_model.dart';
-import 'package:mapman/model/analytics_model.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/service/profile_service.dart';
@@ -138,6 +137,27 @@ class ProfileController extends ChangeNotifier {
     return _apiResponse;
   }
 
+  Future<ApiResponse> deleteShopImage({
+    required int shopId,
+    required String input,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.deleteShopImage(
+        token: token,
+        shopId: shopId,
+        input: input,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
   Future<ApiResponse<ShopDetailData?>> getShopDetail() async {
     _shopDetailData = ApiResponse.loading(Strings.loading);
     notifyListeners();
@@ -155,6 +175,7 @@ class ProfileController extends ChangeNotifier {
           shopCategory: _shopDetailData.data?.category ?? '',
         );
       } else {
+        SessionManager.setShopId(shopId: 0);
         _shopDetailData = ApiResponse.completed(null);
       }
     } catch (e) {

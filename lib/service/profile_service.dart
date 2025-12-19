@@ -114,6 +114,23 @@ class ProfileService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> deleteShopImage({
+    required String token,
+    required int shopId,
+    required String input,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.deleteShopImage,
+        options: headerWithToken(token),
+        data: {"shopId": shopId, "input": input},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getAnalytics({required String token}) async {
     try {
       final response = await dio.get(

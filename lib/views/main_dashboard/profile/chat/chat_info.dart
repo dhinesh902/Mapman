@@ -52,6 +52,42 @@ class _ChatInfoState extends State<ChatInfo> with WidgetsBindingObserver {
     }, SetOptions(merge: true));
   }
 
+  Future<void> sendMessage({
+    required int? roomId,
+    required int? senderId,
+    required String senderType,
+    required int? bid,
+    required String message,
+    required String media,
+    required String mediaType,
+  }) async {
+    try {
+      final messageRef = firebaseFireStore
+          .collection('chats')
+          .doc(roomId.toString())
+          .collection('messages')
+          .doc();
+
+      await messageRef.set({
+        'chatid': messageRef.id,
+        'senderid': senderId,
+        'sendertype': senderType,
+        'bid': bid,
+        'message': message,
+        'media': media,
+        'mediatype': mediaType,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      debugPrint('FireStore error while sending message: ${e.message}');
+      rethrow;
+    } catch (e, stack) {
+      debugPrint('Unexpected error while sending message: $e');
+      debugPrint(stack.toString());
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomSafeArea(

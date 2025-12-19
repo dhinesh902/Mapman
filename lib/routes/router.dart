@@ -101,7 +101,8 @@ class AppRouter {
               GoRoute(
                 path: '/shop_detail',
                 name: AppRoutes.shopDetail,
-                builder: (context, state) => ShopDetail(),
+                builder: (context, state) =>
+                    ShopDetail(shopId: state.extra as int),
               ),
             ],
           ),

@@ -10,6 +10,7 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/home/home.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
@@ -51,6 +52,7 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     profileController = context.watch<ProfileController>();
+    final shopId = SessionManager.getShopId();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Builder(
@@ -94,6 +96,17 @@ class _ProfileState extends State<Profile> {
                             context.pushNamed(AppRoutes.addShopDetail);
                           },
                         ),
+                        if (shopId != 0) ...[
+                          SizedBox(height: 15),
+                          ProfileListTile(
+                            image: AppIcons.analyticsP,
+                            title: 'Shop Analytics',
+                            body: 'Shop Metrics',
+                            onTap: () {
+                              context.pushNamed(AppRoutes.analytics);
+                            },
+                          ),
+                        ],
                         SizedBox(height: 15),
                         ProfileListTile(
                           image: AppIcons.chatP,
@@ -121,6 +134,7 @@ class _ProfileState extends State<Profile> {
                             CustomDialogues().showLogoutDialog(
                               context,
                               title: 'Sign out',
+                              isDeleteAccount: false,
                             );
                           },
                         ),

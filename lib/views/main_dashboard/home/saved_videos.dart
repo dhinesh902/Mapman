@@ -111,6 +111,9 @@ class _SavedVideosState extends State<SavedVideos> {
                               itemBuilder: (context, index) {
                                 return SavedVideoCard(
                                   videosData: savedVideos[index],
+                                  isBookMark:
+                                      savedVideos[index].savedAlready == true,
+                                  bookMarkOnTap: () {},
                                 );
                               },
                             );
@@ -213,9 +216,16 @@ class TopPromoBanner extends StatelessWidget {
 }
 
 class SavedVideoCard extends StatelessWidget {
-  const SavedVideoCard({super.key, required this.videosData});
+  const SavedVideoCard({
+    super.key,
+    required this.videosData,
+    required this.isBookMark,
+    required this.bookMarkOnTap,
+  });
 
   final VideosData videosData;
+  final bool isBookMark;
+  final VoidCallback bookMarkOnTap;
 
   @override
   Widget build(BuildContext context) {
@@ -226,8 +236,8 @@ class SavedVideoCard extends StatelessWidget {
           children: [
             ViewedVideoCard(
               videoUrl: ApiRoutes.baseUrl + (videosData.video ?? ''),
-              isBookMark: true,
-              bookMarkOnTap: () {},
+              isBookMark: isBookMark,
+              bookMarkOnTap: bookMarkOnTap,
             ),
             Positioned(
               bottom: 0,

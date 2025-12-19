@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/home_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -33,6 +34,7 @@ class _HomeState extends State<Home> {
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getHome();
+      context.read<ProfileController>().getShopDetail();
     });
     super.initState();
   }
@@ -122,6 +124,10 @@ class _HomeState extends State<Home> {
                             return GestureDetector(
                               onTap: () {
                                 homeController.setCurrentPage = 1;
+                                homeController.setSearchCategory =
+                                    categories[index].categoryName
+                                        .toString()
+                                        .toLowerCase();
                               },
                               child: Card(
                                 shape: RoundedRectangleBorder(

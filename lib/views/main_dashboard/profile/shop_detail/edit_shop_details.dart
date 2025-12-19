@@ -176,6 +176,24 @@ class _EditShopDetailState extends State<EditShopDetail> {
     }
   }
 
+  Future<void> deleteShopImage({
+    required int shopId,
+    required String input,
+  }) async {
+    final response = await profileController.deleteShopImage(
+      shopId: shopId,
+      input: input,
+    );
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   String formatTimeOfDay(TimeOfDay tod) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
@@ -317,6 +335,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 hintText: 'Enter register number',
                 inputType: TextInputType.number,
                 maxLength: 10,
+                isReadOnly: true,
                 inputAction: TextInputAction.next,
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -428,6 +447,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
                                   clearOnTap: () {
                                     profileController.removeShopImageAt(0);
                                     removeImage('photo1');
+                                    deleteShopImage(
+                                      shopId: shopDetailData.id!,
+                                      input: 'image1',
+                                    );
                                   },
                                   onTap: () {
                                     CustomImagePicker.showImagePicker(
@@ -458,6 +481,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
                                   clearOnTap: () {
                                     profileController.removeShopImageAt(1);
                                     removeImage('photo2');
+                                    deleteShopImage(
+                                      shopId: shopDetailData.id!,
+                                      input: 'image2',
+                                    );
                                   },
                                   onTap: () {
                                     CustomImagePicker.showImagePicker(
@@ -492,6 +519,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
                                   clearOnTap: () {
                                     profileController.removeShopImageAt(2);
                                     removeImage('photo3');
+                                    deleteShopImage(
+                                      shopId: shopDetailData.id!,
+                                      input: 'image3',
+                                    );
                                   },
                                   onTap: () {
                                     CustomImagePicker.showImagePicker(
@@ -522,6 +553,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
                                   clearOnTap: () {
                                     profileController.removeShopImageAt(3);
                                     removeImage('photo4');
+                                    deleteShopImage(
+                                      shopId: shopDetailData.id!,
+                                      input: 'image4',
+                                    );
                                   },
                                   onTap: () {
                                     CustomImagePicker.showImagePicker(

@@ -15,6 +15,7 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -189,28 +190,46 @@ class _EnterLocationState extends State<EnterLocation> {
                           CustomToast.show(
                             context,
                             title: 'Invalid place selected',
+                            isError: true,
                           );
                           return;
                         }
-                        await placeController.fetchPlaceDetails(
-                          placeId,
-                          context,
-                        );
-                        final location = placeController.placeDetails?.location;
-                        final lat = location?.lat;
-                        final lng = location?.lng;
-                        if (!context.mounted) return;
-                        if (lat == null || lng == null) {
-                          CustomToast.show(
-                            context,
-                            title: 'Unable to get location',
-                          );
-                          return;
+
+                        CustomDialogues.showLoadingDialogue(context);
+
+                        try {
+                          await placeController.fetchPlaceDetails(placeId);
+                          final location = placeController.placeDetails?.location;
+                          final lat = location?.lat;
+                          final lng = location?.lng;
+
+                          if (lat == null || lng == null) {
+                            throw Exception('LatLng not found');
+                          }
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop();
+
+                          final address = [
+                            item.title,
+                            item.description,
+                            placeController.placeDetails?.zipCode,
+                          ].where((e) => e != null && e.isNotEmpty).join(', ');
+
+                          context.pop({
+                            'address': address,
+                            'latlong': LatLng(lat, lng),
+                            'placeId': placeId,
+                          });
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            CustomToast.show(
+                              context,
+                              title: 'Unable to get location',
+                              isError: true,
+                            );
+                          }
                         }
-                        context.pop({
-                          'address': item.description ?? '',
-                          'latlong': LatLng(lat, lng),
-                        });
                       },
                       clearOnTap: () async {
                         final placeId = item.placeId;
@@ -233,31 +252,52 @@ class _EnterLocationState extends State<EnterLocation> {
             CustomFullButton(
               title: 'Save Location Details',
               isDialogue: true,
-              onTap: () {
+              onTap: () async {
                 final prediction = placeController.confirmedPrediction;
-                if (prediction == null) {
+                if (prediction == null || prediction.placeId == null) {
                   CustomToast.show(
                     context,
-                    title: 'Please select address',
+                    title: 'Please select a valid address',
                     isError: true,
                   );
                   return;
                 }
-                final lat =
-                    placeController.placeDetails?.location?.lat ??
-                    placeController.currentLocationLatLng.data?.latitude;
 
-                final lng =
-                    placeController.placeDetails?.location?.lng ??
-                    placeController.currentLocationLatLng.data?.longitude;
-                if (lat == null || lng == null) {
-                  CustomToast.show(context, title: 'Unable to get location');
-                  return;
+                final placeId = prediction.placeId!;
+                CustomDialogues.showLoadingDialogue(context);
+
+                try {
+                  await placeController.fetchPlaceDetails(placeId);
+                  final details = placeController.placeDetails;
+                  final lat = details?.location?.lat;
+                  final lng = details?.location?.lng;
+
+                  if (!context.mounted) return;
+                  if (lat == null || lng == null) {
+                    throw Exception('LatLng not found');
+                  }
+
+                  Navigator.of(context).pop();
+
+                  final address = [
+                    prediction.title,
+                    prediction.description,
+                    details?.zipCode,
+                  ].where((e) => e != null && e.isNotEmpty).join(', ');
+
+                  context.pop({
+                    'address': address,
+                    'latlong': LatLng(lat, lng),
+                    'placeId': placeId,
+                  });
+                } catch (e) {
+                  Navigator.of(context).pop();
+                  CustomToast.show(
+                    context,
+                    title: 'Unable to fetch location details',
+                    isError: true,
+                  );
                 }
-                context.pop({
-                  'address': prediction.description ?? '',
-                  'latlong': LatLng(lat, lng),
-                });
               },
             ),
           ],

@@ -74,7 +74,7 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
             ),
           ),
 
-          Positioned(
+          Positioned.fill(
             child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,15 +158,15 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                             isViews: false,
                                           ),
                                         ),
-                                        // Positioned(
-                                        //   bottom: 0,
-                                        //   left: 0,
-                                        //   right: 0,
-                                        //   child: VideoTitleBlurContainer(
-                                        //     isViews: true,
-                                        //     videosData: videos[index],
-                                        //   ),
-                                        // ),
+                                        Positioned(
+                                          bottom: 10,
+                                          left: 0,
+                                          right: 10,
+                                          child: VideoTitleBlurContainer(
+                                            isViews: true,
+                                            videosData: videos[index],
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   );

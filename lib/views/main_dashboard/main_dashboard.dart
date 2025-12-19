@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
@@ -15,6 +18,7 @@ import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart
 import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class MainDashboard extends StatefulWidget {
@@ -29,6 +33,8 @@ class MainDashboard extends StatefulWidget {
 class _MainDashboardState extends State<MainDashboard> {
   late HomeController homeController;
   final List<Widget> _pages = [Home(), Maps(), Videos(), Profile()];
+
+  DateTime? _lastBackPressed;
 
   @override
   void initState() {
@@ -58,126 +64,162 @@ class _MainDashboardState extends State<MainDashboard> {
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
-    return CustomSafeArea(
-      color: getBackgroundColor(
-        homeController.currentPage,
-        context.watch<VideoController>().currentVideoIndex,
-      ),
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        body: _pages[homeController.currentPage],
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: InkWell(
-          onTap: () async {
-            if (SessionManager.getShopId() != null) {
-              VideoDialogues().showVideoUploadDialogue(context);
-            } else {
-              await showAddShopDetail(context);
-            }
-          },
-          child: Container(
-            height: 68,
-            width: 68,
-            padding: EdgeInsets.all(4),
-            margin: EdgeInsets.fromLTRB(3, 2, 3, 0),
-            decoration: BoxDecoration(
-              color: AppColors.scaffoldBackground,
-              border: Border.all(
-                color: AppColors.primaryBorder.withValues(alpha: .1),
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryBorder,
-                  spreadRadius: 1,
-                  blurRadius: 2,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
+    final shopId = SessionManager.getShopId();
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        if (homeController.currentPage != 0) {
+          homeController.setCurrentPage = 0;
+          return;
+        }
+
+        if (Platform.isIOS) return;
+
+        final now = DateTime.now();
+        if (_lastBackPressed == null ||
+            now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+          _lastBackPressed = now;
+
+          CustomToast.show(context, title: 'Press back again to exit');
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: CustomSafeArea(
+        color: getBackgroundColor(
+          homeController.currentPage,
+          context.watch<VideoController>().currentVideoIndex,
+        ),
+        child: Scaffold(
+          extendBody: true,
+          resizeToAvoidBottomInset: false,
+          body: _pages[homeController.currentPage],
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: InkWell(
+            onTap: () async {
+              if (shopId != 0) {
+                VideoDialogues().showVideoUploadDialogue(context);
+              } else {
+                await showAddShopDetail(context);
+              }
+            },
             child: Container(
-              width: double.maxFinite,
-              height: double.maxFinite,
+              height: 65,
+              width: 65,
+              padding: EdgeInsets.all(4),
+              margin: EdgeInsets.fromLTRB(3, 2, 3, 0),
               decoration: BoxDecoration(
+                color: AppColors.scaffoldBackground,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0XFF04509B), Color(0XFF0ACFFF)],
+                ),
+                border: Border.all(
+                  color: AppColors.primaryBorder.withValues(alpha: .1),
+                ),
                 shape: BoxShape.circle,
-                color: GenericColors.uploadPrimary,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBorder,
+                    spreadRadius: 1,
+                    blurRadius: 2,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Center(child: SvgPicture.asset(AppIcons.telegram)),
+              child: Container(
+                width: double.maxFinite,
+                height: double.maxFinite,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.whiteText,
+                ),
+                child: Center(child: SvgPicture.asset(AppIcons.telegram)),
+              ),
             ),
           ),
-        ),
-        bottomNavigationBar: Stack(
-          alignment: Alignment.center,
-          children: [
-            AnimatedBottomNavigationBar.builder(
-              height: 65,
-              itemCount: 4,
-              notchMargin: 8,
-              rightCornerRadius: 6,
-              leftCornerRadius: 6,
-              gapWidth: 100,
-              tabBuilder: (int index, bool isActive) {
-                final List<String> labels = [
-                  "Home",
-                  "Maps",
-                  "Video",
-                  "Profile",
-                ];
-                final List<String> outlineIcons = [
-                  AppIcons.homeOutline,
-                  AppIcons.locationOutline,
-                  AppIcons.videoOutline,
-                  AppIcons.profileOutline,
-                ];
-                final List<String> fillIcons = [
-                  AppIcons.homeFill,
-                  AppIcons.locationFill,
-                  AppIcons.videoFill,
-                  AppIcons.profileFill,
-                ];
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      isActive ? fillIcons[index] : outlineIcons[index],
-                      height: 24,
-                      width: 24,
-                      colorFilter: ColorFilter.mode(
-                        isActive ? AppColors.darkText : AppColors.darkGrey,
-                        BlendMode.srcIn,
+          bottomNavigationBar: Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedBottomNavigationBar.builder(
+                height: 65,
+                itemCount: 4,
+                notchMargin: 8,
+                rightCornerRadius: 6,
+                leftCornerRadius: 6,
+                gapWidth: 100,
+                tabBuilder: (int index, bool isActive) {
+                  final List<String> labels = [
+                    "Home",
+                    "Maps",
+                    "Video",
+                    "Profile",
+                  ];
+                  final List<String> outlineIcons = [
+                    AppIcons.homeOutline,
+                    AppIcons.locationOutline,
+                    AppIcons.videoOutline,
+                    AppIcons.profileOutline,
+                  ];
+                  final List<String> fillIcons = [
+                    AppIcons.homeFill,
+                    AppIcons.locationFill,
+                    AppIcons.videoFill,
+                    AppIcons.profileFill,
+                  ];
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        isActive ? fillIcons[index] : outlineIcons[index],
+                        height: 24,
+                        width: 24,
+                        colorFilter: ColorFilter.mode(
+                          isActive ? AppColors.darkText : AppColors.darkGrey,
+                          BlendMode.srcIn,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    BodyTextColors(
-                      title: labels[index],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isActive ? AppColors.darkText : AppColors.darkGrey,
-                    ),
-                  ],
-                );
-              },
-              backgroundColor: AppColors.scaffoldBackground,
-              borderColor: AppColors.primaryBorder,
-              activeIndex: homeController.currentPage,
-              gapLocation: GapLocation.center,
-              notchSmoothness: NotchSmoothness.softEdge,
-              elevation: 0,
-              borderWidth: 1.5,
-              onTap: (index) {
-                homeController.setCurrentPage = index;
-              },
-            ),
-            Positioned(
-              bottom: 1,
-              child: HeaderTextPrimary(
-                title: SessionManager.getShopId() != null ? "Upload" : "Create",
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                      const SizedBox(height: 4),
+                      BodyTextColors(
+                        title: labels[index],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? AppColors.darkText
+                            : AppColors.darkGrey,
+                      ),
+                    ],
+                  );
+                },
+                backgroundColor: AppColors.scaffoldBackground,
+                borderColor: AppColors.primaryBorder,
+                activeIndex: homeController.currentPage,
+                gapLocation: GapLocation.center,
+                notchSmoothness: NotchSmoothness.softEdge,
+                elevation: 0,
+                borderWidth: 1.5,
+                onTap: (index) {
+                  if (index == 1) {
+                    homeController.setSearchCategory = 'all';
+                  }
+                  homeController.setCurrentPage = index;
+                },
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 1,
+                child: HeaderTextPrimary(
+                  title: shopId != 0 ? "Upload" : "Create",
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
