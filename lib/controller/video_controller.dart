@@ -408,4 +408,18 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
     return _singleShopDetailData;
   }
+
+  Future<ApiResponse> getVideoPoints() async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await videoService.getVideoPoints(token: token);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
 }

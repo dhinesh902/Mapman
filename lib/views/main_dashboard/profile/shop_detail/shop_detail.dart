@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';

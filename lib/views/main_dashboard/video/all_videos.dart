@@ -5,6 +5,7 @@ import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
@@ -172,7 +173,10 @@ class ParticularShopVideoList extends StatelessWidget {
                 onTap: () {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
-                    extra: videosData[index],
+                    extra: {
+                      Keys.videosData: videosData[index],
+                      Keys.isMyVideos: false,
+                    },
                   );
                 },
                 child: MyVideoContainer(

@@ -1,11 +1,14 @@
 import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/routes/api_routes.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
@@ -130,6 +133,15 @@ class _ViewedVideosState extends State<ViewedVideos> {
                                   bookMarkOnTap: () {
                                     videoController.toggleBookmark(index);
                                   },
+                                  onTap: () {
+                                    context.pushNamed(
+                                      AppRoutes.singleVideoScreen,
+                                      extra: {
+                                        Keys.videosData: viewedVideos[index],
+                                        Keys.isMyVideos: false,
+                                      },
+                                    );
+                                  },
                                 ),
                                 Positioned(
                                   bottom: 0,
@@ -167,11 +179,12 @@ class ViewedVideoCard extends StatefulWidget {
     this.isViews = true,
     required this.isBookMark,
     required this.bookMarkOnTap,
+    required this.onTap,
   });
 
   final String videoUrl;
   final bool isViews, isBookMark;
-  final VoidCallback bookMarkOnTap;
+  final VoidCallback bookMarkOnTap, onTap;
 
   @override
   State<ViewedVideoCard> createState() => _ViewedVideoCardState();
@@ -205,51 +218,58 @@ class _ViewedVideoCardState extends State<ViewedVideoCard>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return SizedBox(
-      height: 174,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadiusGeometry.circular(6),
-              child: _player.isInitialized
-                  ? VideoPlayer(_player.controller)
-                  : Container(color: AppColors.bgGrey),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: SizedBox(
+        height: 174,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadiusGeometry.circular(6),
+                child: _player.isInitialized
+                    ? VideoPlayer(_player.controller)
+                    : Container(color: AppColors.bgGrey),
+              ),
             ),
-          ),
-          Positioned(
-            top: 45,
-            left: 0,
-            right: 0,
-            child: Center(child: VideoPausePlayGradientCircleContainer()),
-          ),
-          if (widget.isViews) ...[
             Positioned(
-              top: 10,
-              right: 10,
-              child: GestureDetector(
-                onTap: widget.bookMarkOnTap,
-                child: Container(
-                  height: 30,
-                  width: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.scaffoldBackground,
-                  ),
-                  child: Center(
-                    child: widget.isBookMark
-                        ? Image.asset(AppIcons.bookmarkP, height: 20, width: 20)
-                        : Icon(
-                            CupertinoIcons.bookmark,
-                            size: 20,
-                            color: AppColors.darkGrey,
-                          ),
+              top: 45,
+              left: 0,
+              right: 0,
+              child: Center(child: VideoPausePlayGradientCircleContainer()),
+            ),
+            if (widget.isViews) ...[
+              Positioned(
+                top: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: widget.bookMarkOnTap,
+                  child: Container(
+                    height: 30,
+                    width: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.scaffoldBackground,
+                    ),
+                    child: Center(
+                      child: widget.isBookMark
+                          ? Image.asset(
+                              AppIcons.bookmarkP,
+                              height: 20,
+                              width: 20,
+                            )
+                          : Icon(
+                              CupertinoIcons.bookmark,
+                              size: 20,
+                              color: AppColors.darkGrey,
+                            ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

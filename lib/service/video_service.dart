@@ -215,4 +215,16 @@ class VideoService extends ApiRoutes {
       throw ExceptionHandler.handleApiException(e);
     }
   }
+
+  Future<Map<String, dynamic>> getVideoPoints({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.fetchPoints,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 }

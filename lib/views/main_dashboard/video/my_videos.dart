@@ -8,6 +8,7 @@ import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
@@ -40,7 +41,10 @@ class MyVideos extends StatelessWidget {
                 onTap: () {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
-                    extra: myVideos[index],
+                    extra: {
+                      Keys.videosData: myVideos[index],
+                      Keys.isMyVideos: true,
+                    },
                   );
                 },
                 child: MyVideoContainer(
@@ -226,7 +230,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
         child: Container(
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.darkText.withOpacity(0.2),
+            color: AppColors.darkText.withValues(alpha: 0.2),
             border: Border(
               top: BorderSide(
                 color: AppColors.whiteText.withValues(alpha: .2),

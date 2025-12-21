@@ -32,6 +32,7 @@ class _VideosState extends State<Videos> {
     // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      videoController.getVideoPoints();
       if (videoController.currentVideoIndex == 1) {
         getMyVideos();
       }
@@ -154,10 +155,24 @@ class _VideosState extends State<Videos> {
                                   width: 34,
                                 ),
                                 SizedBox(width: 5),
-                                HeaderTextBlack(
-                                  title: '142',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w300,
+                                Builder(
+                                  builder: (context) {
+                                    if (videoController.response.status ==
+                                            Status.INITIAL ||
+                                        videoController.response.status ==
+                                            Status.LOADING) {
+                                      return HeaderTextBlack(
+                                        title: '...',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w300,
+                                      );
+                                    }
+                                    return HeaderTextBlack(
+                                      title: '142',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w300,
+                                    );
+                                  },
                                 ),
                               ],
                             ),

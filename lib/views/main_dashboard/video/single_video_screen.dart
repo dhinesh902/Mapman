@@ -19,9 +19,14 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class SingleVideoScreen extends StatefulWidget {
-  const SingleVideoScreen({super.key, required this.videosData});
+  const SingleVideoScreen({
+    super.key,
+    required this.videosData,
+    required this.isMyVideos,
+  });
 
   final VideosData videosData;
+  final bool isMyVideos;
 
   @override
   State<SingleVideoScreen> createState() => _SingleVideoScreenState();
@@ -30,21 +35,23 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-  late final CachedVideoPlayerPlus _player;
 
+  late final CachedVideoPlayerPlus _player;
   late ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
+  bool _isCompleted = false;
 
   @override
   void initState() {
     // TODO: implement initState
+    super.initState();
     bookMarkNotifier = ValueNotifier(widget.videosData.savedAlready ?? false);
+
     WidgetsBinding.instance.addObserver(this);
     videoController = context.read<VideoController>();
+
     _initializeVideo();
-    addViewedVideos();
-    super.initState();
   }
 
   @override
@@ -61,6 +68,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _player.controller.removeListener(_videoListener);
     _player.dispose();
     bookMarkNotifier.dispose();
     super.dispose();
@@ -74,24 +82,47 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         mixWithOthers: false,
       ),
     );
+
     try {
       await _player.initialize();
       if (!mounted) return;
-      setState(() => _isInitialized = true);
+
+      _player.controller.addListener(_videoListener);
+
       _player.controller
         ..setLooping(true)
         ..setVolume(1.0)
         ..play();
+
+      setState(() => _isInitialized = true);
     } catch (e) {
       debugPrint('Video init error: $e');
     }
   }
 
-  void addViewedVideos() {
-    Future.delayed(const Duration(seconds: 10), () {
-      if (!mounted) return;
-      videoController.addViewedVideos(videoId: widget.videosData.id ?? 0);
-    });
+  void _videoListener() {
+    final controller = _player.controller;
+
+    if (!controller.value.isInitialized) return;
+
+    final position = controller.value.position;
+    final duration = controller.value.duration;
+
+    if (!_isCompleted &&
+        duration != Duration.zero &&
+        position >= duration - const Duration(milliseconds: 300)) {
+      _isCompleted = true;
+      addViewedVideos();
+    }
+
+    if (position <= const Duration(milliseconds: 200)) {
+      _isCompleted = false;
+    }
+  }
+
+  Future<void> addViewedVideos() async {
+    await videoController.addViewedVideos(videoId: widget.videosData.id ?? 0);
+    await videoController.getVideoPoints();
   }
 
   @override

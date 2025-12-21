@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
@@ -238,6 +241,12 @@ class SavedVideoCard extends StatelessWidget {
               videoUrl: ApiRoutes.baseUrl + (videosData.video ?? ''),
               isBookMark: isBookMark,
               bookMarkOnTap: bookMarkOnTap,
+              onTap: () {
+                context.pushNamed(
+                  AppRoutes.singleVideoScreen,
+                  extra: {Keys.videosData: videosData, Keys.isMyVideos: false},
+                );
+              },
             ),
             Positioned(
               bottom: 0,

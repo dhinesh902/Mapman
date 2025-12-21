@@ -49,4 +49,8 @@ abstract class ApiRoutes {
   static const String allVideos = '/shop/allVideos';
   static const String analytics = '/shop/analytics';
   static const String getShopById = '/shop/getShopById';
+  static const String fetchPoints = '/shop/fetchPoints';
+  static const String notificationPreference = '/shop/notificationPreference';
+  static const String fetchNotificationPreference =
+      '/shop/fetchNotificationPreference';
 }

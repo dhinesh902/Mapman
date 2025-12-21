@@ -62,20 +62,24 @@ class ActionBarComponent extends StatelessWidget {
     required this.title,
     this.action,
     this.titleColor = AppColors.whiteText,
+    this.onTap,
   });
 
   final String title;
   final Widget? action;
   final Color titleColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 10),
       leading: GestureDetector(
-        onTap: () {
-          context.pop();
-        },
+        onTap:
+            onTap ??
+            () {
+              context.pop();
+            },
         child: Container(
           height: 48,
           width: 49,

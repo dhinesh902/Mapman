@@ -120,6 +120,7 @@ class _MapsState extends State<Maps> {
     required double latitude,
     required double longitude,
   }) {
+    if (currentLatLng == null) return 0.0;
     double distanceInMeters = Geolocator.distanceBetween(
       currentLatLng!.latitude,
       currentLatLng!.longitude,
@@ -148,7 +149,7 @@ class _MapsState extends State<Maps> {
 
     if (!mounted) return;
 
-    if (response.status != Status.COMPLETED) {
+    if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
         context: context,
         status: response.status,

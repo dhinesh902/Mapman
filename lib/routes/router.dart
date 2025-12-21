@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/views/auth_screens/login.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/auth_screens/splash.dart';
@@ -95,8 +96,13 @@ class AppRouter {
           GoRoute(
             path: '/single_video_screen',
             name: AppRoutes.singleVideoScreen,
-            builder: (context, state) =>
-                SingleVideoScreen(videosData: state.extra as VideosData),
+            builder: (context, state) {
+              final data = state.extra as Map<String, dynamic>;
+              return SingleVideoScreen(
+                videosData: data[Keys.videosData] as VideosData,
+                isMyVideos: data[Keys.isMyVideos] as bool,
+              );
+            },
             routes: [
               GoRoute(
                 path: '/shop_detail',

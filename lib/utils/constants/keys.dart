@@ -1,4 +1,4 @@
-class Keys{
+class Keys {
   static const String data = 'data';
   static const String phone = 'phone';
   static const String token = 'token';
@@ -9,5 +9,6 @@ class Keys{
   static const String isVideoVideo = 'isVideoVideo';
   static const String shopName = 'shopName';
   static const String shopCategory = 'shopCategory';
-
+  static const String videosData = 'videosData';
+  static const String isMyVideos = 'isMyVideos';
 }

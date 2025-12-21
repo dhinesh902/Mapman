@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mapman/model/home_model.dart';
+import 'package:mapman/model/notification_model.dart';
 import 'package:mapman/model/shop_search_data.dart';
 import 'package:mapman/service/home_service.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -56,41 +57,52 @@ class HomeController extends ChangeNotifier {
   }
 
   /// Notification
+  NotificationPreferenceData _initialPreferenceData =
+      NotificationPreferenceData();
 
-  bool _isEnableNotification = false;
+  NotificationPreferenceData _preferenceData = NotificationPreferenceData();
 
-  bool get isEnableNotification => _isEnableNotification;
+  NotificationPreferenceData get preferenceData => _preferenceData;
 
-  set setIsEnableNotification(bool value) {
-    _isEnableNotification = value;
+  void initPreferences(NotificationPreferenceData data) {
+    _preferenceData = NotificationPreferenceData(
+      enableNotifications: data.enableNotifications,
+      savedVideo: data.savedVideo,
+      newVideo: data.newVideo,
+      newShop: data.newShop,
+    );
+
+    _initialPreferenceData = NotificationPreferenceData(
+      enableNotifications: data.enableNotifications,
+      savedVideo: data.savedVideo,
+      newVideo: data.newVideo,
+      newShop: data.newShop,
+    );
+
     notifyListeners();
   }
 
-  bool _isSavedVideo = false;
+  void updatePreferences({
+    bool? enableNotifications,
+    bool? savedVideo,
+    bool? newVideo,
+    bool? newShop,
+  }) {
+    _preferenceData.enableNotifications =
+        enableNotifications ?? _preferenceData.enableNotifications;
+    _preferenceData.savedVideo = savedVideo ?? _preferenceData.savedVideo;
+    _preferenceData.newVideo = newVideo ?? _preferenceData.newVideo;
+    _preferenceData.newShop = newShop ?? _preferenceData.newShop;
 
-  bool get isSavedVideo => _isSavedVideo;
-
-  set setIsSavedVideo(bool value) {
-    _isSavedVideo = value;
     notifyListeners();
   }
 
-  bool _isVideoAlerts = false;
-
-  bool get isVideoAlerts => _isVideoAlerts;
-
-  set setIsVideoAlerts(bool value) {
-    _isVideoAlerts = value;
-    notifyListeners();
-  }
-
-  bool _isNewShopAlerts = false;
-
-  bool get isNewShopAlerts => _isNewShopAlerts;
-
-  set setIsNewShopAlerts(bool value) {
-    _isNewShopAlerts = value;
-    notifyListeners();
+  bool get hasUnsavedChanges {
+    return _preferenceData.enableNotifications !=
+            _initialPreferenceData.enableNotifications ||
+        _preferenceData.savedVideo != _initialPreferenceData.savedVideo ||
+        _preferenceData.newVideo != _initialPreferenceData.newVideo ||
+        _preferenceData.newShop != _initialPreferenceData.newShop;
   }
 
   String? _category;
@@ -108,10 +120,18 @@ class HomeController extends ChangeNotifier {
 
   List<String> get categories => _categories;
 
+  /// Add response
+
+  ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get apiResponse => _apiResponse;
+
+  /// Home data
   ApiResponse<HomeData> _homeData = ApiResponse.initial(Strings.noDataFound);
 
   ApiResponse<HomeData> get homeData => _homeData;
 
+  ///Maps Data
   ApiResponse<List<ShopSearchData>> _shopSearchData = ApiResponse.initial(
     Strings.noDataFound,
   );
@@ -123,6 +143,13 @@ class HomeController extends ChangeNotifier {
   );
 
   ApiResponse<List<ShopSearchData>> get nearByShopData => _nearByShopData;
+
+  ///Notification data
+  ApiResponse<NotificationPreferenceData> _notificationPreferenceData =
+      ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse<NotificationPreferenceData> get notificationPreferenceData =>
+      _notificationPreferenceData;
 
   Future<ApiResponse<HomeData>> getHome() async {
     _homeData = ApiResponse.loading(Strings.loading);
@@ -231,5 +258,46 @@ class HomeController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Notification data
+  Future<ApiResponse> addNotificationPreference({
+    required NotificationPreferenceData preference,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.addNotificationPreference(
+        token: token,
+        preference: preference,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse<NotificationPreferenceData>>
+  getNotificationPreference() async {
+    _notificationPreferenceData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.getNotificationPreference(
+        token: token,
+      );
+      _notificationPreferenceData = ApiResponse.completed(
+        NotificationPreferenceData.fromJson(
+          response[Keys.data] as Map<String, dynamic>,
+        ),
+      );
+    } catch (e) {
+      _notificationPreferenceData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _notificationPreferenceData;
   }
 }

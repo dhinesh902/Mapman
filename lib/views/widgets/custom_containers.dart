@@ -104,7 +104,7 @@ class VideoPausePlayCircleContainer extends StatelessWidget {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.whiteText.withOpacity(0.2),
+            color: AppColors.whiteText.withValues(alpha: 0.2),
           ),
           alignment: Alignment.center,
           child: Icon(icon, size: 14, color: AppColors.whiteText),

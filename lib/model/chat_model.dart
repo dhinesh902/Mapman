@@ -50,3 +50,19 @@ class ChatModel {
     return userInfo![otherId]?['image'] ?? "";
   }
 }
+
+class ChatMessage {
+  final String? text;
+  final String? imageUrl;
+  final String? profile;
+  final bool isMe;
+  final String time;
+
+  ChatMessage({
+    this.text,
+    this.imageUrl,
+    this.profile,
+    required this.isMe,
+    required this.time,
+  });
+}

@@ -19,7 +19,6 @@ class Chats extends StatefulWidget {
 }
 
 class _ChatsState extends State<Chats> {
-
   Stream<List<ChatModel>> fetchUserChatList({required String userId}) {
     return FirebaseFirestore.instance
         .collection('chats')
@@ -98,6 +97,8 @@ class ChatListTile extends StatelessWidget {
             child: CustomNetworkImage(
               imageUrl:
                   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNbkECXtEG_6-RV7CSNgNoYUGZE-JCliYm9g&s',
+
+              isProfile: true,
             ),
           ),
           title: HeaderTextBlack(

@@ -6,6 +6,7 @@ import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/constants/themes.dart';
@@ -129,7 +130,7 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                             if (videos.isEmpty) {
                               return NoDataText(title: Strings.noDataFound);
                             } else {
-                            return  ListView.builder(
+                              return ListView.builder(
                                 itemCount: videos.length,
                                 shrinkWrap: true,
                                 padding: EdgeInsets.only(bottom: 20),
@@ -148,12 +149,15 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                           onTap: () {
                                             context.pushNamed(
                                               AppRoutes.singleVideoScreen,
-                                              extra: videos[index],
+                                              extra: {
+                                                Keys.videosData: videos[index],
+                                                Keys.isMyVideos: true,
+                                              },
                                             );
                                           },
                                           child: MyVideoContainer(
                                             videoUrl:
-                                            ApiRoutes.baseUrl +
+                                                ApiRoutes.baseUrl +
                                                 (videos[index].video ?? ''),
                                             isViews: false,
                                           ),
@@ -172,7 +176,6 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                   );
                                 },
                               );
-
                             }
                           case Status.ERROR:
                             return CustomErrorTextWidget(
