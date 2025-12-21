@@ -94,7 +94,7 @@ class CustomDropDownField extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0XFF1F1F1F1F),
+                color: Color(0Xff1f1f1f1f),
               ),
               value: dropdownValue,
               onChanged: onChanged,

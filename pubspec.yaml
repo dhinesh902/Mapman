@@ -58,7 +58,7 @@ dependencies:
   video_player: ^2.10.1
   cached_video_player_plus: ^4.1.0
   firebase_core: ^4.2.1
-  cloud_firestore: ^6.1.0
+  cloud_firestore: ^6.1.1
   firebase_messaging: ^16.0.4
   shared_preferences: ^2.5.4
   flutter_local_notifications: ^19.5.0

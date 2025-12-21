@@ -104,7 +104,7 @@ class CustomTextField extends StatelessWidget {
               hintStyle: AppTextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0XFF1F1F1F1F),
+                color: Color(0Xff1f1f1f1f),
               ).textStyle,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 15,
@@ -135,7 +135,7 @@ class CustomSearchField extends StatelessWidget {
     required this.clearOnTap,
     this.onChanged,
     this.focusNode,
-     this.ontTap,
+    this.ontTap,
   });
 
   final TextEditingController controller;
