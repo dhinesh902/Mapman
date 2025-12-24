@@ -168,7 +168,8 @@ class _VideosState extends State<Videos> {
                                       );
                                     }
                                     return HeaderTextBlack(
-                                      title: '142',
+                                      title:
+                                          '${videoController.response.data ?? 0}',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w300,
                                     );

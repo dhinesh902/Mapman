@@ -53,6 +53,14 @@ class SessionManager {
     return _sessionStorage?.getInt(Keys.shopId);
   }
 
+  static Future<bool> setUserId({required int userId}) async {
+    return _sessionStorage!.setInt(Keys.userId, userId);
+  }
+
+  static int? getUserId() {
+    return _sessionStorage?.getInt(Keys.userId);
+  }
+
   static Future<bool> setVideoVideo({required bool isVideoVideo}) async {
     return _sessionStorage!.setBool(Keys.isVideoVideo, isVideoVideo);
   }

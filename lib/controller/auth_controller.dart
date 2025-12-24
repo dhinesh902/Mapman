@@ -107,7 +107,9 @@ class AuthController extends ChangeNotifier {
         otp: otp,
       );
       final String token = response[Keys.data][Keys.token] ?? '';
+      final int userId = response[Keys.data][Keys.userId] ?? '';
       await SessionManager.setToken(token: token);
+      await SessionManager.setUserId(userId: userId);
       _apiResponse = ApiResponse.completed(response[Keys.data]);
       await addFcmToken();
     } catch (e) {

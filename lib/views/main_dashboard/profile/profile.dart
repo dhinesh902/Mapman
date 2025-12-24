@@ -107,15 +107,15 @@ class _ProfileState extends State<Profile> {
                             },
                           ),
                         ],
-                        SizedBox(height: 15),
-                        ProfileListTile(
-                          image: AppIcons.chatP,
-                          title: 'Chat',
-                          body: 'Chat with your shop people',
-                          onTap: () {
-                            context.pushNamed(AppRoutes.chats);
-                          },
-                        ),
+                        // SizedBox(height: 15),
+                        // ProfileListTile(
+                        //   image: AppIcons.chatP,
+                        //   title: 'Chat',
+                        //   body: 'Chat with your shop people',
+                        //   onTap: () {
+                        //     context.pushNamed(AppRoutes.chats);
+                        //   },
+                        // ),
                         SizedBox(height: 15),
                         ProfileListTile(
                           image: AppIcons.helpP,

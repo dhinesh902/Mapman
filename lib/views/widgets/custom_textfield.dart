@@ -136,6 +136,7 @@ class CustomSearchField extends StatelessWidget {
     this.onChanged,
     this.focusNode,
     this.ontTap,
+    this.onFieldSubmitted,
   });
 
   final TextEditingController controller;
@@ -143,6 +144,7 @@ class CustomSearchField extends StatelessWidget {
   final VoidCallback clearOnTap;
   final FocusNode? focusNode;
   final Function(String?)? onChanged;
+  final Function(String?)? onFieldSubmitted;
   final VoidCallback? ontTap;
 
   @override
@@ -158,6 +160,7 @@ class CustomSearchField extends StatelessWidget {
             return TextFormField(
               controller: controller,
               focusNode: focusNode,
+              onFieldSubmitted: onFieldSubmitted,
               textCapitalization: TextCapitalization.sentences,
               cursorColor: AppColors.primary,
               onTap: ontTap,

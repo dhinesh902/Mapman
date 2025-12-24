@@ -21,4 +21,5 @@ class AppRoutes {
   static String notificationSettings = 'notification_settings';
   static String viewedVideos = 'viewed_videos';
   static String savedVideos = 'saved_videos';
+  static String searchLocation = 'search_location';
 }

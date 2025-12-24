@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_autocomplete/google_places_autocomplete.dart';
@@ -29,15 +30,6 @@ class PlaceController extends ChangeNotifier {
 
   bool get isDetailsLoading => _isDetailsLoading;
 
-  Prediction? _selectedPrediction;
-
-  Prediction? get selectedPrediction => _selectedPrediction;
-
-  set setSelectedPrediction(Prediction? value) {
-    _selectedPrediction = value;
-    notifyListeners();
-  }
-
   Prediction? _confirmedPrediction;
 
   Prediction? get confirmedPrediction => _confirmedPrediction;
@@ -47,9 +39,11 @@ class PlaceController extends ChangeNotifier {
     notifyListeners();
   }
 
+
+
   PlaceController() {
     _placesService = GooglePlacesAutocomplete(
-      apiKey: "AIzaSyDqlmtxOs2gBzD0_BpRcyTOtE3uk8jH1Ms",
+      apiKey: "AIzaSyCoALxlSdarOigVPgFjfO2zrhFZEZSIxyM",
       debounceTime: 300,
       countries: ['in'],
       language: 'en',
@@ -146,5 +140,52 @@ class PlaceController extends ChangeNotifier {
       notifyListeners();
     }
     return _currentLocationLatLng;
+  }
+
+  String _currentAddress = 'Fetching address...';
+
+  bool _isCameraMove = false;
+  bool _loadingAddress = false;
+
+  String get currentAddress => _currentAddress;
+
+  bool get loadingAddress => _loadingAddress;
+
+  bool get isCameraMove => _isCameraMove;
+
+  set setIsCameraMode(bool value) {
+    _isCameraMove = value;
+    notifyListeners();
+  }
+
+  /// Called ONLY on camera idle
+  Future<void> fetchAddress({required LatLng latLng}) async {
+    if (_loadingAddress) return;
+
+    _loadingAddress = true;
+    notifyListeners();
+
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        latLng.latitude,
+        latLng.longitude,
+      );
+
+      final place = placemarks.first;
+
+      _currentAddress =
+          '${place.street}, ${place.subLocality}, ${place.locality}, '
+          '${place.administrativeArea}, ${place.postalCode}, ${place.country}';
+    } catch (_) {
+      _currentAddress = 'Unable to fetch address';
+    }
+
+    _loadingAddress = false;
+    notifyListeners();
+  }
+
+  void clearAddress() {
+    _currentAddress = '';
+    notifyListeners();
   }
 }

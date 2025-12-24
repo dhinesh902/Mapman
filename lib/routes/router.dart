@@ -12,14 +12,13 @@ import 'package:mapman/views/main_dashboard/main_dashboard.dart';
 import 'package:mapman/views/main_dashboard/notification/notification_settings.dart';
 import 'package:mapman/views/main_dashboard/notification/notifications.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
-import 'package:mapman/views/main_dashboard/profile/chat/chat_info.dart';
-import 'package:mapman/views/main_dashboard/profile/chat/chats.dart';
 import 'package:mapman/views/main_dashboard/profile/edit_profile.dart';
 import 'package:mapman/views/main_dashboard/profile/help_and_support.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_your_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
+import 'package:mapman/views/main_dashboard/profile/shop_detail/search_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_analytics.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_detail.dart';
 import 'package:mapman/views/main_dashboard/video/replace_video.dart';
@@ -118,18 +117,18 @@ class AppRouter {
             builder: (context, state) =>
                 EditProfile(profileData: state.extra as ProfileData),
           ),
-          GoRoute(
-            path: '/chats',
-            name: AppRoutes.chats,
-            builder: (context, state) => Chats(),
-            routes: [
-              GoRoute(
-                path: '/chat_info',
-                name: AppRoutes.chatInfo,
-                builder: (context, state) => ChatInfo(),
-              ),
-            ],
-          ),
+          // GoRoute(
+          //   path: '/chats',
+          //   name: AppRoutes.chats,
+          //   builder: (context, state) => Chats(),
+          //   routes: [
+          //     GoRoute(
+          //       path: '/chat_info',
+          //       name: AppRoutes.chatInfo,
+          //       builder: (context, state) => ChatInfo(),
+          //     ),
+          //   ],
+          // ),
           GoRoute(
             path: '/help_and_support',
             name: AppRoutes.helpAndSupport,
@@ -154,6 +153,13 @@ class AppRouter {
                         path: '/enter_your_location',
                         name: AppRoutes.enterYourLocation,
                         builder: (context, state) => EnterYourLocation(),
+                        routes: [
+                          GoRoute(
+                            path: '/search_location',
+                            name: AppRoutes.searchLocation,
+                            builder: (context, state) => SearchLocation(),
+                          ),
+                        ],
                       ),
                     ],
                   ),

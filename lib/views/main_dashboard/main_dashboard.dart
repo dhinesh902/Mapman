@@ -13,7 +13,7 @@ import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/home/home.dart';
 import 'package:mapman/views/main_dashboard/map/maps.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
-import 'package:mapman/views/main_dashboard/profile/profile.dart';
+import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_your_location.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
@@ -32,7 +32,7 @@ class MainDashboard extends StatefulWidget {
 
 class _MainDashboardState extends State<MainDashboard> {
   late HomeController homeController;
-  final List<Widget> _pages = [Home(), Maps(), Videos(), Profile()];
+  final List<Widget> _pages = [Home(), Maps(), Videos(), EnterYourLocation()];
 
   DateTime? _lastBackPressed;
 

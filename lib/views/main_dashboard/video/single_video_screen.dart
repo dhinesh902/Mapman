@@ -14,6 +14,7 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
+import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -41,11 +42,13 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   bool _isInitialized = false;
   bool _isCompleted = false;
+  late bool isMyVideos;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    isMyVideos = widget.isMyVideos;
     bookMarkNotifier = ValueNotifier(widget.videosData.savedAlready ?? false);
 
     WidgetsBinding.instance.addObserver(this);
@@ -112,7 +115,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         duration != Duration.zero &&
         position >= duration - const Duration(milliseconds: 300)) {
       _isCompleted = true;
-      addViewedVideos();
+      if (!isMyVideos) {
+        addViewedVideos();
+      }
     }
 
     if (position <= const Duration(milliseconds: 200)) {
@@ -159,15 +164,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                       );
                     },
                   ),
-                  SizedBox(width: 15),
-                  RewardContainer(
-                    onTap: () {
-                      VideoDialogues().showRewardsDialogue(
-                        context,
-                        isEarnCoins: true,
-                      );
-                    },
-                  ),
+                  if (!isMyVideos) ...[
+                    SizedBox(width: 15),
+                    RewardContainer(
+                      onTap: () {
+                        VideoDialogues().showRewardsDialogue(
+                          context,
+                          isEarnCoins: true,
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -212,7 +219,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                 ),
                               ),
                               SizedBox(width: 10),
-                              if (widget.videosData.watched == true)
+                              if (widget.videosData.watched == true &&
+                                  !isMyVideos)
                                 Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -252,43 +260,49 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                       ),
                     ),
                     SizedBox(width: 8),
-                    Row(
-                      children: [
-                        CircleContainer(
-                          onTap: () {},
-                          child: Image.asset(
-                            AppIcons.videoChatP,
-                            height: 30,
-                            width: 30,
+                    if (!isMyVideos) ...[
+                      Row(
+                        children: [
+                          CircleContainer(
+                            onTap: () async {
+                              await CustomLaunchers.openWhatsApp(
+                                phoneNumber: '9025821501',
+                              );
+                            },
+                            child: Image.asset(
+                              AppIcons.whatsappP,
+                              height: 30,
+                              width: 30,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 10),
-                        ValueListenableBuilder(
-                          valueListenable: bookMarkNotifier,
-                          builder: (context, isActive, _) {
-                            return CircleContainer(
-                              onTap: () async {
-                                bookMarkNotifier.value = !isActive;
-                                await videoController.addSavedVideos(
-                                  videoId: widget.videosData.id ?? 0,
-                                );
-                              },
-                              child: isActive
-                                  ? Image.asset(
-                                      AppIcons.bookmarkP,
-                                      height: 30,
-                                      width: 30,
-                                    )
-                                  : Icon(
-                                      Icons.bookmark_border_outlined,
-                                      size: 30,
-                                      color: AppColors.darkGrey,
-                                    ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                          SizedBox(width: 10),
+                          ValueListenableBuilder(
+                            valueListenable: bookMarkNotifier,
+                            builder: (context, isActive, _) {
+                              return CircleContainer(
+                                onTap: () async {
+                                  bookMarkNotifier.value = !isActive;
+                                  await videoController.addSavedVideos(
+                                    videoId: widget.videosData.id ?? 0,
+                                  );
+                                },
+                                child: isActive
+                                    ? Image.asset(
+                                        AppIcons.bookmarkP,
+                                        height: 30,
+                                        width: 30,
+                                      )
+                                    : Icon(
+                                        Icons.bookmark_border_outlined,
+                                        size: 30,
+                                        color: AppColors.darkGrey,
+                                      ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
