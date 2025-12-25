@@ -61,12 +61,12 @@ class SessionManager {
     return _sessionStorage?.getInt(Keys.userId);
   }
 
-  static Future<bool> setVideoVideo({required bool isVideoVideo}) async {
-    return _sessionStorage!.setBool(Keys.isVideoVideo, isVideoVideo);
+  static Future<bool> setViewedVideoStatus({required int status}) async {
+    return _sessionStorage!.setInt(Keys.isViewedVideo, status);
   }
 
-  static bool getVideoVideo() {
-    return _sessionStorage!.getBool(Keys.isVideoVideo) ?? false;
+  static int getViewedVideoStatus() {
+    return _sessionStorage!.getInt(Keys.isViewedVideo) ?? 0;
   }
 
   static Future<bool> setShopName({required String shopName}) async {

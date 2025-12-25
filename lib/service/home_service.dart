@@ -16,6 +16,22 @@ class HomeService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> addNewCategory({
+    required String token,
+    required String categoryName,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.addNewCategory,
+        options: headerWithToken(token),
+        data: {'categoryName': categoryName},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getSearchShops({
     required String token,
     required String input,
@@ -59,6 +75,32 @@ class HomeService extends ApiRoutes {
     try {
       final response = await dio.get(
         ApiRoutes.fetchNotificationPreference,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getNotifications({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.fetchNotifications,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getNotificationCount({
+    required String token,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.notificationCount,
         options: headerWithToken(token),
       );
       return response.data;

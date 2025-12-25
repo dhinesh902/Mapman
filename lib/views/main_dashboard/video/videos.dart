@@ -39,6 +39,12 @@ class _VideosState extends State<Videos> {
       if (videoController.currentVideoIndex == 0) {
         getCategoryVideos();
       }
+
+      if (videoController.isShowParticularShopVideos) {
+        context.read<VideoController>().getAllVideos(
+          category: videoController.selectedCategory.toLowerCase(),
+        );
+      }
     });
     super.initState();
   }

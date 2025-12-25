@@ -199,7 +199,8 @@ class _EnterLocationState extends State<EnterLocation> {
 
                         try {
                           await placeController.fetchPlaceDetails(placeId);
-                          final location = placeController.placeDetails?.location;
+                          final location =
+                              placeController.placeDetails?.location;
                           final lat = location?.lat;
                           final lng = location?.lng;
 
@@ -218,7 +219,6 @@ class _EnterLocationState extends State<EnterLocation> {
                           context.pop({
                             'address': address,
                             'latlong': LatLng(lat, lng),
-                            'placeId': placeId,
                           });
                         } catch (e) {
                           if (context.mounted) {
@@ -253,45 +253,22 @@ class _EnterLocationState extends State<EnterLocation> {
               title: 'Save Location Details',
               isDialogue: true,
               onTap: () async {
-                final prediction = placeController.confirmedPrediction;
-                if (prediction == null || prediction.placeId == null) {
+                final shopAddress = placeController.shopAddress;
+                if (shopAddress.isEmpty) {
                   CustomToast.show(
                     context,
-                    title: 'Please select a valid address',
+                    title: 'Please select address',
                     isError: true,
                   );
                   return;
                 }
 
-                final placeId = prediction.placeId!;
-                CustomDialogues.showLoadingDialogue(context);
-
                 try {
-                  await placeController.fetchPlaceDetails(placeId);
-                  final details = placeController.placeDetails;
-                  final lat = details?.location?.lat;
-                  final lng = details?.location?.lng;
-
-                  if (!context.mounted) return;
-                  if (lat == null || lng == null) {
-                    throw Exception('LatLng not found');
-                  }
-
-                  Navigator.of(context).pop();
-
-                  final address = [
-                    prediction.title,
-                    prediction.description,
-                    details?.zipCode,
-                  ].where((e) => e != null && e.isNotEmpty).join(', ');
-
                   context.pop({
-                    'address': address,
-                    'latlong': LatLng(lat, lng),
-                    'placeId': placeId,
+                    'address': shopAddress['address'],
+                    'latlong': shopAddress['latLong'],
                   });
                 } catch (e) {
-                  Navigator.of(context).pop();
                   CustomToast.show(
                     context,
                     title: 'Unable to fetch location details',

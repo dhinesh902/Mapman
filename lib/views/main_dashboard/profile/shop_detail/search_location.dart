@@ -87,7 +87,8 @@ class _SearchLocationState extends State<SearchLocation> {
                               await placeController.fetchPlaceDetails(
                                 prediction.placeId ?? '',
                               );
-
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
                               await SessionManager().addPlaceDetail(
                                 CustomPrediction(
                                   title: prediction.title,

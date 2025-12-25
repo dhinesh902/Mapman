@@ -15,6 +15,7 @@ import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
@@ -38,6 +39,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
     videoController = context.read<VideoController>();
     searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      videoController.loadViewedVideoStatus();
       getMyViewedVideos();
     });
     super.initState();
@@ -62,6 +64,33 @@ class _ViewedVideosState extends State<ViewedVideos> {
     }
   }
 
+  Future<void> addSavedVideos({
+    required int videoId,
+    required String status,
+  }) async {
+    CustomDialogues.showLoadingDialogue(context);
+    final response = await videoController.addSavedVideos(
+      videoId: videoId,
+      status: status,
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      CustomToast.show(context, title: 'Video unsaved successfully ');
+      await context.read<VideoController>().getMyViewedVideos(
+        removeBookMark: false,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } else {
+      Navigator.pop(context);
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
@@ -76,68 +105,84 @@ class _ViewedVideosState extends State<ViewedVideos> {
               scaleX: .9,
               scaleY: 0.8,
               child: CupertinoSwitch(
-                value: videoController.isViewedVideo,
+                value: videoController.isViewedVideo == 1,
                 activeTrackColor: GenericColors.darkGreen,
-                onChanged: (value) {
-                  videoController.setIsViewedVideo = value;
+                onChanged: (value) async {
+                  final int status = value ? 1 : 0;
+
+                  await videoController.setIsViewedVideo(status);
+                  if (!context.mounted) return;
                   VideoDialogues().showViewedVideoDialogue(
                     context,
-                    turnOn: value,
+                    turnOn: status,
                   );
                 },
               ),
             ),
           ),
         ),
-        body: Builder(
-          builder: (context) {
-            switch (videoController.viewedVideoData.status) {
-              case Status.INITIAL:
-                return CustomLoadingIndicator();
-              case Status.LOADING:
-                return CustomLoadingIndicator();
-              case Status.COMPLETED:
-                final viewedVideos = videoController.filteredViewedVideos;
-                if (viewedVideos.isEmpty) {
-                  return NoDataText(title: Strings.noDataFound);
-                }
-                return Column(
-                  children: [
-                    SizedBox(height: 20),
-                    CustomSearchField(
-                      controller: searchController,
-                      hintText: 'Search by Video title',
-                      onChanged: (value) {
-                        videoController.filterViewedVideosByTitle(value!);
-                      },
-                      clearOnTap: () {
-                        searchController.clear();
-                        videoController.filterViewedVideosByTitle('');
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    Expanded(
-                      child: ListView.builder(
+        body: Column(
+          children: [
+            const SizedBox(height: 20),
+            CustomSearchField(
+              controller: searchController,
+              hintText: 'Search by Video title',
+              onChanged: (value) {
+                videoController.filterViewedVideosByTitle(value ?? '');
+              },
+              clearOnTap: () {
+                searchController.clear();
+                videoController.filterViewedVideosByTitle('');
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  switch (videoController.viewedVideoData.status) {
+                    case Status.INITIAL:
+                      return CustomLoadingIndicator();
+                    case Status.LOADING:
+                      return CustomLoadingIndicator();
+                    case Status.COMPLETED:
+                      final viewedVideos = videoController.filteredViewedVideos;
+
+                      if (viewedVideos.isEmpty) {
+                        return NoDataText(title: Strings.noDataFound);
+                      }
+
+                      return ListView.builder(
                         itemCount: viewedVideos.length,
-                        shrinkWrap: true,
-                        padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                         itemBuilder: (context, index) {
+                          final video = viewedVideos[index];
+
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 15),
                             child: Stack(
                               children: [
                                 ViewedVideoCard(
                                   videoUrl:
-                                      '${ApiRoutes.baseUrl}${viewedVideos[index].video ?? ''}',
+                                      '${ApiRoutes.baseUrl}${video.video ?? ''}',
                                   isBookMark: videoController.bookmarked[index],
-                                  bookMarkOnTap: () {
+                                  bookMarkOnTap: () async {
                                     videoController.toggleBookmark(index);
+                                    await addSavedVideos(
+                                      videoId: viewedVideos[index].id ?? 0,
+                                      status:
+                                          videoController.bookmarked[index] ==
+                                              true
+                                          ? 'inactive'
+                                          : 'active',
+                                    );
                                   },
                                   onTap: () {
                                     context.pushNamed(
                                       AppRoutes.singleVideoScreen,
                                       extra: {
-                                        Keys.videosData: viewedVideos[index],
+                                        Keys.videosData: video,
                                         Keys.isMyVideos: false,
                                       },
                                     );
@@ -149,23 +194,24 @@ class _ViewedVideosState extends State<ViewedVideos> {
                                   right: 0,
                                   child: VideoTitleBlurContainer(
                                     isShopDetail: true,
-                                    videosData: viewedVideos[index],
+                                    videosData: video,
                                   ),
                                 ),
                               ],
                             ),
                           );
                         },
-                      ),
-                    ),
-                  ],
-                );
-              case Status.ERROR:
-                return CustomErrorTextWidget(
-                  title: '${videoController.viewedVideoData.message}',
-                );
-            }
-          },
+                      );
+
+                    case Status.ERROR:
+                      return CustomErrorTextWidget(
+                        title: '${videoController.viewedVideoData.message}',
+                      );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

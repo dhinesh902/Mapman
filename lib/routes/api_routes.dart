@@ -33,6 +33,7 @@ abstract class ApiRoutes {
   static const String getProfile = '/shop/getProfile';
   static const String shopRegister = '/shop/shopRegister';
   static const String home = '/shop/home';
+  static const String addNewCategory = '/shop/addNewCategory';
   static const String searchShops = '/shop/search';
   static const String fetchShop = '/shop/fetchShop';
   static const String deleteShopImage = '/shop/deleteShopImage';
@@ -41,8 +42,10 @@ abstract class ApiRoutes {
   static const String viewedVideos = '/shop/viewedVideos';
   static const String fetchMyViewedVideos = '/shop/fetchMyViewedVideos';
   static const String updateVideoDetails = '/shop/updateVideoDetails';
+  static const String deleteShop = '/shop/deleteShop';
   static const String replaceVideo = '/shop/replaceVideo';
   static const String deleteVideo = '/shop/deleteVideo';
+  static const String fetchVideoById = '/shop/fetchVideoById';
   static const String saveOthersVideos = '/shop/saveOthersVideos';
   static const String fetchMySavedVideos = '/shop/fetchMySavedVideos';
   static const String getCategoryVideos = '/shop/getCategoryVideos';
@@ -50,6 +53,8 @@ abstract class ApiRoutes {
   static const String analytics = '/shop/analytics';
   static const String getShopById = '/shop/getShopById';
   static const String fetchPoints = '/shop/fetchPoints';
+  static const String fetchNotifications = '/shop/fetchNotifications';
+  static const String notificationCount = '/shop/notificationCount';
   static const String notificationPreference = '/shop/notificationPreference';
   static const String fetchNotificationPreference =
       '/shop/fetchNotificationPreference';

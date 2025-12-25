@@ -39,11 +39,9 @@ class PlaceController extends ChangeNotifier {
     notifyListeners();
   }
 
-
-
   PlaceController() {
     _placesService = GooglePlacesAutocomplete(
-      apiKey: "AIzaSyCoALxlSdarOigVPgFjfO2zrhFZEZSIxyM",
+      apiKey: "",
       debounceTime: 300,
       countries: ['in'],
       language: 'en',
@@ -166,16 +164,21 @@ class PlaceController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final placemarks = await placemarkFromCoordinates(
+      final placeMarks = await placemarkFromCoordinates(
         latLng.latitude,
         latLng.longitude,
       );
 
-      final place = placemarks.first;
-
-      _currentAddress =
-          '${place.street}, ${place.subLocality}, ${place.locality}, '
-          '${place.administrativeArea}, ${place.postalCode}, ${place.country}';
+      final place = placeMarks.first;
+      _currentAddress = [
+        place.street,
+        place.subLocality,
+        place.thoroughfare,
+        place.locality,
+        place.administrativeArea,
+        place.postalCode,
+        place.country,
+      ].where((e) => e != null && e.trim().isNotEmpty).join(', ');
     } catch (_) {
       _currentAddress = 'Unable to fetch address';
     }
@@ -186,6 +189,15 @@ class PlaceController extends ChangeNotifier {
 
   void clearAddress() {
     _currentAddress = '';
+    notifyListeners();
+  }
+
+  Map<String, dynamic> _shopAddress = {};
+
+  Map<String, dynamic> get shopAddress => _shopAddress;
+
+  set setShopAddress(Map<String, dynamic> value) {
+    _shopAddress = value;
     notifyListeners();
   }
 }

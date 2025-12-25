@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,15 +13,18 @@ import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
+import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
-import 'package:mapman/views/widgets/custom_drop_downs.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:mapman/views/widgets/custom_time_picker.dart';
 import 'package:provider/provider.dart';
@@ -37,12 +41,15 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
   late ProfileController profileController;
 
   final formKey = GlobalKey<FormState>();
+  final categoryFormKey = GlobalKey<FormState>();
   late TextEditingController shopNameController,
       descriptionController,
       locationController,
       openTimeController,
       phoneNumberController,
+      whatsAppNumberController,
       shopNumberController,
+      addNewCategoryController,
       closeTimeController;
 
   final ValueNotifier<File?> shopImageNotifier = ValueNotifier(null);
@@ -67,12 +74,15 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       text: SessionManager.getMobile() ?? '',
     );
     shopNumberController = TextEditingController();
+    whatsAppNumberController = TextEditingController();
+    addNewCategoryController = TextEditingController();
     locationController = TextEditingController();
     openTimeController = TextEditingController();
     closeTimeController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       homeController.setSelectedCategory = null;
+      homeController.setIsShowAddNewCategory = false;
       profileController.setSelectedLatLong = null;
       profileController.setIsActive = false;
     });
@@ -85,6 +95,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     shopNameController.dispose();
     descriptionController.dispose();
     phoneNumberController.dispose();
+    whatsAppNumberController.dispose();
     locationController.dispose();
     openTimeController.dispose();
     closeTimeController.dispose();
@@ -109,6 +120,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       address: locationController.text.trim(),
       registerNumber: phoneNumberController.text.trim(),
       shopNumber: shopNumberController.text.trim(),
+      whatsappNumber: whatsAppNumberController.text.trim(),
       openTime: openTimeController.text.trim(),
       closeTime: closeTimeController.text.trim(),
       lat: '${profileController.selectedLatLong?.latitude}',
@@ -129,6 +141,23 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       context.pop();
       context.pop();
       await profileController.getShopDetail();
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  Future<void> addShopCategory() async {
+    final response = await homeController.addNewCategory(
+      categoryName: addNewCategoryController.text.trim(),
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      homeController.setSelectedCategory = null;
+      CustomToast.show(context, title: 'Your category added successfully');
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -206,21 +235,211 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 },
               ),
               SizedBox(height: 15),
-              CustomDropDownField(
-                title: "Category",
-                dropdownValue: homeController.category,
-                items: homeController.categories,
-                onChanged: (value) {
-                  homeController.setSelectedCategory = value;
-                },
-                hintText: "Select category",
-                validator: (value) {
-                  if (value == null) {
-                    return "Please select category";
-                  }
-                  return null;
-                },
+              CustomTextFieldContainer(
+                title: 'Category',
+                child: PopupMenuButton<String>(
+                  position: PopupMenuPosition.under,
+                  padding: EdgeInsets.zero,
+                  color: AppColors.scaffoldBackground,
+                  elevation: 2,
+                  offset: Offset(0, 25),
+                  borderRadius: BorderRadius.circular(5),
+                  constraints: const BoxConstraints(
+                    minWidth: double.maxFinite,
+                    maxHeight: 250,
+                  ),
+                  onSelected: (value) {
+                    if (value == 'add_category') {
+                    } else {
+                      homeController.setSelectedCategory = value;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      enabled: false,
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              homeController.setIsShowAddNewCategory = true;
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              color: Color(0XFFEAEAEA),
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: const [
+                                  BodyTextColors(
+                                    title: 'Add Category',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: GenericColors.darkGeryHeading,
+                                  ),
+                                  Spacer(),
+                                  Icon(
+                                    CupertinoIcons.add_circled,
+                                    size: 20,
+                                    weight: 700,
+                                    color: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: homeController.categories.length,
+                              itemBuilder: (context, index) {
+                                final cat = homeController.categories[index];
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    homeController.setSelectedCategory = cat;
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(height: 10),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 15,
+                                        ),
+                                        child: BodyTextColors(
+                                          title: cat.capitalize(),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: GenericColors.darkGeryHeading,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Divider(
+                                        color: Colors.grey.shade100,
+                                        height: 5,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: SizedBox(
+                    height: 30,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (homeController.category != null)
+                          BodyTextColors(
+                            title: '${homeController.category?.capitalize()}',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkText,
+                          )
+                        else
+                          BodyTextColors(
+                            title: 'Select category',
+                            overflow: TextOverflow.ellipsis,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0Xff1f1f1f1f),
+                          ),
+                        SvgPicture.asset(AppIcons.arrowDropdown, height: 24),
+                      ],
+                    ),
+                  ),
+                ),
               ),
+              if (homeController.isShowAddNewCategory) ...[
+                SizedBox(height: 15),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Form(
+                    key: categoryFormKey,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Image.asset(
+                              AppIcons.addCategoryP,
+                              height: 24,
+                              width: 24,
+                            ),
+                            SizedBox(width: 10),
+                            HeaderTextBlack(
+                              title: 'Add Category',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            Spacer(),
+                            ClearCircleContainer(
+                              onTap: () {
+                                homeController.setIsShowAddNewCategory = false;
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 30),
+                        CategoryTextField(
+                          controller: addNewCategoryController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter category name';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              width: 136,
+                              child: CustomOutlineButton(
+                                title: 'Cancel',
+                                onTap: () {
+                                  homeController.setIsShowAddNewCategory =
+                                      false;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 15),
+                            SizedBox(
+                              width: 136,
+                              child:
+                                  homeController.apiResponse.status ==
+                                      Status.LOADING
+                                  ? ButtonProgressBar()
+                                  : CustomFullButton(
+                                      isDialogue: true,
+                                      title: 'Apply',
+                                      onTap: () async {
+                                        if (categoryFormKey.currentState!
+                                            .validate()) {
+                                          await addShopCategory();
+                                        }
+                                      },
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: 15),
               CustomTextField(
                 controller: locationController,
@@ -273,6 +492,24 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   }
                   if (value.length != 10) {
                     return "Please enter 10 register number";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 15),
+              CustomTextField(
+                controller: whatsAppNumberController,
+                title: 'WhatsApp Number',
+                hintText: 'Enter whatsapp number',
+                inputType: TextInputType.number,
+                maxLength: 10,
+                inputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter whatsapp number";
+                  }
+                  if (value.length != 10) {
+                    return "Please enter 10 whatsapp number";
                   }
                   return null;
                 },
@@ -514,6 +751,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 : CustomFullButton(
                     title: 'Update Shop details',
                     onTap: () async {
+                      homeController.getHome();
                       if (formKey.currentState!.validate()) {
                         await registerShop();
                       }

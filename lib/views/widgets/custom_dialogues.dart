@@ -303,7 +303,10 @@ class CustomDialogues {
     );
   }
 
-  Future showDeleteDialog(BuildContext context) {
+  Future showDeleteDialog(
+    BuildContext context, {
+    String body = 'Video Permanently deleted by you',
+  }) {
     Future.delayed(const Duration(milliseconds: 1550), () {
       if (context.mounted) {
         if (Navigator.of(context).canPop()) {
@@ -325,13 +328,13 @@ class CustomDialogues {
                 ),
                 SizedBox(height: 20),
                 HeaderTextBlack(
-                  title: 'Successfully Updated!!',
+                  title: 'Deleted Successfully!!',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
                 SizedBox(height: 10),
                 BodyTextHint(
-                  title: 'Shop details successfully submitted by you',
+                  title: body,
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,
@@ -373,7 +376,7 @@ class CustomDialogues {
                 ),
                 SizedBox(height: 10),
                 BodyTextHint(
-                  title: 'Video Permanently deleted by you',
+                  title: body,
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,

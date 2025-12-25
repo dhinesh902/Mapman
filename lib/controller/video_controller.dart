@@ -22,19 +22,25 @@ class VideoController extends ChangeNotifier {
   }
 
   /// Viewed Video
-  bool _isViewedVideo = true;
+  int _isViewedVideo = 0;
 
-  bool get isViewedVideo => _isViewedVideo;
+  int get isViewedVideo => _isViewedVideo;
 
-  set setIsViewedVideo(bool value) {
+  void loadViewedVideoStatus() {
+    _isViewedVideo = SessionManager.getViewedVideoStatus();
+    notifyListeners();
+  }
+
+  Future<void> setIsViewedVideo(int value) async {
     _isViewedVideo = value;
+    await SessionManager.setViewedVideoStatus(status: value);
     notifyListeners();
   }
 
   List<bool> bookmarked = [];
 
-  void initializeBookmarks(int length) {
-    bookmarked = List.generate(length, (index) => true);
+  void initializeBookmarks(List<VideosData> videos) {
+    bookmarked = videos.map((video) => video.savedAlready == true).toList();
     notifyListeners();
   }
 
@@ -100,10 +106,12 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse<List<VideosData>> get viewedVideoData => _viewedVideoData;
 
+  /// Search state
   List<VideosData> _filteredViewedVideos = [];
+  bool _isSearching = false;
 
   List<VideosData> get filteredViewedVideos =>
-      _filteredViewedVideos.isEmpty ? [] : (_viewedVideoData.data ?? []);
+      _isSearching ? _filteredViewedVideos : (_viewedVideoData.data ?? []);
 
   /// Saved Videos
   ApiResponse<List<VideosData>> _savedVideoData = ApiResponse.initial(
@@ -133,6 +141,13 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse<SingleShopDetailData> get singleShopDetailData =>
       _singleShopDetailData;
+
+  /// video by id detail
+  ApiResponse<VideosData> _videoByIdData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<VideosData> get videoByIdData => _videoByIdData;
 
   Future<ApiResponse> uploadMyVideos({
     required File video,
@@ -250,35 +265,39 @@ class VideoController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<VideosData>>> getMyViewedVideos() async {
-    _viewedVideoData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
+  Future<ApiResponse<List<VideosData>>> getMyViewedVideos({
+    bool removeBookMark = true,
+  }) async {
+    if (removeBookMark) {
+      _viewedVideoData = ApiResponse.loading(Strings.loading);
+      notifyListeners();
+    }
     try {
-      final token = SessionManager.getToken() ?? '';
+      final String token = SessionManager.getToken() ?? '';
       final response = await videoService.getMyViewedVideos(token: token);
-      final data = response[Keys.data];
-      if (data != null && data is List) {
-        _viewedVideoData = ApiResponse.completed(
-          data
-              .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
-              .toList(),
-        );
-        initializeBookmarks(_viewedVideoData.data?.length ?? 0);
-      } else {
-        _viewedVideoData = ApiResponse.completed([]);
-      }
+      final List list = response[Keys.data] ?? [];
+      final List<VideosData> videos = list
+          .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _viewedVideoData = ApiResponse.completed(videos);
+      _filteredViewedVideos.clear();
+      _isSearching = false;
+      initializeBookmarks(videos);
     } catch (e) {
       _viewedVideoData = ApiResponse.error(e.toString());
     }
+
     notifyListeners();
     return _viewedVideoData;
   }
 
   void filterViewedVideosByTitle(String query) {
-    if (query.isEmpty) {
-      _filteredViewedVideos = [];
+    if (query.trim().isEmpty) {
+      _isSearching = false;
+      _filteredViewedVideos.clear();
     } else {
-      _filteredViewedVideos = _viewedVideoData.data!
+      _isSearching = true;
+      _filteredViewedVideos = (_viewedVideoData.data ?? [])
           .where(
             (video) => (video.videoTitle ?? '').toLowerCase().contains(
               query.toLowerCase(),
@@ -289,7 +308,10 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ApiResponse> addSavedVideos({required int videoId}) async {
+  Future<ApiResponse> addSavedVideos({
+    required int videoId,
+    required String status,
+  }) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
@@ -297,6 +319,7 @@ class VideoController extends ChangeNotifier {
       final response = await videoService.addSavedVideos(
         token: token,
         videoId: videoId,
+        status: status,
       );
       _apiResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
@@ -306,9 +329,13 @@ class VideoController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<VideosData>>> getMySavedVideos() async {
-    _savedVideoData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
+  Future<ApiResponse<List<VideosData>>> getMySavedVideos({
+    bool removeBookMark = true,
+  }) async {
+    if (removeBookMark) {
+      _savedVideoData = ApiResponse.loading(Strings.loading);
+      notifyListeners();
+    }
     try {
       final token = SessionManager.getToken() ?? '';
       final response = await videoService.getMySavedVideos(token: token);
@@ -319,7 +346,7 @@ class VideoController extends ChangeNotifier {
               .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
               .toList(),
         );
-        initializeBookmarks(_savedVideoData.data?.length ?? 0);
+        initializeBookmarks(_savedVideoData.data ?? []);
       } else {
         _savedVideoData = ApiResponse.completed([]);
       }
@@ -421,5 +448,27 @@ class VideoController extends ChangeNotifier {
     }
     notifyListeners();
     return _apiResponse;
+  }
+
+  Future<ApiResponse<VideosData>> getVideoById({required int videoId}) async {
+    _videoByIdData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await videoService.geVideoById(
+        token: token,
+        videoId: videoId,
+      );
+      final Map<String, dynamic> data =
+          response[Keys.data] as Map<String, dynamic>;
+      final video = VideosData.fromJson(data);
+      _videoByIdData = ApiResponse.completed(video);
+    } catch (e) {
+      _videoByIdData = ApiResponse.error(e.toString());
+    }
+
+    notifyListeners();
+    return _videoByIdData;
   }
 }

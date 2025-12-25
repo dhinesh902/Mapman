@@ -53,6 +53,10 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse get apiResponse => _apiResponse;
 
+  ApiResponse _deleteShopResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get deleteShopResponse => _deleteShopResponse;
+
   ApiResponse<ProfileData> _profileData = ApiResponse.initial(
     Strings.noDataFound,
   );
@@ -156,6 +160,23 @@ class ProfileController extends ChangeNotifier {
     }
     notifyListeners();
     return _apiResponse;
+  }
+
+  Future<ApiResponse> deleteShop({required int shopId}) async {
+    _deleteShopResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.deleteShop(
+        token: token,
+        shopId: shopId,
+      );
+      _deleteShopResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _deleteShopResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _deleteShopResponse;
   }
 
   Future<ApiResponse<ShopDetailData?>> getShopDetail() async {

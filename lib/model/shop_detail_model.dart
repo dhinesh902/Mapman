@@ -12,6 +12,7 @@ class ShopDetailData {
   String? description;
   String? registerNumber;
   String? shopNumber;
+  String? whatsappNumber;
   String? openTime;
   String? closeTime;
   String? image1;
@@ -35,6 +36,7 @@ class ShopDetailData {
     this.description,
     this.registerNumber,
     this.shopNumber,
+    this.whatsappNumber,
     this.openTime,
     this.closeTime,
     this.image1,
@@ -58,6 +60,7 @@ class ShopDetailData {
     address = json['address'];
     description = json['description'];
     registerNumber = json['registerNumber'];
+    whatsappNumber = json['whatsappNumber'];
     shopNumber = json['shopNumber'];
     openTime = json['openTime'];
     closeTime = json['closeTime'];

@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/main.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -33,6 +34,7 @@ class AppRouter {
 
   static final router = GoRouter(
     observers: [observer],
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     routes: [
       GoRoute(

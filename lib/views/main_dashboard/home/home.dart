@@ -33,6 +33,7 @@ class _HomeState extends State<Home> {
     // TODO: implement initState
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      homeController.getNotificationCount();
       getHome();
       context.read<ProfileController>().getShopDetail();
     });
@@ -79,7 +80,7 @@ class _HomeState extends State<Home> {
             case Status.LOADING:
               return CustomLoadingIndicator();
             case Status.COMPLETED:
-              final categories = homeController.homeData.data?.category ?? [];
+              final categories = homeController.homeCategories;
               return Column(
                 children: [
                   HomeTopCard(
@@ -443,7 +444,54 @@ class HomeTopListTile extends StatelessWidget {
               onTap: () {
                 context.pushNamed(AppRoutes.notifications);
               },
-              child: SvgPicture.asset(AppIcons.notification),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 6),
+                    child: SvgPicture.asset(AppIcons.notification),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Builder(
+                        builder: (context) {
+                          switch (homeController.apiResponse.status) {
+                            case Status.INITIAL:
+                            case Status.LOADING:
+                              return HeaderTextBlack(
+                                title: '..',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              );
+                            case Status.COMPLETED:
+                              return BodyTextColors(
+                                title:
+                                    '${homeController.apiResponse.data ?? 0}',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                textAlign: TextAlign.center,
+                                color: AppColors.whiteText,
+                              );
+                            case Status.ERROR:
+                              return BodyTextColors(
+                                title: '0',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.whiteText,
+                              );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

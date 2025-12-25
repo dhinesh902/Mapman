@@ -14,6 +14,7 @@ import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -41,6 +42,33 @@ class _SavedVideosState extends State<SavedVideos> {
     final response = await videoController.getMySavedVideos();
     if (!mounted) return;
     if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  Future<void> addSavedVideos({
+    required int videoId,
+    required String status,
+  }) async {
+    CustomDialogues.showLoadingDialogue(context);
+    final response = await videoController.addSavedVideos(
+      videoId: videoId,
+      status: status,
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      CustomToast.show(context, title: 'Video unsaved successfully ');
+      await context.read<VideoController>().getMySavedVideos(
+        removeBookMark: false,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } else {
+      Navigator.pop(context);
       ExceptionHandler.handleUiException(
         context: context,
         status: response.status,
@@ -114,9 +142,13 @@ class _SavedVideosState extends State<SavedVideos> {
                               itemBuilder: (context, index) {
                                 return SavedVideoCard(
                                   videosData: savedVideos[index],
-                                  isBookMark:
-                                      savedVideos[index].savedAlready == true,
-                                  bookMarkOnTap: () {},
+                                  isBookMark: true,
+                                  bookMarkOnTap: () async {
+                                    await addSavedVideos(
+                                      videoId: savedVideos[index].id ?? 0,
+                                      status: 'inactive',
+                                    );
+                                  },
                                 );
                               },
                             );

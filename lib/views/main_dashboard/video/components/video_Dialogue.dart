@@ -211,7 +211,7 @@ class VideoDialogues {
 
   Future<dynamic> showViewedVideoDialogue(
     BuildContext context, {
-    required bool turnOn,
+    required int turnOn,
   }) async {
     if (Platform.isIOS) {
       return showCupertinoDialog(
@@ -228,7 +228,7 @@ class VideoDialogues {
                 ),
                 const SizedBox(height: 10),
                 HeaderTextBlack(
-                  title: turnOn
+                  title: turnOn == 1
                       ? 'Turn on view history'
                       : 'Turn off view history',
                   fontSize: 16,
@@ -240,7 +240,7 @@ class VideoDialogues {
               padding: const EdgeInsets.only(top: 10),
               child: Center(
                 child: BodyTextHint(
-                  title: turnOn
+                  title: turnOn == 1
                       ? 'Are you sure you want to turn on view history?'
                       : 'Are you sure you want to turn off view history?',
                   fontSize: 12,
@@ -262,15 +262,15 @@ class VideoDialogues {
               CupertinoDialogAction(
                 isDefaultAction: true,
                 onPressed: () async {
-                  await SessionManager.setVideoVideo(isVideoVideo: turnOn);
+                  await SessionManager.setViewedVideoStatus(status: turnOn);
                   if (!context.mounted) return;
                   Navigator.pop(context);
                 },
                 child: BodyTextColors(
-                  title: turnOn ? 'Turn On' : 'Turn Off',
+                  title: turnOn == 1 ? 'Turn On' : 'Turn Off',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: turnOn
+                  color: turnOn == 1
                       ? GenericColors.darkGreen
                       : GenericColors.darkRed,
                 ),
@@ -309,7 +309,7 @@ class VideoDialogues {
                   ),
                   SizedBox(height: 20),
                   HeaderTextBlack(
-                    title: turnOn
+                    title: turnOn == 1
                         ? 'Turn on view history'
                         : 'Turn off view history',
                     fontSize: 16,
@@ -318,7 +318,7 @@ class VideoDialogues {
                   ),
                   SizedBox(height: 10),
                   BodyTextHint(
-                    title: turnOn
+                    title: turnOn == 1
                         ? 'Are you sure you want to turn on view history?'
                         : 'Are you sure you want to turn off view history?',
                     fontSize: 14,
@@ -339,14 +339,14 @@ class VideoDialogues {
                       SizedBox(width: 15),
                       Expanded(
                         child: CustomFullButton(
-                          title: turnOn ? 'Turn On' : 'Turn Off',
+                          title: turnOn == 1 ? 'Turn On' : 'Turn Off',
                           isDialogue: true,
-                          color: turnOn
+                          color: turnOn == 1
                               ? GenericColors.darkGreen
                               : GenericColors.darkRed,
                           onTap: () async {
-                            await SessionManager.setVideoVideo(
-                              isVideoVideo: turnOn,
+                            await SessionManager.setViewedVideoStatus(
+                              status: turnOn,
                             );
                             if (!context.mounted) return;
                             Navigator.pop(context);

@@ -147,6 +147,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                         address: placeController.loadingAddress
                             ? 'Loading...'
                             : placeController.currentAddress,
+                        latLng: _currentLatLng ?? initial,
                       ),
                     ),
                   ],
@@ -278,9 +279,14 @@ class LocationPickContainerPrediction extends StatelessWidget {
 }
 
 class LocationPickContainerDrag extends StatelessWidget {
-  const LocationPickContainerDrag({super.key, required this.address});
+  const LocationPickContainerDrag({
+    super.key,
+    required this.address,
+    required this.latLng,
+  });
 
   final String address;
+  final LatLng latLng;
 
   @override
   Widget build(BuildContext context) {
@@ -337,8 +343,10 @@ class LocationPickContainerDrag extends StatelessWidget {
                 CustomFullButton(
                   title: 'Confirm & Proceed',
                   onTap: () async {
-                    // context.read<PlaceController>().setConfirmedPrediction =
-                    //     prediction;
+                    context.read<PlaceController>().setShopAddress = {
+                      'address': address,
+                      'latLong': latLng,
+                    };
                     await CustomDialogues.showSuccessDialog(
                       context,
                       title: 'SuccessFully Updated!',

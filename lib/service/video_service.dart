@@ -145,12 +145,13 @@ class VideoService extends ApiRoutes {
   Future<Map<String, dynamic>> addSavedVideos({
     required String token,
     required int videoId,
+    required String status,
   }) async {
     try {
       final response = await dio.post(
         ApiRoutes.saveOthersVideos,
         options: headerWithToken(token),
-        data: {'videoId': videoId},
+        data: {'videoId': videoId, 'status': status},
       );
       return response.data;
     } on DioException catch (e) {
@@ -221,6 +222,22 @@ class VideoService extends ApiRoutes {
       final response = await dio.get(
         ApiRoutes.fetchPoints,
         options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> geVideoById({
+    required String token,
+    required int videoId,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.fetchVideoById,
+        options: headerWithToken(token),
+        queryParameters: {'videoId': videoId},
       );
       return response.data;
     } on DioException catch (e) {

@@ -58,6 +58,7 @@ class AppIcons {
   static const String mapP = 'assets/images/png/map_location.png';
   static const String addIconP = 'assets/images/png/add_icon.png';
   static const String locationPinP = 'assets/images/png/location_pin.png';
+  static const String addCategoryP = 'assets/images/png/add_category.png';
   static const String locationLastPinP =
       'assets/images/png/location_last_pin.png';
   static const String chatsP = 'assets/images/png/chats.png';

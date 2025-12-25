@@ -56,6 +56,15 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isShowAddNewCategory = false;
+
+  bool get isShowAddNewCategory => _isShowAddNewCategory;
+
+  set setIsShowAddNewCategory(bool value) {
+    _isShowAddNewCategory = value;
+    notifyListeners();
+  }
+
   /// Notification
   NotificationPreferenceData _initialPreferenceData =
       NotificationPreferenceData();
@@ -83,15 +92,18 @@ class HomeController extends ChangeNotifier {
   }
 
   void updatePreferences({
-    bool? enableNotifications,
-    bool? savedVideo,
-    bool? newVideo,
-    bool? newShop,
+    int? enableNotifications,
+    int? savedVideo,
+    int? newVideo,
+    int? newShop,
   }) {
     _preferenceData.enableNotifications =
         enableNotifications ?? _preferenceData.enableNotifications;
+
     _preferenceData.savedVideo = savedVideo ?? _preferenceData.savedVideo;
+
     _preferenceData.newVideo = newVideo ?? _preferenceData.newVideo;
+
     _preferenceData.newShop = newShop ?? _preferenceData.newShop;
 
     notifyListeners();
@@ -119,6 +131,10 @@ class HomeController extends ChangeNotifier {
   List<String> _categories = [];
 
   List<String> get categories => _categories;
+
+  List<Category> _homeCategories = [];
+
+  List<Category> get homeCategories => _homeCategories;
 
   /// Add response
 
@@ -151,6 +167,13 @@ class HomeController extends ChangeNotifier {
   ApiResponse<NotificationPreferenceData> get notificationPreferenceData =>
       _notificationPreferenceData;
 
+  ApiResponse<List<NotificationsData>> _notificationsData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<List<NotificationsData>> get notificationsData =>
+      _notificationsData;
+
   Future<ApiResponse<HomeData>> getHome() async {
     _homeData = ApiResponse.loading(Strings.loading);
     notifyListeners();
@@ -161,8 +184,20 @@ class HomeController extends ChangeNotifier {
         HomeData.fromJson(response[Keys.data] as Map<String, dynamic>),
       );
       _categories = (_homeData.data?.category ?? [])
-          .where((item) => item.categoryName?.isNotEmpty ?? false)
+          .where(
+            (item) =>
+                (item.categoryName?.isNotEmpty ?? false) &&
+                item.categoryName!.toLowerCase() != 'others',
+          )
           .map((item) => item.categoryName!)
+          .toList();
+
+      _homeCategories = (_homeData.data?.category ?? [])
+          .where(
+            (item) =>
+                item.categoryType?.toLowerCase() == 'default' ||
+                item.categoryName?.toLowerCase() == 'others',
+          )
           .toList();
     } catch (e) {
       _homeData = ApiResponse.error(e.toString());
@@ -299,5 +334,58 @@ class HomeController extends ChangeNotifier {
     }
     notifyListeners();
     return _notificationPreferenceData;
+  }
+
+  Future<ApiResponse<List<NotificationsData>>> getNotifications() async {
+    _notificationsData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final String token = SessionManager.getToken() ?? '';
+      final response = await homeService.getNotifications(token: token);
+      final List list = response[Keys.data] as List;
+      final List<NotificationsData> notifications = list
+          .map((e) => NotificationsData.fromJson(e))
+          .toList();
+      _notificationsData = ApiResponse.completed(notifications);
+    } catch (e) {
+      _notificationsData = ApiResponse.error(e.toString());
+    }
+
+    notifyListeners();
+    return _notificationsData;
+  }
+
+  Future<ApiResponse> getNotificationCount() async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final String token = SessionManager.getToken() ?? '';
+      final response = await homeService.getNotificationCount(token: token);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  /// Add Shop Category
+  Future<ApiResponse> addNewCategory({required String categoryName}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.addNewCategory(
+        token: token,
+        categoryName: categoryName,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      await getHome();
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
   }
 }

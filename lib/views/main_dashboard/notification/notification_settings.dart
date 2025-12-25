@@ -40,13 +40,14 @@ class _NotificationSettingsState extends State<NotificationSettings> {
     final response = await homeController.addNotificationPreference(
       preference: homeController.preferenceData,
     );
+    if (!mounted) return;
     if (response.status == Status.COMPLETED) {
-      if (!mounted) return;
       await CustomDialogues.showSuccessDialog(
         context,
         title: 'SuccessFully Updated!',
         body: 'Your notification settings updated successfully!',
       );
+      await getNotificationPreference();
     } else {
       if (!mounted) return;
       ExceptionHandler.handleUiException(
@@ -157,54 +158,57 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                                       SettingListTile(
                                         title: 'Enable Notification',
                                         body:
-                                            'stay updated with real-time alerts',
+                                            'Stay updated with real-time alerts',
                                         isChecked:
                                             preferenceData
-                                                .enableNotifications ??
-                                            false,
+                                                .enableNotifications ==
+                                            1,
                                         onChanged: (value) {
                                           homeController.updatePreferences(
-                                            enableNotifications: value,
+                                            enableNotifications: value ? 1 : 0,
                                           );
                                         },
                                       ),
+
                                       Divider(color: AppColors.bgGrey),
+
                                       SettingListTile(
                                         title: 'Saved Video Alerts',
                                         body:
                                             'Stay updated with the latest alerts',
                                         isChecked:
-                                            preferenceData.savedVideo ??
-                                            false,
+                                            preferenceData.savedVideo == 1,
                                         onChanged: (value) {
                                           homeController.updatePreferences(
-                                            savedVideo: value,
+                                            savedVideo: value ? 1 : 0,
                                           );
                                         },
                                       ),
+
                                       Divider(color: AppColors.bgGrey),
+
                                       SettingListTile(
                                         title: 'Video Alerts',
                                         body:
                                             'Stay updated with the latest alerts',
-                                        isChecked:
-                                            preferenceData.newVideo ?? false,
+                                        isChecked: preferenceData.newVideo == 1,
                                         onChanged: (value) {
                                           homeController.updatePreferences(
-                                            newVideo: value,
+                                            newVideo: value ? 1 : 0,
                                           );
                                         },
                                       ),
+
                                       Divider(color: AppColors.bgGrey),
+
                                       SettingListTile(
-                                        title: 'New shop Alert',
+                                        title: 'New Shop Alert',
                                         body:
                                             'Stay updated with the latest shop alerts',
-                                        isChecked:
-                                            preferenceData.newShop ?? false,
+                                        isChecked: preferenceData.newShop == 1,
                                         onChanged: (value) {
                                           homeController.updatePreferences(
-                                            newShop: value,
+                                            newShop: value ? 1 : 0,
                                           );
                                         },
                                       ),
@@ -291,12 +295,12 @@ class SettingListTile extends StatelessWidget {
     required this.title,
     required this.body,
     required this.isChecked,
-    this.onChanged,
+    required this.onChanged,
   });
 
   final String title, body;
   final bool isChecked;
-  final Function(bool?)? onChanged;
+  final Function(bool) onChanged;
 
   @override
   Widget build(BuildContext context) {

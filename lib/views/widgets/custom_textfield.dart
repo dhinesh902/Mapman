@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
@@ -22,6 +23,7 @@ class CustomTextField extends StatelessWidget {
     this.maxLength,
     required this.inputAction,
     this.isReadOnly = false,
+    this.suffixWidget,
   });
 
   final TextEditingController controller;
@@ -37,6 +39,7 @@ class CustomTextField extends StatelessWidget {
   final int? maxLength;
   final TextInputAction inputAction;
   final bool isReadOnly;
+  final Widget? suffixWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +120,10 @@ class CustomTextField extends StatelessWidget {
                       weight: 700,
                       color: AppColors.darkText,
                     )
-                  : null,
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: suffixWidget,
+                    ),
             ),
             validator: validator,
           ),
@@ -225,6 +231,48 @@ class CustomSearchField extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class CategoryTextField extends StatelessWidget {
+  const CategoryTextField({
+    super.key,
+    required this.controller,
+    required this.validator,
+  });
+
+  final TextEditingController controller;
+  final FormFieldValidator validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      textCapitalization: TextCapitalization.sentences,
+      cursorColor: AppColors.primary,
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: 'Enter Your Category',
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.darkGrey,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.borderGrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.borderGrey),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed),
+        ),
+      ),
+      validator: validator,
     );
   }
 }

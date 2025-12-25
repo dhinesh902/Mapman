@@ -18,6 +18,8 @@ import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:provider/provider.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Flutter Local Notifications Plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -73,9 +75,23 @@ Future<void> initializeLocalNotifications() async {
     initializationSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) async {
       debugPrint("Notification tapped: ${response.payload}");
-      // Handle deep link or navigation here
+      _handleNotificationNavigation(response.payload);
     },
+    onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
   );
+}
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) {
+  _handleNotificationNavigation(response.payload);
+}
+
+void _handleNotificationNavigation(String? payload) {
+  if (payload == null) return;
+
+  if (payload == 'notifications') {
+    AppRouter.router.go('/main_dashboard/notifications');
+  }
 }
 
 /// Background message handler
