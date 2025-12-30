@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
@@ -63,7 +67,10 @@ class _ShopDetailState extends State<ShopDetail> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(
-          title: 'Teddy Shop',
+          title:
+              videoController.singleShopDetailData.data?.shop?.shopName
+                  ?.capitalize() ??
+              '......',
           action: ShopLocationButton(
             onTap: () async {
               await CustomLaunchers.openGoogleMaps(
@@ -130,13 +137,15 @@ class _ShopDetailState extends State<ShopDetail> {
                                       ?.shop ??
                                   Shop(),
                             )
-                          : ShopVideosList(
-                              shopVideos:
-                                  videoController
-                                      .singleShopDetailData
-                                      .data
-                                      ?.shopVideos ??
-                                  [],
+                          : Expanded(
+                              child: ShopVideosList(
+                                shopVideos:
+                                    videoController
+                                        .singleShopDetailData
+                                        .data
+                                        ?.shopVideos ??
+                                    [],
+                              ),
                             );
                     } else {
                       return Expanded(
@@ -303,40 +312,40 @@ class ShopVideosList extends StatelessWidget {
       shrinkWrap: true,
       children: [
         SizedBox(height: 15),
-        ListView.builder(
-          itemCount: shopVideos.length,
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.only(bottom: 10),
-          itemBuilder: (context, index) {
-            return Container(
-              height: 174,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-              margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
-              child: Stack(
-                children: [
-                  InkWell(
-                    onTap: () {},
-                    child: MyVideoContainer(
-                      videoUrl:
-                          ApiRoutes.baseUrl + (shopVideos[index].video ?? ''),
-                      views: '${shopVideos[index].views ?? 0}',
-                    ),
+        for (int index = 0; index < shopVideos.length; index++) ...[
+          Container(
+            height: 174,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
+            child: Stack(
+              children: [
+                InkWell(
+                  onTap: () {
+                    // context.pushNamed(
+                    //   AppRoutes.singleVideoScreen,
+                    //   extra: {
+                    //     Keys.videosData: shopVideos[index],
+                    //     Keys.isMyVideos: false,
+                    //   },
+                    // );
+                  },
+                  child: MyVideoContainer(
+                    videoUrl:
+                        ApiRoutes.baseUrl + (shopVideos[index].video ?? ''),
+                    views: '${shopVideos[index].views ?? 0}',
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: VideoTitleBlurContainer(
-                      videosData: shopVideos[index],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: VideoTitleBlurContainer(videosData: shopVideos[index]),
+                ),
+              ],
+            ),
+          ),
+        ],
         Container(
           height: 150,
           alignment: Alignment.centerRight,

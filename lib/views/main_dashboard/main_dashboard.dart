@@ -107,41 +107,8 @@ class _MainDashboardState extends State<MainDashboard> {
                 await showAddShopDetail(context);
               }
             },
-            child: Container(
-              height: 65,
-              width: 65,
-              padding: EdgeInsets.all(4),
-              margin: EdgeInsets.fromLTRB(3, 2, 3, 0),
-              decoration: BoxDecoration(
-                color: AppColors.scaffoldBackground,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0XFF04509B), Color(0XFF0ACFFF)],
-                ),
-                border: Border.all(
-                  color: AppColors.primaryBorder.withValues(alpha: .1),
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryBorder,
-                    spreadRadius: 1,
-                    blurRadius: 2,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Container(
-                width: double.maxFinite,
-                height: double.maxFinite,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.whiteText,
-                ),
-                child: Center(child: SvgPicture.asset(AppIcons.telegram)),
-              ),
-            ),
+
+            child: AnimatedGradientCircle(),
           ),
           bottomNavigationBar: Stack(
             alignment: Alignment.center,
@@ -263,3 +230,128 @@ class UploadFloatingActionButton extends StatelessWidget {
     );
   }
 }
+
+class AnimatedGradientCircle extends StatefulWidget {
+  const AnimatedGradientCircle({super.key});
+
+  @override
+  State<AnimatedGradientCircle> createState() => _AnimatedGradientCircleState();
+}
+
+class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) {
+        return Container(
+          height: 65,
+          width: 65,
+          padding: const EdgeInsets.all(4),
+          margin: const EdgeInsets.fromLTRB(3, 2, 3, 0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: SweepGradient(
+              startAngle: 0,
+              endAngle: 3.14 * 2,
+              transform: GradientRotation(_controller.value * 3.14 * 2),
+              colors: [
+                Color(0XFF04509B),
+                GenericColors.darkYellow.withValues(alpha: .7),
+                Color(0XFF0ACFFF),
+                Color(0XFF04509B),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryBorder.withOpacity(.4),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.whiteText,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(AppGifs.upload1, fit: BoxFit.cover),
+                Image.asset(AppGifs.upload2, fit: BoxFit.cover),
+                Center(child: SvgPicture.asset(AppIcons.telegram)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// child: Container(
+//   height: 65,
+//   width: 65,
+//   padding: EdgeInsets.all(4),
+//   margin: EdgeInsets.fromLTRB(3, 2, 3, 0),
+//   decoration: BoxDecoration(
+//     color: AppColors.scaffoldBackground,
+//     gradient: LinearGradient(
+//       begin: Alignment.topLeft,
+//       end: Alignment.bottomRight,
+//       colors: [
+//         Color(0XFF04509B),
+//         Color(0XFF0ACFFF),
+//         GenericColors.darkYellow,
+//       ],
+//     ),
+//     border: Border.all(
+//       color: AppColors.primaryBorder.withValues(alpha: .1),
+//     ),
+//     shape: BoxShape.circle,
+//     boxShadow: [
+//       BoxShadow(
+//         color: AppColors.primaryBorder,
+//         spreadRadius: 1,
+//         blurRadius: 2,
+//         offset: Offset(0, 4),
+//       ),
+//     ],
+//   ),
+//   child: Container(
+//     width: double.maxFinite,
+//     height: double.maxFinite,
+//     decoration: BoxDecoration(
+//       shape: BoxShape.circle,
+//       color: AppColors.whiteText,
+//     ),
+//     child: Stack(
+//       fit: StackFit.expand,
+//       children: [
+//         Image.asset(AppGifs.upload1),
+//         Center(child: SvgPicture.asset(AppIcons.telegram)),
+//         Image.asset(AppGifs.upload2),
+//       ],
+//     ),
+//   ),
+// ),

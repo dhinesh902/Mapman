@@ -8,6 +8,7 @@ class NotificationsData {
   String? msgDesc;
   String? msgStatus;
   String? readStatus;
+  String? openStatus;
   String? createdAt;
 
   NotificationsData({
@@ -20,6 +21,7 @@ class NotificationsData {
     this.msgDesc,
     this.msgStatus,
     this.readStatus,
+    this.openStatus,
     this.createdAt,
   });
 
@@ -33,6 +35,7 @@ class NotificationsData {
     msgDesc = json['msgDesc'];
     msgStatus = json['msgStatus'];
     readStatus = json['readStatus'];
+    openStatus = json['openStatus'];
     createdAt = json['createdAt'];
   }
 }

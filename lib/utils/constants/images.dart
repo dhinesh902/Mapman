@@ -144,3 +144,9 @@ class AppAnimations {
   static const String flexConfetti = 'assets/lottie/flex_confetti.json';
   static const String goldCoin = 'assets/lottie/gold_coin.json';
 }
+
+
+class AppGifs{
+  static const String upload1 = 'assets/gif/upload_1.gif';
+  static const String upload2 = 'assets/gif/upload_2.gif';
+}

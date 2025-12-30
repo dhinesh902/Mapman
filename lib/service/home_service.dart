@@ -69,6 +69,22 @@ class HomeService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> getNotificationOpenStatus({
+    required String token,
+    required int notificationId,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.notificationOpenStatus,
+        options: headerWithToken(token),
+        data: {"notificationId": notificationId},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getNotificationPreference({
     required String token,
   }) async {

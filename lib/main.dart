@@ -97,9 +97,9 @@ void _handleNotificationNavigation(String? payload) {
 /// Background message handler
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Background message: ${message.messageId}');
-  // await showLocalNotification(message);
+  await showLocalNotification(message);
 }
 
 Future<void> main() async {
@@ -127,9 +127,9 @@ Future<void> main() async {
   /// Background & foreground handlers
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((message) {
-    debugPrint('Foreground message: ${message.data}');
+    debugPrint('Foreground message: ${message.notification}');
     if (message.notification != null) {
-      // showLocalNotification(message);
+      showLocalNotification(message);
     }
   });
 
@@ -164,7 +164,7 @@ Future<void> main() async {
       String? initialToken = await firebaseMessaging.getToken();
       if (initialToken != null) {
         await sharedPrefs.setString(Keys.fcmToken, initialToken);
-        // await AuthController().addFcmToken();
+        await AuthController().addFcmToken();
       }
     } catch (e) {
       print("Error getting token: $e");

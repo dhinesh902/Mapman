@@ -163,9 +163,9 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                           ),
                                         ),
                                         Positioned(
-                                          bottom: 10,
+                                          bottom: 0,
                                           left: 0,
-                                          right: 10,
+                                          right: 0,
                                           child: VideoTitleBlurContainer(
                                             isViews: true,
                                             videosData: videos[index],

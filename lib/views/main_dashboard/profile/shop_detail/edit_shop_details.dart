@@ -127,9 +127,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
 
   Future<void> updateShopDetail() async {
     final shopImages = ShopDetailImages(
-      shopImage: shopDetailData.shopImage == null
-          ? shopImageNotifier.value
-          : null,
+      shopImage: shopImageNotifier.value,
       image1: profileController.shopImages[0] == null
           ? shopImagesNotifier.value['photo1']
           : null,

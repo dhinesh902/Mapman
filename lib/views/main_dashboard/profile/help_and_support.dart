@@ -28,17 +28,17 @@ class _HelpAndSupportState extends State<HelpAndSupport> {
               title: 'SMS',
               body: 'Connect With Our Support Team',
               onTap: () async {
-                await CustomLaunchers.sendSms(phoneNumber: '9791543756');
+                await CustomLaunchers.sendSms(phoneNumber: '9342376760');
               },
             ),
             SizedBox(height: 15),
             ProfileListTile(
               image: AppIcons.gmailP,
               title: 'Email',
-              body: 'Email us at support@mapman.com',
+              body: 'Email us at mapman6760@gmail.com',
               onTap: () async {
                 await CustomLaunchers.sendEmail(
-                  emailAddress: 'dhineshbabu9025@gmail.com',
+                  emailAddress: 'mapman6760@gmail.com',
                 );
               },
             ),
@@ -46,9 +46,9 @@ class _HelpAndSupportState extends State<HelpAndSupport> {
             ProfileListTile(
               image: AppIcons.callP,
               title: 'Call',
-              body: '+91 9791543756',
+              body: '+91 9342376760',
               onTap: () async {
-                await CustomLaunchers.makePhoneCall(phoneNumber: '9791543756');
+                await CustomLaunchers.makePhoneCall(phoneNumber: '9342376760');
               },
             ),
             SizedBox(height: 15),
@@ -57,7 +57,7 @@ class _HelpAndSupportState extends State<HelpAndSupport> {
               title: 'Whats app',
               body: 'Connect With Our Support Team',
               onTap: () async {
-                await CustomLaunchers.openWhatsApp(phoneNumber: '9025821501');
+                await CustomLaunchers.openWhatsApp(phoneNumber: '9342376760');
               },
             ),
             SizedBox(height: 15),

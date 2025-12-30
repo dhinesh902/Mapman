@@ -3,6 +3,10 @@
 <plist version="1.0">
 <dict>
 
+  <key>NSUserNotificationUsageDescription</key>
+  <string>This app uses notifications to keep you updated.</string>
+
+
    <key>LSApplicationQueriesSchemes</key>
    <array>
      <string>sms</string>

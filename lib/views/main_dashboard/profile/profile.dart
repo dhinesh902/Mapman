@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -25,13 +26,16 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  late HomeController homeController;
   late ProfileController profileController;
 
   @override
   void initState() {
     // TODO: implement initState
     profileController = context.read<ProfileController>();
+    homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      homeController.getNotificationCount();
       getProfile();
     });
     super.initState();
@@ -52,6 +56,7 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     profileController = context.watch<ProfileController>();
+    homeController = context.watch<HomeController>();
     final shopId = SessionManager.getShopId();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -67,7 +72,7 @@ class _ProfileState extends State<Profile> {
                   profileController.profileData.data ?? ProfileData();
               return Column(
                 children: [
-                  const ProfileTopCard(),
+                  ProfileTopCard(homeController: homeController),
                   const SizedBox(height: 20),
                   ProfileImage(profileData: profileData),
                   const SizedBox(height: 20),
@@ -156,7 +161,9 @@ class _ProfileState extends State<Profile> {
 }
 
 class ProfileTopCard extends StatelessWidget {
-  const ProfileTopCard({super.key});
+  const ProfileTopCard({super.key, required this.homeController});
+
+  final HomeController homeController;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +196,56 @@ class ProfileTopCard extends StatelessWidget {
             onTap: () {
               context.pushNamed(AppRoutes.notifications);
             },
-            child: SvgPicture.asset(AppIcons.notification),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 6),
+                  child: SvgPicture.asset(AppIcons.notification),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        switch (homeController
+                            .notificationCountResponse
+                            .status) {
+                          case Status.INITIAL:
+                          case Status.LOADING:
+                            return HeaderTextBlack(
+                              title: '..',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            );
+                          case Status.COMPLETED:
+                            return BodyTextColors(
+                              title:
+                                  '${homeController.notificationCountResponse.data ?? 0}',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              textAlign: TextAlign.center,
+                              color: AppColors.whiteText,
+                            );
+                          case Status.ERROR:
+                            return BodyTextColors(
+                              title: '0',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.whiteText,
+                            );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

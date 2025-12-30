@@ -50,7 +50,7 @@ class _MapsState extends State<Maps> {
 
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
-    zoom: 14.5,
+    zoom: 16,
   );
 
   @override
@@ -188,10 +188,24 @@ class _MapsState extends State<Maps> {
     }).toSet();
   }
 
+  Set<Circle> _getLocationCircle() {
+    if (currentLatLng == null) return {};
+
+    return {
+      Circle(
+        circleId: const CircleId('current_location_circle'),
+        center: currentLatLng!,
+        radius: 100,
+        fillColor: AppColors.primary.withOpacity(0.15),
+        strokeColor: AppColors.primary.withOpacity(0.5),
+        strokeWidth: 0,
+      ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
-
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Builder(
@@ -207,11 +221,14 @@ class _MapsState extends State<Maps> {
                   GoogleMap(
                     initialCameraPosition: _kGooglePlex,
                     markers: markers,
+                    circles: _getLocationCircle(),
                     myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
                     zoomControlsEnabled: false,
+                    buildingsEnabled: true,
+                    padding: EdgeInsets.only(top: 70),
                     onMapCreated: onMapCreated,
                   ),
-
                   Positioned(
                     top: 15,
                     left: 5,

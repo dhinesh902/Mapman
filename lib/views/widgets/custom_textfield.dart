@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
@@ -251,14 +250,19 @@ class CategoryTextField extends StatelessWidget {
       controller: controller,
       textCapitalization: TextCapitalization.sentences,
       cursorColor: AppColors.primary,
+      style: AppTextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: AppColors.darkText,
+      ).textStyle,
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: 'Enter Your Category',
-        hintStyle: GoogleFonts.poppins(
-          fontSize: 14,
+        hintStyle: AppTextStyle(
+          fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.darkGrey,
-        ),
+          color: Color(0Xff1f1f1f1f),
+        ).textStyle,
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey),
         ),

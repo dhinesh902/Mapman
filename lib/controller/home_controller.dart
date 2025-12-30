@@ -97,14 +97,21 @@ class HomeController extends ChangeNotifier {
     int? newVideo,
     int? newShop,
   }) {
-    _preferenceData.enableNotifications =
-        enableNotifications ?? _preferenceData.enableNotifications;
+    if (enableNotifications != null) {
+      _preferenceData.enableNotifications = enableNotifications;
+    }
 
-    _preferenceData.savedVideo = savedVideo ?? _preferenceData.savedVideo;
+    if (savedVideo != null) {
+      _preferenceData.savedVideo = savedVideo;
+    }
 
-    _preferenceData.newVideo = newVideo ?? _preferenceData.newVideo;
+    if (newVideo != null) {
+      _preferenceData.newVideo = newVideo;
+    }
 
-    _preferenceData.newShop = newShop ?? _preferenceData.newShop;
+    if (newShop != null) {
+      _preferenceData.newShop = newShop;
+    }
 
     notifyListeners();
   }
@@ -141,6 +148,18 @@ class HomeController extends ChangeNotifier {
   ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
 
   ApiResponse get apiResponse => _apiResponse;
+
+  ApiResponse _notificationCountResponse = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse get notificationCountResponse => _notificationCountResponse;
+
+  ApiResponse _notificationStatusResponse = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse get notificationStatusResponse => _notificationStatusResponse;
 
   /// Home data
   ApiResponse<HomeData> _homeData = ApiResponse.initial(Strings.noDataFound);
@@ -315,6 +334,25 @@ class HomeController extends ChangeNotifier {
     return _apiResponse;
   }
 
+  Future<ApiResponse> getNotificationOpenStatus({
+    required int notificationId,
+  }) async {
+    _notificationStatusResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.getNotificationOpenStatus(
+        token: token,
+        notificationId: notificationId,
+      );
+      _notificationStatusResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _notificationStatusResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _notificationStatusResponse;
+  }
+
   Future<ApiResponse<NotificationPreferenceData>>
   getNotificationPreference() async {
     _notificationPreferenceData = ApiResponse.loading(Strings.loading);
@@ -356,18 +394,18 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<ApiResponse> getNotificationCount() async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
+    _notificationCountResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final String token = SessionManager.getToken() ?? '';
       final response = await homeService.getNotificationCount(token: token);
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      _notificationCountResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      _notificationCountResponse = ApiResponse.error(e.toString());
     }
 
     notifyListeners();
-    return _apiResponse;
+    return _notificationCountResponse;
   }
 
   /// Add Shop Category

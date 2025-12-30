@@ -98,14 +98,15 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                     GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: LatLng(initial.latitude, initial.longitude),
-                        zoom: 15,
+                        zoom: 18,
                         tilt: 65,
                         bearing: 30,
                       ),
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
                       buildingsEnabled: true,
-                      compassEnabled: false,
+                      tiltGesturesEnabled: true,
+                      trafficEnabled: true,
                       onMapCreated: (c) {
                         _mapController = c;
                       },
@@ -209,7 +210,9 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
     _currentLatLng = latLng;
 
     await _mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(CameraPosition(target: latLng, zoom: 16)),
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: latLng, zoom: 18, tilt: 65, bearing: 30),
+      ),
     );
 
     _fetchAddressOnce(latLng);

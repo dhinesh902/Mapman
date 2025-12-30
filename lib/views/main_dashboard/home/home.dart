@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,6 +18,7 @@ import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
@@ -31,6 +34,7 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     // TODO: implement initState
+    requestNotificationPermission();
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       homeController.getNotificationCount();
@@ -65,6 +69,27 @@ class _HomeState extends State<Home> {
         message: response.message,
       );
     }
+  }
+
+  Future<bool> requestNotificationPermission() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      final status = await Permission.notification.status;
+      if (status.isGranted) {
+        return true;
+      }
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+        return false;
+      }
+      final result = await Permission.notification.request();
+
+      if (result.isPermanentlyDenied) {
+        await openAppSettings();
+        return false;
+      }
+      return result.isGranted;
+    }
+    return false;
   }
 
   @override
@@ -461,7 +486,9 @@ class HomeTopListTile extends StatelessWidget {
                       ),
                       child: Builder(
                         builder: (context) {
-                          switch (homeController.apiResponse.status) {
+                          switch (homeController
+                              .notificationCountResponse
+                              .status) {
                             case Status.INITIAL:
                             case Status.LOADING:
                               return HeaderTextBlack(
@@ -472,7 +499,7 @@ class HomeTopListTile extends StatelessWidget {
                             case Status.COMPLETED:
                               return BodyTextColors(
                                 title:
-                                    '${homeController.apiResponse.data ?? 0}',
+                                    '${homeController.notificationCountResponse.data ?? 0}',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                                 textAlign: TextAlign.center,

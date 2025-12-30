@@ -92,6 +92,10 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse get response => _apiResponse;
 
+  ApiResponse _coinResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get coinResponse => _coinResponse;
+
   /// My Videos
   ApiResponse<List<VideosData>> _myVideosData = ApiResponse.initial(
     Strings.noDataFound,
@@ -437,17 +441,17 @@ class VideoController extends ChangeNotifier {
   }
 
   Future<ApiResponse> getVideoPoints() async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
+    _coinResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
       final response = await videoService.getVideoPoints(token: token);
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      _coinResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      _coinResponse = ApiResponse.error(e.toString());
     }
     notifyListeners();
-    return _apiResponse;
+    return _coinResponse;
   }
 
   Future<ApiResponse<VideosData>> getVideoById({required int videoId}) async {

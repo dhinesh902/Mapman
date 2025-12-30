@@ -57,6 +57,12 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse get deleteShopResponse => _deleteShopResponse;
 
+  ApiResponse _deleteShopImageResponse = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse get deleteShopImageResponse => _deleteShopImageResponse;
+
   ApiResponse<ProfileData> _profileData = ApiResponse.initial(
     Strings.noDataFound,
   );
@@ -145,7 +151,7 @@ class ProfileController extends ChangeNotifier {
     required int shopId,
     required String input,
   }) async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
+    _deleteShopImageResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
@@ -154,12 +160,12 @@ class ProfileController extends ChangeNotifier {
         shopId: shopId,
         input: input,
       );
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      _deleteShopImageResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      _deleteShopImageResponse = ApiResponse.error(e.toString());
     }
     notifyListeners();
-    return _apiResponse;
+    return _deleteShopImageResponse;
   }
 
   Future<ApiResponse> deleteShop({required int shopId}) async {

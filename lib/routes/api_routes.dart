@@ -56,6 +56,7 @@ abstract class ApiRoutes {
   static const String fetchNotifications = '/shop/fetchNotifications';
   static const String notificationCount = '/shop/notificationCount';
   static const String notificationPreference = '/shop/notificationPreference';
+  static const String notificationOpenStatus = '/shop/notificationOpenStatus';
   static const String fetchNotificationPreference =
       '/shop/fetchNotificationPreference';
 }

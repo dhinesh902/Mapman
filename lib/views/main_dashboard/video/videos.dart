@@ -163,9 +163,9 @@ class _VideosState extends State<Videos> {
                                 SizedBox(width: 5),
                                 Builder(
                                   builder: (context) {
-                                    if (videoController.response.status ==
+                                    if (videoController.coinResponse.status ==
                                             Status.INITIAL ||
-                                        videoController.response.status ==
+                                        videoController.coinResponse.status ==
                                             Status.LOADING) {
                                       return HeaderTextBlack(
                                         title: '...',
@@ -175,7 +175,7 @@ class _VideosState extends State<Videos> {
                                     }
                                     return HeaderTextBlack(
                                       title:
-                                          '${videoController.response.data ?? 0}',
+                                          '${videoController.coinResponse.data ?? 0}',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w300,
                                     );
@@ -325,6 +325,7 @@ class _VideosState extends State<Videos> {
                 },
               ),
             ),
+            SizedBox(height: 60,)
           ],
 
           /// MY VIDEOS
