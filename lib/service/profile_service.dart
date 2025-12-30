@@ -65,6 +65,7 @@ class ProfileService extends ApiRoutes {
         'closeTime': shopDetail.closeTime,
         'address': shopDetail.address,
         'registerNumber': shopDetail.registerNumber,
+        'whatsappNumber': shopDetail.whatsappNumber,
         'shopNumber': shopDetail.shopNumber,
       };
       if (shopImages.shopImage != null) {

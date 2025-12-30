@@ -157,6 +157,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
       homeController.setSelectedCategory = null;
+      homeController.setIsShowAddNewCategory = false;
       CustomToast.show(context, title: 'Your category added successfully');
     } else {
       ExceptionHandler.handleUiException(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_autocomplete/google_places_autocomplete.dart';
@@ -43,7 +44,6 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   @override
   void initState() {
     super.initState();
-
     placeController = context.read<PlaceController>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -99,11 +99,19 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       initialCameraPosition: CameraPosition(
                         target: LatLng(initial.latitude, initial.longitude),
                         zoom: 15,
+                        tilt: 65,
+                        bearing: 30,
                       ),
                       myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
-                      onMapCreated: (c) => _mapController = c,
-                      padding: EdgeInsets.only(top: 50),
+                      myLocationButtonEnabled: false,
+                      buildingsEnabled: true,
+                      compassEnabled: false,
+                      onMapCreated: (c) {
+                        _mapController = c;
+                      },
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).size.height * .55,
+                      ),
                       onCameraMove: (position) {
                         if (placeController.placeDetails != null) {
                           placeController.resetAddress();
@@ -116,7 +124,10 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 
                     /// LOTTIE ANIMATION
                     IgnorePointer(
-                      child: Lottie.asset(AppAnimations.location, height: 160),
+                      child: Lottie.asset(
+                        AppAnimations.locationPin,
+                        height: 80,
+                      ),
                     ),
 
                     /// SEARCH BAR
@@ -143,11 +154,39 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       bottom: 15,
                       left: 0,
                       right: 0,
-                      child: LocationPickContainerDrag(
-                        address: placeController.loadingAddress
-                            ? 'Loading...'
-                            : placeController.currentAddress,
-                        latLng: _currentLatLng ?? initial,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Center(
+                            child: ElevatedButton.icon(
+                              onPressed: _goToMyCurrentLocation,
+                              icon: const Icon(Icons.my_location),
+                              label: const HeaderTextBlack(
+                                title: "Current Location",
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                elevation: 4,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          LocationPickContainerDrag(
+                            address: placeController.loadingAddress
+                                ? 'Loading...'
+                                : placeController.currentAddress,
+                            latLng: _currentLatLng ?? initial,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -174,6 +213,43 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
     );
 
     _fetchAddressOnce(latLng);
+  }
+
+  Future<void> _goToMyCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('Location services are disabled.');
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        debugPrint('Location permission denied');
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('Location permission permanently denied');
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    _mapController?.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(position.latitude, position.longitude),
+          zoom: 16,
+          tilt: 0,
+          bearing: 0,
+        ),
+      ),
+    );
   }
 
   void _handleCameraIdle() {

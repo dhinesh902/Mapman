@@ -107,6 +107,7 @@ class _LoginState extends State<Login> {
                                 childAspectRatio: 1,
                                 mainAxisExtent: 135,
                               ),
+                          physics: NeverScrollableScrollPhysics(),
                           itemCount: authController.loginImages.length,
                           itemBuilder: (_, index) {
                             return ClipRRect(
@@ -183,7 +184,8 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             CustomOutlineButtonWithImage(
               title: 'Continue with Google',
               icon: AppIcons.google,
-              onTap: () {},
+              onTap: () {
+              },
             ),
             SizedBox(height: 15),
             Row(

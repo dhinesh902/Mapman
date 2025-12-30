@@ -168,6 +168,13 @@ class ShopDetailContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> images = [
+      shop.image1,
+      shop.image2,
+      shop.image3,
+      shop.image4,
+    ].where((e) => e != null && e.trim().isNotEmpty).cast<String>().toList();
+
     return Column(
       children: [
         Container(
@@ -263,15 +270,7 @@ class ShopDetailContainer extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 35),
-              ImageSliderWithArrows(
-                images: [
-                  shop.image1,
-                  shop.image2,
-                  shop.image3,
-                  shop.image4,
-                ].whereType<String>().toList(),
-              ),
-
+              if (images.isNotEmpty) ImageSliderWithArrows(images: images),
               SizedBox(height: 15),
               CustomTextFieldContainer(
                 title: 'Opening- Closing Time',

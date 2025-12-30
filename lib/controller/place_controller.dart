@@ -41,7 +41,7 @@ class PlaceController extends ChangeNotifier {
 
   PlaceController() {
     _placesService = GooglePlacesAutocomplete(
-      apiKey: "",
+      apiKey: "AIzaSyD5DDgkqYerJpBqwE2PVU-WVRQAs8ujfbw",
       debounceTime: 300,
       countries: ['in'],
       language: 'en',
