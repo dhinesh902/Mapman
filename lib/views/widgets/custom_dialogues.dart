@@ -107,7 +107,7 @@ class CustomDialogues {
                   }
                 },
                 child: BodyTextColors(
-                  title: "Logout",
+                  title: isDeleteAccount ? 'Delete' : "Logout",
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: GenericColors.darkRed,
@@ -171,7 +171,7 @@ class CustomDialogues {
                     SizedBox(width: 15),
                     Expanded(
                       child: CustomFullButton(
-                        title: 'Logout',
+                        title: isDeleteAccount ? 'Delete' : 'Logout',
                         isDialogue: true,
                         color: GenericColors.darkRed,
                         onTap: () async {
@@ -408,6 +408,145 @@ class CustomDialogues {
             ),
             insetPadding: const EdgeInsets.symmetric(horizontal: 20),
             child: _RatingDialogContent(),
+          );
+        },
+      );
+    }
+  }
+
+  Future<dynamic> showUpdateReviewDialogue(
+    BuildContext context, {
+    required VoidCallback onTap,
+  }) async {
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: Column(
+              children: [
+                Image.asset(
+                  AppIcons.updateChangeP,
+                  fit: BoxFit.cover,
+                  height: 80,
+                  width: 80,
+                ),
+                const SizedBox(height: 10),
+                HeaderTextBlack(
+                  title: 'Update Changes',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ],
+            ),
+            content: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Center(
+                child: BodyTextHint(
+                  title: 'Are you sure you want to save these changes?',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.pop();
+                },
+                child: BodyTextHint(
+                  title: 'Cancel',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () async {},
+                child: BodyTextColors(
+                  title: 'Save changes',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      return showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Container(
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBackground,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      AppIcons.updateChangeP,
+                      height: 130,
+                      width: 130,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  HeaderTextBlack(
+                    title: 'Update Changes',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  BodyTextHint(
+                    title: 'Are you sure you want to save these changes?',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomOutlineButton(
+                          title: 'Not Now',
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.pop();
+                          },
+                        ),
+                      ),
+                      SizedBox(width: 15),
+                      Expanded(
+                        child: CustomFullButton(
+                          title: 'Save Changes',
+                          isDialogue: true,
+                          onTap: () async {
+                            Navigator.pop(context);
+                            onTap();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           );
         },
       );

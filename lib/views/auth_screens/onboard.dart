@@ -27,23 +27,23 @@ class _OnboardScreenState extends State<OnboardScreen> {
           children: [
             Image.asset(AppIcons.onboardP, height: 392, width: 249),
             BlurContainer(),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: HeaderTextBlack(
                 title: 'Boost Your Shop’s \nwith best & affordable \nway',
-                fontSize: 32,
+                fontSize: 30,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             GetStartedButton(
               onTap: () {
                 SessionManager.setString(key: Keys.isFirstTime, value: 'true');
                 context.go('/login');
               },
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             Center(
               child: BodyTextHint(
                 title: 'By Continuing you agree to Mapman',

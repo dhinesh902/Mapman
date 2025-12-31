@@ -150,6 +150,7 @@ class _HomeState extends State<Home> {
                             return GestureDetector(
                               onTap: () {
                                 homeController.setCurrentPage = 1;
+                                homeController.setIsShowAddNearBy = true;
                                 homeController.setSearchCategory =
                                     categories[index].categoryName
                                         .toString()
@@ -226,7 +227,23 @@ class _HomeState extends State<Home> {
                           height: MediaQuery.of(context).size.height * .18,
                         ),
                         BottomCarousalSlider(
-                          images: [""],
+                          images: [
+                            {
+                              'title': 'Near by Wine shop',
+                              'banner': AppIcons.beerBgP,
+                              'image': AppIcons.beerManP,
+                            },
+                            {
+                              'title': 'Near by Super market',
+                              'banner': AppIcons.groceryBgP,
+                              'image': AppIcons.groceryP,
+                            },
+                            {
+                              'title': 'Near by Hospital',
+                              'banner': AppIcons.doctorBgP,
+                              'image': AppIcons.doctorP,
+                            },
+                          ],
                           homeController: homeController,
                           height: 74,
                         ),
@@ -475,48 +492,49 @@ class HomeTopListTile extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8, bottom: 6),
                     child: SvgPicture.asset(AppIcons.notification),
                   ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Builder(
-                        builder: (context) {
-                          switch (homeController
-                              .notificationCountResponse
-                              .status) {
-                            case Status.INITIAL:
-                            case Status.LOADING:
-                              return HeaderTextBlack(
-                                title: '..',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              );
-                            case Status.COMPLETED:
-                              return BodyTextColors(
-                                title:
-                                    '${homeController.notificationCountResponse.data ?? 0}',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                textAlign: TextAlign.center,
-                                color: AppColors.whiteText,
-                              );
-                            case Status.ERROR:
-                              return BodyTextColors(
-                                title: '0',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.whiteText,
-                              );
-                          }
-                        },
+                  if (homeController.notificationCountResponse.data != 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Builder(
+                          builder: (context) {
+                            switch (homeController
+                                .notificationCountResponse
+                                .status) {
+                              case Status.INITIAL:
+                              case Status.LOADING:
+                                return HeaderTextBlack(
+                                  title: '..',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                );
+                              case Status.COMPLETED:
+                                return BodyTextColors(
+                                  title:
+                                      '${homeController.notificationCountResponse.data ?? 0}',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  textAlign: TextAlign.center,
+                                  color: AppColors.whiteText,
+                                );
+                              case Status.ERROR:
+                                return BodyTextColors(
+                                  title: '0',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.whiteText,
+                                );
+                            }
+                          },
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -558,7 +576,7 @@ class BottomCarousalSlider extends StatelessWidget {
     required this.height,
   });
 
-  final List<String> images;
+  final List<Map<String, dynamic>> images;
   final HomeController homeController;
   final double height;
 
@@ -574,7 +592,7 @@ class BottomCarousalSlider extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
                   image: DecorationImage(
-                    image: AssetImage(AppIcons.beerBgP),
+                    image: AssetImage(images[index]['banner']),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -583,7 +601,7 @@ class BottomCarousalSlider extends StatelessWidget {
                 child: ListTile(
                   contentPadding: EdgeInsets.only(left: 15),
                   title: BodyTextColors(
-                    title: 'Near by Wine shop',
+                    title: images[index]['title'],
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.whiteText,
@@ -591,29 +609,45 @@ class BottomCarousalSlider extends StatelessWidget {
                   subtitle: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        height: 28,
-                        width: 88,
-                        margin: EdgeInsets.only(top: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.darkText,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Center(
-                          child: BodyTextColors(
-                            title: 'Explore Now',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                            color: AppColors.whiteText,
+                      InkWell(
+                        onTap: () {
+                          homeController.setCurrentPage = 1;
+                          homeController.setIsShowAddNearBy = true;
+
+                          const categories = ['bars', 'grocery', 'hospital'];
+
+                          if (index < categories.length) {
+                            homeController.setSearchCategory =
+                                categories[index];
+                          }
+                        },
+
+                        child: Container(
+                          height: 28,
+                          width: 88,
+                          margin: EdgeInsets.only(top: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.darkText,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Center(
+                            child: BodyTextColors(
+                              title: 'Explore Now',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                              color: AppColors.whiteText,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  trailing: Image.asset(
-                    AppIcons.beerManP,
-                    height: 73,
-                    width: 77,
+                  trailing: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Image.asset(
+                      images[index]['image'],
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );

@@ -142,3 +142,28 @@ class VideoPausePlayGradientCircleContainer extends StatelessWidget {
     );
   }
 }
+
+class EmptyDataContainer extends StatelessWidget {
+  const EmptyDataContainer({super.key, required this.children, this.top = 40});
+
+  final List<Widget> children;
+  final double top;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 330,
+      margin: EdgeInsets.fromLTRB(10, top, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBackground,
+        borderRadius: BorderRadiusGeometry.circular(10),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: children,
+        ),
+      ),
+    );
+  }
+}

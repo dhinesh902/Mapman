@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
-import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
-import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
@@ -232,7 +229,7 @@ class ShopDetailContainer extends StatelessWidget {
                       },
                       child: Center(
                         child: Image.asset(
-                          AppIcons.commentsP,
+                          AppIcons.whatsappP,
                           height: 30,
                           width: 30,
                         ),

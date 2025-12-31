@@ -83,6 +83,8 @@ class AppIcons {
   static const String playVideoP = 'assets/images/png/play_video.png';
   static const String savedVideoBg = 'assets/images/png/saved_video_bg.jpg';
   static const String savedVideoMan = 'assets/images/png/saved_video_man.png';
+  static const String notificationMan =
+      'assets/images/png/notification_man.png';
   static const String logoutImgP = 'assets/images/png/logout_img.png';
   static const String ratingStarP = 'assets/images/png/rating_star.png';
   static const String ratingHandP = 'assets/images/png/rating_hand.png';
@@ -101,6 +103,7 @@ class AppIcons {
 
   /// Login Images
   static const String login1P = 'assets/images/png/login/login_1.png';
+  static const String mapmanP = 'assets/images/png/login/mapman.png';
   static const String login2P = 'assets/images/png/login/login_2.png';
   static const String login3P = 'assets/images/png/login/login_3.png';
   static const String login4P = 'assets/images/png/login/login_4.png';
@@ -117,19 +120,24 @@ class AppIcons {
   static const String login15P = 'assets/images/png/login/login_15.jpg';
 
   ///   Home Categories
-  static const String theaterP = 'assets/images/png/home/theater.png';
-  static const String restaurantP = 'assets/images/png/home/restaurant.png';
-  static const String hospitalP = 'assets/images/png/home/hospital.png';
-  static const String barsP = 'assets/images/png/home/bars.png';
-  static const String shoppingP = 'assets/images/png/home/shopping.png';
-  static const String uniformP = 'assets/images/png/home/uniform.png';
-  static const String beachP = 'assets/images/png/home/beach.png';
-  static const String petrolP = 'assets/images/png/home/petrol.png';
-  static const String spaP = 'assets/images/png/home/spa.png';
-  static const String hotelP = 'assets/images/png/home/hotel.png';
   static const String beerManP = 'assets/images/png/home/beer_man.png';
   static const String beerBgP = 'assets/images/png/home/beer_bg.png';
-  static const String othersP = 'assets/images/png/home/others.png';
+  static const String doctorP = 'assets/images/png/home/doctor.png';
+  static const String doctorBgP = 'assets/images/png/home/doctor_bg.png';
+  static const String groceryP = 'assets/images/png/home/grocery.png';
+  static const String groceryBgP = 'assets/images/png/home/grocery_bg.jpg';
+
+  ///empty images
+  static const String allVideoEmptyP =
+      'assets/images/png/empty/allvideo_empty.png';
+  static const String notificationEmptyP =
+      'assets/images/png/empty/notification_empty.png';
+  static const String savedVideoEmptyP =
+      'assets/images/png/empty/saved_video_empty.png';
+  static const String updateChangeP =
+      'assets/images/png/empty/update_change.png';
+  static const String viewedVideoEmptyP =
+      'assets/images/png/empty/viewed_video_empty.png';
 }
 
 class AppAnimations {
@@ -145,8 +153,7 @@ class AppAnimations {
   static const String goldCoin = 'assets/lottie/gold_coin.json';
 }
 
-
-class AppGifs{
+class AppGifs {
   static const String upload1 = 'assets/gif/upload_1.gif';
   static const String upload2 = 'assets/gif/upload_2.gif';
 }

@@ -8,12 +8,12 @@ import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
-import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
+import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -139,7 +139,10 @@ class _VideosState extends State<Videos> {
                     Spacer(),
                     GestureDetector(
                       onTap: () {
-                        VideoDialogues().showRewardsDialogue(context);
+                        VideoDialogues().showRewardsDialogue(
+                          context,
+                          isEarnCoins: true,
+                        );
                       },
                       child: Container(
                         height: 44,
@@ -295,7 +298,7 @@ class _VideosState extends State<Videos> {
                     SizedBox(width: 10),
                     HeaderTextBlack(
                       title:
-                          '${videoController.selectedCategory} Videos (${videoController.allVideosData.data?.length})',
+                          '${videoController.selectedCategory} Videos ${videoController.allVideosData.data!.isNotEmpty ? '(${videoController.allVideosData.data?.length})' : ''}',
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -303,7 +306,7 @@ class _VideosState extends State<Videos> {
                 ),
               ),
             ],
-            Expanded(
+            Flexible(
               child: Builder(
                 builder: (context) {
                   switch (videoController.allVideosData.status) {
@@ -314,7 +317,23 @@ class _VideosState extends State<Videos> {
                     case Status.COMPLETED:
                       final allVideo = videoController.allVideosData.data ?? [];
                       if (allVideo.isEmpty) {
-                        return NoDataText(title: Strings.noDataFound);
+                        return EmptyDataContainer(
+                          top: 10,
+                          children: [
+                            Image.asset(
+                              AppIcons.allVideoEmptyP,
+                              height: 100,
+                              width: 100,
+                            ),
+                            SizedBox(height: 20),
+                            BodyTextColors(
+                              title: 'No videos uploaded yet',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.lightGreyHint,
+                            ),
+                          ],
+                        );
                       }
                       return ParticularShopVideoList(videosData: allVideo);
                     case Status.ERROR:
@@ -325,7 +344,7 @@ class _VideosState extends State<Videos> {
                 },
               ),
             ),
-            SizedBox(height: 60,)
+            SizedBox(height: 60),
           ],
 
           /// MY VIDEOS

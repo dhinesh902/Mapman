@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
+import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
-import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/constants/themes.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -112,7 +113,7 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                     ),
                   ),
                   SizedBox(height: 20),
-                  Expanded(
+                  Flexible(
                     child: Builder(
                       builder: (context) {
                         switch (profileController.analyticsData.status) {
@@ -128,7 +129,37 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                     ?.totalVideos ??
                                 [];
                             if (videos.isEmpty) {
-                              return NoDataText(title: Strings.noDataFound);
+                              return EmptyDataContainer(
+                                children: [
+                                  Image.asset(
+                                    AppIcons.videoAppP,
+                                    height: 130,
+                                    width: 130,
+                                  ),
+                                  SizedBox(height: 20),
+                                  BodyTextColors(
+                                    title: 'No uploads yet',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.lightGreyHint,
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      context.pushNamed(
+                                        AppRoutes.uploadVideo,
+                                        extra: VideosData(),
+                                      );
+                                    },
+                                    child: HeaderTextPrimary(
+                                      title: 'Start Uploading Videos',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      textDecoration: TextDecoration.underline,
+                                      decorationColor: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              );
                             } else {
                               return ListView.builder(
                                 itemCount: videos.length,

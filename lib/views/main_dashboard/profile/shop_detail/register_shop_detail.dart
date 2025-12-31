@@ -91,7 +91,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     shopNameController.dispose();
     descriptionController.dispose();
     phoneNumberController.dispose();
@@ -100,8 +99,10 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     openTimeController.dispose();
     closeTimeController.dispose();
     shopNumberController.dispose();
+    addNewCategoryController.dispose();
+    shopImageNotifier.dispose();
+    shopImageValidator.dispose();
     shopImagesNotifier.dispose();
-
     super.dispose();
   }
 
@@ -505,6 +506,17 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 inputType: TextInputType.number,
                 maxLength: 10,
                 inputAction: TextInputAction.next,
+                isSameRegisterNumber: true,
+                isActive: profileController.isActiveWhatsappNumber,
+                onChanged: (value) {
+                  profileController.setIsActiveWhatsappNumber = value!;
+                  if (value) {
+                    whatsAppNumberController.text =
+                        SessionManager.getMobile() ?? '';
+                  } else {
+                    shopNumberController.clear();
+                  }
+                },
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter whatsapp number";
@@ -600,7 +612,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               ),
               SizedBox(height: 15),
               CustomContainer(
-                title: 'Upload Photo (You can upto 2 photos)',
+                title: 'Upload Photo (You can upto 4 photos)',
                 child: Padding(
                   padding: const EdgeInsets.all(10),
                   child: ValueListenableBuilder<Map<String, File?>>(

@@ -2,6 +2,7 @@ import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -9,7 +10,7 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
-import 'package:mapman/utils/constants/strings.dart';
+import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
@@ -138,7 +139,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
 
             const SizedBox(height: 20),
 
-            Expanded(
+            Flexible(
               child: Builder(
                 builder: (context) {
                   switch (videoController.viewedVideoData.status) {
@@ -150,7 +151,42 @@ class _ViewedVideosState extends State<ViewedVideos> {
                       final viewedVideos = videoController.filteredViewedVideos;
 
                       if (viewedVideos.isEmpty) {
-                        return NoDataText(title: Strings.noDataFound);
+                        return EmptyDataContainer(
+                          top: 20,
+                          children: [
+                            Image.asset(
+                              AppIcons.viewedVideoEmptyP,
+                              height: 130,
+                              width: 130,
+                            ),
+                            SizedBox(height: 20),
+                            BodyTextColors(
+                              title: 'No viewed videos',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              textAlign: TextAlign.center,
+                              color: AppColors.lightGreyHint,
+                            ),
+                            SizedBox(height: 15),
+                            TextButton(
+                              onPressed: () {
+                                context.read<HomeController>().setCurrentPage =
+                                    2;
+                                context.goNamed(
+                                  AppRoutes.mainDashboard,
+                                  extra: false,
+                                );
+                              },
+                              child: HeaderTextPrimary(
+                                title: 'Start Watching Videos & Earn Rewards',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                textDecoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        );
                       }
 
                       return ListView.builder(

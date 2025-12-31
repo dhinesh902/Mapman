@@ -13,6 +13,7 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -106,8 +107,9 @@ class _NotificationsState extends State<Notifications> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 30),
-                  Expanded(
+                  TopPromoBanner(),
+                  SizedBox(height: 15),
+                  Flexible(
                     child: Builder(
                       builder: (context) {
                         switch (homeController.notificationsData.status) {
@@ -118,7 +120,24 @@ class _NotificationsState extends State<Notifications> {
                             final notifications =
                                 homeController.notificationsData.data ?? [];
                             if (notifications.isEmpty) {
-                              return NoDataText(title: 'No data found');
+                              return EmptyDataContainer(
+                                children: [
+                                  Image.asset(
+                                    AppIcons.notificationEmptyP,
+                                    height: 130,
+                                    width: 130,
+                                  ),
+                                  SizedBox(height: 20),
+                                  BodyTextColors(
+                                    title:
+                                        'You don’t have any notifications yet',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    textAlign: TextAlign.center,
+                                    color: AppColors.lightGreyHint,
+                                  ),
+                                ],
+                              );
                             }
                             return ListView.builder(
                               itemCount: notifications.length,
@@ -257,6 +276,85 @@ class NotificationCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class TopPromoBanner extends StatelessWidget {
+  const TopPromoBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 110,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          Positioned.fill(
+            child: Container(
+              height: 81,
+              margin: const EdgeInsets.fromLTRB(10, 20, 10, 0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                image: DecorationImage(
+                  image: AssetImage(AppIcons.savedVideoBg),
+                  fit: BoxFit.cover,
+                ),
+                color: AppColors.scaffoldBackground,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Positioned(
+            right: 20,
+            bottom: 0,
+            child: Image.asset(
+              AppIcons.notificationMan,
+              height: 120,
+              cacheWidth: 200,
+            ),
+          ),
+
+          Positioned(
+            left: 60,
+            top: 30,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const HeaderTextPrimary(
+                  title: 'Enroll shop owners',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(height: 15),
+                Container(
+                  height: 24,
+                  width: 91,
+                  decoration: BoxDecoration(
+                    color: AppColors.darkText,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Center(
+                    child: BodyTextColors(
+                      title: 'Register Now',
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -229,6 +229,18 @@ class VideoService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> addVideoPoints({required String token}) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.addPoints,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> geVideoById({
     required String token,
     required int videoId,

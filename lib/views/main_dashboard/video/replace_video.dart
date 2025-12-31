@@ -76,77 +76,95 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
-    return CustomSafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Replace Video Details'),
-        body: ListView(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 25),
-          children: [
-            GestureDetector(
-              onTap: () async {
-                await pickVideo();
-              },
-              child: Container(
-                height: 187,
-                decoration: BoxDecoration(
-                  color: GenericColors.placeHolderGrey,
-                  borderRadius: BorderRadiusGeometry.circular(10),
-                ),
-                child: Center(
-                  child: ValueListenableBuilder(
-                    valueListenable: videoNotifier,
-                    builder: (context, file, _) {
-                      if (file != null) {
-                        return UploadVideoFileContainer(
-                          key: ValueKey(file.path),
-                          videoFile: file,
-                        );
-                      } else {
-                        return UploadVideoUrlContainer(
-                          videoUrl:
-                              '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
-                        );
-                      }
-                    },
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (videoNotifier.value == null) {
+          Navigator.pop(context);
+          return;
+        }
+
+        await CustomDialogues().showUpdateReviewDialogue(
+          context,
+          onTap: () async {
+            await replaceMyVideo();
+          },
+        );
+      },
+      child: CustomSafeArea(
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundDark,
+          appBar: ActionBar(title: 'Replace Video Details'),
+          body: ListView(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 25),
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  await pickVideo();
+                },
+                child: Container(
+                  height: 187,
+                  decoration: BoxDecoration(
+                    color: GenericColors.placeHolderGrey,
+                    borderRadius: BorderRadiusGeometry.circular(10),
+                  ),
+                  child: Center(
+                    child: ValueListenableBuilder(
+                      valueListenable: videoNotifier,
+                      builder: (context, file, _) {
+                        if (file != null) {
+                          return UploadVideoFileContainer(
+                            key: ValueKey(file.path),
+                            videoFile: file,
+                          );
+                        } else {
+                          return UploadVideoUrlContainer(
+                            videoUrl:
+                                '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
+                          );
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 5),
-            if (videoController.isVideoFileSize) ...[
-              Align(
-                alignment: AlignmentGeometry.centerRight,
-                child: BodyTextColors(
-                  title: 'Note Video size Less than 10MB.',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: GenericColors.darkRed,
+              SizedBox(height: 5),
+              if (videoController.isVideoFileSize) ...[
+                Align(
+                  alignment: AlignmentGeometry.centerRight,
+                  child: BodyTextColors(
+                    title: 'Note Video size Less than 10MB.',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    color: GenericColors.darkRed,
+                  ),
                 ),
-              ),
+              ],
+              SizedBox(height: 40),
+              if (videoController.response.status == Status.LOADING) ...[
+                ButtonProgressBar(),
+              ] else ...[
+                CustomFullButton(
+                  title: 'Replace  Video',
+                  isDialogue: true,
+                  onTap: () async {
+                    if (videoNotifier.value == null) {
+                      CustomToast.show(
+                        context,
+                        title: 'Please select upload video',
+                        isError: true,
+                      );
+                      return;
+                    } else {
+                      await replaceMyVideo();
+                    }
+                  },
+                ),
+              ],
             ],
-            SizedBox(height: 40),
-            if (videoController.response.status == Status.LOADING) ...[
-              ButtonProgressBar(),
-            ] else ...[
-              CustomFullButton(
-                title: 'Replace  Video',
-                isDialogue: true,
-                onTap: () async {
-                  if (videoNotifier.value == null) {
-                    CustomToast.show(
-                      context,
-                      title: 'Please select upload video',
-                      isError: true,
-                    );
-                    return;
-                  } else {
-                    await replaceMyVideo();
-                  }
-                },
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

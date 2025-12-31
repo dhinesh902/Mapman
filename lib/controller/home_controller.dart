@@ -65,6 +65,15 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isShowAddNearBy = false;
+
+  bool get isShowAddNearBy => _isShowAddNearBy;
+
+  set setIsShowAddNearBy(bool value) {
+    _isShowAddNearBy = value;
+    notifyListeners();
+  }
+
   /// Notification
   NotificationPreferenceData _initialPreferenceData =
       NotificationPreferenceData();
@@ -160,6 +169,10 @@ class HomeController extends ChangeNotifier {
   );
 
   ApiResponse get notificationStatusResponse => _notificationStatusResponse;
+
+  ApiResponse _newCategoryResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get newCategoryResponse => _newCategoryResponse;
 
   /// Home data
   ApiResponse<HomeData> _homeData = ApiResponse.initial(Strings.noDataFound);
@@ -410,7 +423,7 @@ class HomeController extends ChangeNotifier {
 
   /// Add Shop Category
   Future<ApiResponse> addNewCategory({required String categoryName}) async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
+    _newCategoryResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
@@ -418,12 +431,12 @@ class HomeController extends ChangeNotifier {
         token: token,
         categoryName: categoryName,
       );
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      _newCategoryResponse = ApiResponse.completed(response[Keys.data]);
       await getHome();
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      _newCategoryResponse = ApiResponse.error(e.toString());
     }
     notifyListeners();
-    return _apiResponse;
+    return _newCategoryResponse;
   }
 }

@@ -108,6 +108,7 @@ flutter:
     - assets/images/png/
     - assets/images/png/home/
     - assets/images/png/login/
+    - assets/images/png/empty/
     - assets/lottie/
     - assets/map_style.json
 

@@ -202,48 +202,49 @@ class ProfileTopCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8, bottom: 6),
                   child: SvgPicture.asset(AppIcons.notification),
                 ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        switch (homeController
-                            .notificationCountResponse
-                            .status) {
-                          case Status.INITIAL:
-                          case Status.LOADING:
-                            return HeaderTextBlack(
-                              title: '..',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                            );
-                          case Status.COMPLETED:
-                            return BodyTextColors(
-                              title:
-                                  '${homeController.notificationCountResponse.data ?? 0}',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              textAlign: TextAlign.center,
-                              color: AppColors.whiteText,
-                            );
-                          case Status.ERROR:
-                            return BodyTextColors(
-                              title: '0',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.whiteText,
-                            );
-                        }
-                      },
+                if (homeController.notificationCountResponse.data != 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Builder(
+                        builder: (context) {
+                          switch (homeController
+                              .notificationCountResponse
+                              .status) {
+                            case Status.INITIAL:
+                            case Status.LOADING:
+                              return HeaderTextBlack(
+                                title: '..',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              );
+                            case Status.COMPLETED:
+                              return BodyTextColors(
+                                title:
+                                    '${homeController.notificationCountResponse.data ?? 0}',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                textAlign: TextAlign.center,
+                                color: AppColors.whiteText,
+                              );
+                            case Status.ERROR:
+                              return BodyTextColors(
+                                title: '0',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.whiteText,
+                              );
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

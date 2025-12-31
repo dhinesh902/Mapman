@@ -37,6 +37,9 @@ class _EditProfileState extends State<EditProfile> {
 
   final ValueNotifier<File?> profileImageNotifier = ValueNotifier(null);
 
+  String? initialName;
+  String? initialEmail;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -50,10 +53,10 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     userNameController.dispose();
     phoneNumberController.dispose();
     emailAddressController.dispose();
+    profileImageNotifier.dispose();
     super.dispose();
   }
 
@@ -62,6 +65,10 @@ class _EditProfileState extends State<EditProfile> {
     userNameController.text = profileData.userName ?? '';
     phoneNumberController.text = profileData.phone?.split('-').last ?? '';
     emailAddressController.text = profileData.email ?? '';
+
+    ///initial data
+    initialName = profileData.userName;
+    initialEmail = profileData.email;
   }
 
   Future<void> updateProfile() async {
@@ -105,140 +112,166 @@ class _EditProfileState extends State<EditProfile> {
     return emailRegex.hasMatch(email);
   }
 
+  bool hasChanges() {
+    if (userNameController.text.trim() != initialName) return true;
+    if (emailAddressController.text.trim() != initialEmail) return true;
+    if (profileImageNotifier.value != null) return true;
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     profileController = context.watch<ProfileController>();
-    return CustomSafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Edit Profile'),
-        body: Form(
-          key: formKey,
-          child: ListView(
-            padding: EdgeInsets.all(10),
-            children: [
-              Center(
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 125,
-                      width: 160,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      clipBehavior: Clip.hardEdge,
-                      child: ValueListenableBuilder(
-                        valueListenable: profileImageNotifier,
-                        builder: (context, file, _) {
-                          if (file != null) {
-                            return Image.file(
-                              File(file.path),
-                              fit: BoxFit.cover,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (!hasChanges()) {
+          Navigator.pop(context);
+          return;
+        }
+
+        await CustomDialogues().showUpdateReviewDialogue(
+          context,
+          onTap: () async {
+            await updateProfile();
+          },
+        );
+      },
+      child: CustomSafeArea(
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundDark,
+          appBar: ActionBar(title: 'Edit Profile'),
+          body: Form(
+            key: formKey,
+            child: ListView(
+              padding: EdgeInsets.all(10),
+              children: [
+                Center(
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 125,
+                        width: 160,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: ValueListenableBuilder(
+                          valueListenable: profileImageNotifier,
+                          builder: (context, file, _) {
+                            if (file != null) {
+                              return Image.file(
+                                File(file.path),
+                                fit: BoxFit.cover,
+                              );
+                            }
+                            return CustomNetworkImage(
+                              imageUrl: widget.profileData.profilePic ?? '',
                             );
-                          }
-                          return CustomNetworkImage(
-                            imageUrl: widget.profileData.profilePic ?? '',
-                          );
-                        },
+                          },
+                        ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: InkWell(
-                        onTap: () {
-                          CustomImagePicker.showImagePicker(
-                            context,
-                            cameraOnTap: () {
-                              _pickImage(ImageSource.camera);
-                              Navigator.pop(context);
-                            },
-                            galleryOnTap: () {
-                              _pickImage(ImageSource.gallery);
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
-                        child: Container(
-                          height: 20,
-                          width: 20,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Center(
-                            child: SvgPicture.asset(AppIcons.editOutline),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: () {
+                            CustomImagePicker.showImagePicker(
+                              context,
+                              cameraOnTap: () {
+                                _pickImage(ImageSource.camera);
+                                Navigator.pop(context);
+                              },
+                              galleryOnTap: () {
+                                _pickImage(ImageSource.gallery);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                          child: Container(
+                            height: 20,
+                            width: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: Center(
+                              child: SvgPicture.asset(AppIcons.editOutline),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: 30),
-              CustomTextField(
-                controller: userNameController,
-                title: 'User Name',
-                hintText: 'Enter user name',
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter user name";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                controller: phoneNumberController,
-                inputType: TextInputType.number,
-                maxLength: 10,
-                isReadOnly: true,
-                title: 'Register Number',
-                hintText: 'Enter register number',
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter register phone number";
-                  }
-                  if (value.length != 10) {
-                    return "Please enter 10 digit register phone number";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                controller: emailAddressController,
-                title: 'Email Address',
-                hintText: 'Enter email address',
-                inputType: TextInputType.emailAddress,
-                textCapitalization: TextCapitalization.none,
-                inputAction: TextInputAction.done,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter email address";
-                  }
-                  if (!isValidEmail(value.trim())) {
-                    return "Please enter valid email address";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 50),
-              if (profileController.apiResponse.status == Status.LOADING)
-                ButtonProgressBar()
-              else
-                CustomFullButton(
-                  title: 'Update Profile',
-                  isDialogue: true,
-                  onTap: () async {
-                    if (formKey.currentState!.validate()) {
-                      await updateProfile();
+                SizedBox(height: 30),
+                CustomTextField(
+                  controller: userNameController,
+                  title: 'User Name',
+                  hintText: 'Enter user name',
+                  inputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter user name";
                     }
+                    return null;
                   },
                 ),
-            ],
+                SizedBox(height: 15),
+                CustomTextField(
+                  controller: phoneNumberController,
+                  inputType: TextInputType.number,
+                  maxLength: 10,
+                  isReadOnly: true,
+                  title: 'Register Number',
+                  hintText: 'Enter register number',
+                  inputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter register phone number";
+                    }
+                    if (value.length != 10) {
+                      return "Please enter 10 digit register phone number";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 15),
+                CustomTextField(
+                  controller: emailAddressController,
+                  title: 'Email Address',
+                  hintText: 'Enter email address',
+                  inputType: TextInputType.emailAddress,
+                  textCapitalization: TextCapitalization.none,
+                  inputAction: TextInputAction.done,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter email address";
+                    }
+                    if (!isValidEmail(value.trim())) {
+                      return "Please enter valid email address";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 50),
+                if (profileController.apiResponse.status == Status.LOADING)
+                  ButtonProgressBar()
+                else
+                  CustomFullButton(
+                    title: 'Update Profile',
+                    isDialogue: true,
+                    onTap: () async {
+                      if (formKey.currentState!.validate()) {
+                        await updateProfile();
+                      }
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),

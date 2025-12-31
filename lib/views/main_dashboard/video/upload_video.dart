@@ -42,6 +42,9 @@ class _UploadVideoState extends State<UploadVideo> {
       categoryController,
       shopNameController;
 
+  late String _initialVideoTitle;
+  late String _initialDescription;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -80,6 +83,10 @@ class _UploadVideoState extends State<UploadVideo> {
     if (videoDetail.videoTitle != null) {
       videoTitleController.text = videoDetail.videoTitle ?? '';
       videoDescriptionController.text = videoDetail.description ?? '';
+
+      /// initial Data
+      _initialVideoTitle = videoDetail.videoTitle ?? '';
+      _initialDescription = videoDetail.description ?? '';
     }
   }
 
@@ -146,144 +153,169 @@ class _UploadVideoState extends State<UploadVideo> {
     }
   }
 
+  bool hasChanges() {
+    if (videoTitleController.text != _initialVideoTitle) return true;
+    if (videoDescriptionController.text != _initialDescription) return true;
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
-    return CustomSafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Video Upload'),
-        body: Form(
-          key: formKey,
-          child: ListView(
-            padding: EdgeInsets.all(10),
-            children: [
-              SizedBox(height: 10),
-              ValueListenableBuilder(
-                valueListenable: videoNotifier,
-                builder: (context, file, _) {
-                  if (widget.videosData.video != null) {
-                    return Container(
-                      height: 140,
-                      decoration: BoxDecoration(
-                        color: GenericColors.placeHolderGrey,
-                        borderRadius: BorderRadiusGeometry.circular(10),
-                      ),
-                      child: Center(
-                        child: UploadVideoUrlContainer(
-                          videoUrl:
-                              '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (!hasChanges()) {
+          Navigator.pop(context);
+          return;
+        }
+
+        await CustomDialogues().showUpdateReviewDialogue(
+          context,
+          onTap: () async {
+            await updateMyVideoDetail();
+          },
+        );
+      },
+      child: CustomSafeArea(
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundDark,
+          appBar: ActionBar(title: 'Video Upload'),
+          body: Form(
+            key: formKey,
+            child: ListView(
+              padding: EdgeInsets.all(10),
+              children: [
+                SizedBox(height: 10),
+                ValueListenableBuilder(
+                  valueListenable: videoNotifier,
+                  builder: (context, file, _) {
+                    if (widget.videosData.video != null) {
+                      return Container(
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: GenericColors.placeHolderGrey,
+                          borderRadius: BorderRadiusGeometry.circular(10),
                         ),
+                        child: Center(
+                          child: UploadVideoUrlContainer(
+                            videoUrl:
+                                '${ApiRoutes.baseUrl}${widget.videosData.video ?? ''}',
+                          ),
+                        ),
+                      );
+                    }
+                    return EmptyVideoUploadContainer(
+                      file: file,
+                      onTap: () async {
+                        await pickVideo();
+                      },
+                    );
+                  },
+                ),
+                SizedBox(height: 5),
+
+                ValueListenableBuilder(
+                  valueListenable: videoValidator,
+                  builder: (context, hasError, _) {
+                    if (!hasError) return const SizedBox.shrink();
+                    return Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: BodyTextColors(
+                        title: 'Please select video',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.red.shade900,
                       ),
                     );
-                  }
-                  return EmptyVideoUploadContainer(
-                    file: file,
-                    onTap: () async {
-                      await pickVideo();
-                    },
-                  );
-                },
-              ),
-              SizedBox(height: 5),
+                  },
+                ),
 
-              ValueListenableBuilder(
-                valueListenable: videoValidator,
-                builder: (context, hasError, _) {
-                  if (!hasError) return const SizedBox.shrink();
-                  return Align(
-                    alignment: AlignmentGeometry.centerLeft,
+                if (videoController.isVideoFileSize) ...[
+                  Align(
+                    alignment: AlignmentGeometry.centerRight,
                     child: BodyTextColors(
-                      title: 'Please select video',
+                      title: 'Note Video size Less than 10MB.',
                       fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.red.shade900,
+                      fontWeight: FontWeight.w300,
+                      color: GenericColors.darkRed,
                     ),
-                  );
-                },
-              ),
-
-              if (videoController.isVideoFileSize) ...[
-                Align(
-                  alignment: AlignmentGeometry.centerRight,
-                  child: BodyTextColors(
-                    title: 'Note Video size Less than 10MB.',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300,
-                    color: GenericColors.darkRed,
                   ),
+                ],
+                SizedBox(height: 25),
+                CustomTextField(
+                  title: 'Video Title',
+                  controller: videoTitleController,
+                  hintText: "Enter video title",
+                  inputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter video title";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 15),
+                CustomTextField(
+                  title: 'Description',
+                  controller: videoDescriptionController,
+                  hintText: "Enter video description",
+                  inputAction: TextInputAction.done,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter video description";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 15),
+                CustomTextField(
+                  title: 'Shop Name',
+                  controller: shopNameController,
+                  hintText: "Enter shop name",
+                  inputAction: TextInputAction.done,
+                  isReadOnly: true,
+                ),
+
+                SizedBox(height: 15),
+                CustomTextField(
+                  title: 'Category',
+                  controller: categoryController,
+                  hintText: "Enter shop name",
+                  inputAction: TextInputAction.done,
+                  isReadOnly: true,
                 ),
               ],
-              SizedBox(height: 25),
-              CustomTextField(
-                title: 'Video Title',
-                controller: videoTitleController,
-                hintText: "Enter video title",
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter video title";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                title: 'Description',
-                controller: videoDescriptionController,
-                hintText: "Enter video description",
-                inputAction: TextInputAction.done,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter video description";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              CustomTextField(
-                title: 'Shop Name',
-                controller: shopNameController,
-                hintText: "Enter shop name",
-                inputAction: TextInputAction.done,
-                isReadOnly: true,
-              ),
-
-              SizedBox(height: 15),
-              CustomTextField(
-                title: 'Category',
-                controller: categoryController,
-                hintText: "Enter shop name",
-                inputAction: TextInputAction.done,
-                isReadOnly: true,
-              ),
+            ),
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (videoController.response.status == Status.LOADING)
+                ButtonProgressBar()
+              else
+                CustomFullButton(
+                  title: 'Upload Video',
+                  onTap: () async {
+                    if (widget.videosData.videoTitle != null) {
+                      await updateMyVideoDetail();
+                      return;
+                    } else {
+                      final bool isFormValid =
+                          formKey.currentState?.validate() ?? false;
+                      final bool hasVideo = videoNotifier.value != null;
+                      videoValidator.value = !hasVideo;
+                      if (isFormValid && hasVideo) {
+                        await uploadVideo();
+                      }
+                    }
+                  },
+                ),
             ],
           ),
-        ),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (videoController.response.status == Status.LOADING)
-              ButtonProgressBar()
-            else
-              CustomFullButton(
-                title: 'Upload Video',
-                onTap: () async {
-                  if (widget.videosData.videoTitle != null) {
-                    await updateMyVideoDetail();
-                    return;
-                  } else {
-                    final bool isFormValid =
-                        formKey.currentState?.validate() ?? false;
-                    final bool hasVideo = videoNotifier.value != null;
-                    videoValidator.value = !hasVideo;
-                    if (isFormValid && hasVideo) {
-                      await uploadVideo();
-                    }
-                  }
-                },
-              ),
-          ],
         ),
       ),
     );

@@ -26,6 +26,10 @@ class NotificationSettings extends StatefulWidget {
 class _NotificationSettingsState extends State<NotificationSettings> {
   late HomeController homeController;
 
+  late int _initialEnableNotification;
+  late int _initialVideoAlert;
+  late int _initialNewShopAlert;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -47,7 +51,8 @@ class _NotificationSettingsState extends State<NotificationSettings> {
         title: 'SuccessFully Updated!',
         body: 'Your notification settings updated successfully!',
       );
-      await getNotificationPreference();
+      if (!mounted) return;
+      context.pop();
     } else {
       if (!mounted) return;
       ExceptionHandler.handleUiException(
@@ -66,6 +71,11 @@ class _NotificationSettingsState extends State<NotificationSettings> {
       homeController.initPreferences(
         preference ?? NotificationPreferenceData(),
       );
+
+      ///initial data
+      _initialEnableNotification = preference?.enableNotifications ?? 0;
+      _initialVideoAlert = preference?.newVideo ?? 0;
+      _initialNewShopAlert = preference?.newShop ?? 0;
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -75,220 +85,246 @@ class _NotificationSettingsState extends State<NotificationSettings> {
     }
   }
 
+  bool hasChanges() {
+    final preferenceData = homeController.preferenceData;
+    if (preferenceData.enableNotifications != _initialEnableNotification) {
+      return true;
+    }
+    if (preferenceData.newVideo != _initialVideoAlert) return true;
+    if (preferenceData.newShop != _initialNewShopAlert) return true;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
-    //canPop: false,
-    //       onPopInvoked: (didPop) async {
-    //         if (!homeController.hasUnsavedChanges) {
-    //           context.pop();
-    //           return;
-    //         }
-    //       },
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(50),
-                  bottomLeft: Radius.circular(50),
+
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (!hasChanges()) {
+          Navigator.pop(context);
+          return;
+        }
+
+        await CustomDialogues().showUpdateReviewDialogue(
+          context,
+          onTap: () async {
+            await addNotificationPreference();
+          },
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundDark,
+        body: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    bottomRight: Radius.circular(50),
+                    bottomLeft: Radius.circular(50),
+                  ),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Image.asset(
+                  AppIcons.notificationTopCardP,
+                  fit: BoxFit.cover,
                 ),
               ),
-              clipBehavior: Clip.hardEdge,
-              child: Image.asset(
-                AppIcons.notificationTopCardP,
-                fit: BoxFit.cover,
-              ),
             ),
-          ),
 
-          Positioned.fill(
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ActionBarComponent(
-                    title: 'Notification Settings',
-                    // onTap: () {
-                    //   if (!homeController.hasUnsavedChanges) {
-                    //     context.pop();
-                    //     return;
-                    //   }
-                    // },
-                  ),
-                  SizedBox(height: 20),
-                  Expanded(
-                    child: Builder(
-                      builder: (context) {
-                        final apiStatus = homeController
-                            .notificationPreferenceData.status;
-                        final preferenceData = homeController.preferenceData;
+            Positioned.fill(
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ActionBarComponent(
+                      title: 'Notification Settings',
+                      // onTap: () {
+                      //   if (!homeController.hasUnsavedChanges) {
+                      //     context.pop();
+                      //     return;
+                      //   }
+                      // },
+                    ),
+                    SizedBox(height: 20),
+                    Expanded(
+                      child: Builder(
+                        builder: (context) {
+                          final apiStatus =
+                              homeController.notificationPreferenceData.status;
+                          final preferenceData = homeController.preferenceData;
 
-                        if (apiStatus == Status.INITIAL ||
-                            apiStatus == Status.LOADING) {
-                          return CustomLoadingIndicator();
-                        }
+                          if (apiStatus == Status.INITIAL ||
+                              apiStatus == Status.LOADING) {
+                            return CustomLoadingIndicator();
+                          }
 
-                        if (apiStatus == Status.ERROR) {
-                          return CustomErrorTextWidget(
-                            title:
-                                '${homeController.notificationPreferenceData.message}',
+                          if (apiStatus == Status.ERROR) {
+                            return CustomErrorTextWidget(
+                              title:
+                                  '${homeController.notificationPreferenceData.message}',
+                            );
+                          }
+
+                          return ListView(
+                            children: [
+                              Container(
+                                margin: EdgeInsets.all(10),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.scaffoldBackground,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Column(
+                                  children: [
+                                    SettingListTile(
+                                      title: 'Enable Notification',
+                                      body:
+                                          'Stay updated with real-time alerts',
+                                      isChecked:
+                                          (preferenceData.enableNotifications ??
+                                              0) ==
+                                          1,
+                                      onChanged: (value) {
+                                        homeController.updatePreferences(
+                                          enableNotifications: value ? 1 : 0,
+                                          savedVideo: value ? null : 0,
+                                          newVideo: value ? null : 0,
+                                          newShop: value ? null : 0,
+                                        );
+                                      },
+                                    ),
+
+                                    Divider(color: AppColors.bgGrey),
+
+                                    // SettingListTile(
+                                    //   title: 'Saved Video Alerts',
+                                    //   body:
+                                    //       'Stay updated with the latest alerts',
+                                    //   isChecked:
+                                    //       (preferenceData.savedVideo ?? 0) == 1,
+                                    //   enabled: (preferenceData.enableNotifications ?? 0) == 1,
+                                    //   onChanged: (value) {
+                                    //     homeController.updatePreferences(
+                                    //       savedVideo: value ? 1 : 0,
+                                    //     );
+                                    //   },
+                                    // ),
+                                    //
+                                    // Divider(color: AppColors.bgGrey),
+                                    SettingListTile(
+                                      title: 'Video Alerts',
+                                      body:
+                                          'Stay updated with the latest alerts',
+                                      isChecked:
+                                          (preferenceData.newVideo ?? 0) == 1,
+                                      enabled:
+                                          (preferenceData.enableNotifications ??
+                                              0) ==
+                                          1,
+                                      onChanged: (value) {
+                                        homeController.updatePreferences(
+                                          newVideo: value ? 1 : 0,
+                                        );
+                                      },
+                                    ),
+
+                                    Divider(color: AppColors.bgGrey),
+
+                                    SettingListTile(
+                                      title: 'New Shop Alert',
+                                      body:
+                                          'Stay updated with the latest shop alerts',
+                                      isChecked:
+                                          (preferenceData.newShop ?? 0) == 1,
+                                      enabled:
+                                          (preferenceData.enableNotifications ??
+                                              0) ==
+                                          1,
+                                      onChanged: (value) {
+                                        homeController.updatePreferences(
+                                          newShop: value ? 1 : 0,
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: HeaderTextPrimary(
+                                  title: 'General Settings',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                              GeneralSettingListTile(
+                                image: AppIcons.playVideoP,
+                                title: 'Viewed Videos',
+                                body: 'videos you have already watched',
+                                onTap: () {
+                                  context.pushNamed(AppRoutes.viewedVideos);
+                                },
+                              ),
+                              SizedBox(height: 15),
+                              GeneralSettingListTile(
+                                image: AppIcons.deleteBlueP,
+                                title: 'Delete Account',
+                                body: 'Permanently remove your account',
+                                onTap: () {
+                                  CustomDialogues().showLogoutDialog(
+                                    context,
+                                    title: 'Delete Account',
+                                    isDeleteAccount: true,
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 10),
+                            ],
                           );
-                        }
-
-                        return ListView(
-                          children: [
-                            Container(
-                              margin: EdgeInsets.all(10),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.scaffoldBackground,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Column(
-                                children: [
-                                  SettingListTile(
-                                    title: 'Enable Notification',
-                                    body:
-                                        'Stay updated with real-time alerts',
-                                    isChecked:
-                                        (preferenceData.enableNotifications ??
-                                                0) ==
-                                            1,
-                                    onChanged: (value) {
-                                      homeController.updatePreferences(
-                                        enableNotifications: value ? 1 : 0,
-                                        // Automatically disable other notifications when main toggle is off
-                                        savedVideo: value ? null : 0,
-                                        newVideo: value ? null : 0,
-                                        newShop: value ? null : 0,
-                                      );
-                                    },
-                                  ),
-
-                                  Divider(color: AppColors.bgGrey),
-
-                                  SettingListTile(
-                                    title: 'Saved Video Alerts',
-                                    body:
-                                        'Stay updated with the latest alerts',
-                                    isChecked:
-                                        (preferenceData.savedVideo ?? 0) == 1,
-                                    enabled: (preferenceData.enableNotifications ?? 0) == 1,
-                                    onChanged: (value) {
-                                      homeController.updatePreferences(
-                                        savedVideo: value ? 1 : 0,
-                                      );
-                                    },
-                                  ),
-
-                                  Divider(color: AppColors.bgGrey),
-
-                                  SettingListTile(
-                                    title: 'Video Alerts',
-                                    body:
-                                        'Stay updated with the latest alerts',
-                                    isChecked:
-                                        (preferenceData.newVideo ?? 0) == 1,
-                                    enabled: (preferenceData.enableNotifications ?? 0) == 1,
-                                    onChanged: (value) {
-                                      homeController.updatePreferences(
-                                        newVideo: value ? 1 : 0,
-                                      );
-                                    },
-                                  ),
-
-                                  Divider(color: AppColors.bgGrey),
-
-                                  SettingListTile(
-                                    title: 'New Shop Alert',
-                                    body:
-                                        'Stay updated with the latest shop alerts',
-                                    isChecked:
-                                        (preferenceData.newShop ?? 0) == 1,
-                                    enabled: (preferenceData.enableNotifications ?? 0) == 1,
-                                    onChanged: (value) {
-                                      homeController.updatePreferences(
-                                        newShop: value ? 1 : 0,
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: HeaderTextPrimary(
-                                title: 'General Settings',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                            GeneralSettingListTile(
-                              image: AppIcons.playVideoP,
-                              title: 'Viewed Videos',
-                              body: 'videos you have already watched',
-                              onTap: () {
-                                context.pushNamed(AppRoutes.viewedVideos);
-                              },
-                            ),
-                            SizedBox(height: 15),
-                            GeneralSettingListTile(
-                              image: AppIcons.deleteBlueP,
-                              title: 'Delete Account',
-                              body: 'Permanently remove your account',
-                              onTap: () {
-                                CustomDialogues().showLogoutDialog(
-                                  context,
-                                  title: 'Delete Account',
-                                  isDeleteAccount: true,
-                                );
-                              },
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        );
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar:
+            homeController.notificationPreferenceData.status == Status.LOADING
+            ? SizedBox.shrink()
+            : SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (homeController.apiResponse.status == Status.LOADING)
+                      ButtonProgressBar()
+                    else
+                      CustomFullButton(
+                        title: 'Save Notification Changes',
+                        onTap: () async {
+                          await addNotificationPreference();
+                        },
+                      ),
+                  ],
+                ),
+              ),
       ),
-      bottomNavigationBar:
-          homeController.notificationPreferenceData.status == Status.LOADING
-          ? SizedBox.shrink()
-          : SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (homeController.apiResponse.status == Status.LOADING)
-                    ButtonProgressBar()
-                  else
-                    CustomFullButton(
-                      title: 'Save Notification Changes',
-                      onTap: () async {
-                        await addNotificationPreference();
-                      },
-                    ),
-                ],
-              ),
-            ),
     );
   }
 }

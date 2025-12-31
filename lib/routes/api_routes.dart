@@ -23,6 +23,7 @@ abstract class ApiRoutes {
   }
 
   static const String baseUrl = 'https://mapman-production.up.railway.app';
+  // static const String baseUrl = 'https://2sdfshx9-3000.inc1.devtunnels.ms/';
 
   static const String sendOTP = '/shop/auth/sendOtp';
   static const String verifyOTP = '/shop/auth/verifyOtp';
@@ -52,6 +53,7 @@ abstract class ApiRoutes {
   static const String allVideos = '/shop/allVideos';
   static const String analytics = '/shop/analytics';
   static const String getShopById = '/shop/getShopById';
+  static const String addPoints = '/shop/addPoints';
   static const String fetchPoints = '/shop/fetchPoints';
   static const String fetchNotifications = '/shop/fetchNotifications';
   static const String notificationCount = '/shop/notificationCount';

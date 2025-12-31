@@ -39,12 +39,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
 
-  late final CachedVideoPlayerPlus _player;
+  CachedVideoPlayerPlus? _player;
   late final ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
   bool _isCompleted = false;
+  bool _hasBeenFullyWatched = false;
   late bool isMyVideos;
+
+  double _progress = 0.0;
+  Duration _currentPosition = Duration.zero;
+  Duration _totalDuration = Duration.zero;
 
   VideosData videosData = VideosData();
 
@@ -53,6 +58,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     super.initState();
 
     isMyVideos = widget.isMyVideos;
+    bookMarkNotifier = ValueNotifier(false);
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -66,20 +72,22 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_isInitialized) return;
+    if (!_isInitialized || _player == null) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      _player.controller.pause();
+      _player!.controller.pause();
     } else if (state == AppLifecycleState.resumed) {
-      _player.controller.play();
+      _player!.controller.play();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _player.controller.removeListener(_videoListener);
-    _player.dispose();
+    if (_player != null && _isInitialized) {
+      _player!.controller.removeListener(_videoListener);
+      _player!.dispose();
+    }
     bookMarkNotifier.dispose();
     super.dispose();
   }
@@ -93,7 +101,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     if (response.status == Status.COMPLETED && response.data != null) {
       videosData = response.data as VideosData;
-      bookMarkNotifier = ValueNotifier(videosData.savedAlready ?? false);
+      bookMarkNotifier.value = videosData.savedAlready ?? false;
       await _initializeVideo();
     } else {
       ExceptionHandler.handleUiException(
@@ -105,10 +113,13 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   Future<void> _initializeVideo() async {
-    if (_isInitialized) {
-      _player.controller.removeListener(_videoListener);
-      await _player.dispose();
+    if (_isInitialized && _player != null) {
+      _player!.controller.removeListener(_videoListener);
+      await _player!.dispose();
     }
+
+    _hasBeenFullyWatched = false;
+    _isCompleted = false;
 
     _player = CachedVideoPlayerPlus.networkUrl(
       Uri.parse(ApiRoutes.baseUrl + (videosData.video ?? '')),
@@ -119,10 +130,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     );
 
     try {
-      await _player.initialize();
+      await _player!.initialize();
       if (!mounted) return;
 
-      _player.controller
+      _player!.controller
         ..addListener(_videoListener)
         ..setLooping(true)
         ..setVolume(1.0)
@@ -134,10 +145,37 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
-  void _videoListener() {
-    if (!_isInitialized) return;
+  // void _videoListener() {
+  //   if (!_isInitialized) return;
+  //
+  //   final controller = _player.controller;
+  //   final value = controller.value;
+  //
+  //   if (!value.isInitialized) return;
+  //
+  //   final position = value.position;
+  //   final duration = value.duration;
+  //
+  //   if (!_isCompleted &&
+  //       duration != Duration.zero &&
+  //       position >= duration - const Duration(milliseconds: 300)) {
+  //     _isCompleted = true;
+  //
+  //     if (!isMyVideos && videoController.isViewedVideo == 1) {
+  //       addViewedVideos();
+  //     }
+  //     getVideoPoints();
+  //   }
+  //
+  //   if (position <= const Duration(milliseconds: 200)) {
+  //     _isCompleted = false;
+  //   }
+  // }
 
-    final controller = _player.controller;
+  void _videoListener() {
+    if (!_isInitialized || _player == null) return;
+
+    final controller = _player!.controller;
     final value = controller.value;
 
     if (!value.isInitialized) return;
@@ -145,13 +183,26 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     final position = value.position;
     final duration = value.duration;
 
+    if (duration.inMilliseconds > 0) {
+      setState(() {
+        _currentPosition = position;
+        _totalDuration = duration;
+        _progress = position.inMilliseconds / duration.inMilliseconds;
+      });
+    }
+
     if (!_isCompleted &&
         duration != Duration.zero &&
         position >= duration - const Duration(milliseconds: 300)) {
       _isCompleted = true;
 
-      if (!isMyVideos && videoController.isViewedVideo == 1) {
-        addViewedVideos();
+      if (!_hasBeenFullyWatched) {
+        _hasBeenFullyWatched = true;
+
+        if (!isMyVideos && videoController.isViewedVideo == 1) {
+          addViewedVideos();
+        }
+        getVideoPoints();
       }
     }
 
@@ -160,8 +211,18 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
+  String _formatTime(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$minutes:$seconds";
+  }
+
   Future<void> addViewedVideos() async {
     await videoController.addViewedVideos(videoId: videosData.id ?? 0);
+  }
+
+  Future<void> getVideoPoints() async {
+    await videoController.addVideoPoints();
     await videoController.getVideoPoints();
   }
 
@@ -180,8 +241,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
               return Stack(
                 children: [
                   Container(
-                    child: _player.isInitialized
-                        ? ClipRRect(child: VideoPlayer(_player.controller))
+                    child: (_player != null && _player!.isInitialized)
+                        ? ClipRRect(child: VideoPlayer(_player!.controller))
                         : CustomLoadingIndicator(),
                   ),
                   Positioned(
@@ -199,7 +260,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           Spacer(),
                           ShopDetailsButton(
                             onTap: () {
-                              _player.controller.pause();
+                              if (_player != null && _isInitialized) {
+                                _player!.controller.pause();
+                              }
                               context.pushNamed(
                                 AppRoutes.shopDetail,
                                 extra: videosData.shopId,
@@ -221,144 +284,229 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                       ),
                     ),
                   ),
-
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: SafeArea(
-                      child: Container(
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.whiteText,
-                              GenericColors.lightPrimary,
-                            ],
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Flexible(
-                                        child: HeaderTextBlack(
-                                          title:
-                                              videosData.shopName
-                                                  ?.capitalize() ??
-                                              '',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          textDecoration:
-                                              TextDecoration.underline,
-                                          decorationColor: AppColors.darkText,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.visible,
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      if (videosData.watched == true &&
-                                          !isMyVideos)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: BodyTextColors(
-                                              title: 'Watched',
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
-                                              color: AppColors.whiteText,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  BodyTextHint(
-                                    title:
-                                        videosData.description?.capitalize() ??
-                                        '',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    maxLines: 4,
-                                  ),
-                                  SizedBox(height: 8),
-                                  BodyTextHint(
-                                    title: '+91 ${videosData.whatsappNumber}',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                  ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.whiteText,
+                                  GenericColors.lightPrimary,
                                 ],
                               ),
                             ),
-                            SizedBox(width: 8),
-                            if (!isMyVideos) ...[
-                              Row(
-                                children: [
-                                  CircleContainer(
-                                    onTap: () async {
-                                      await CustomLaunchers.openWhatsApp(
-                                        phoneNumber: '9025821501',
-                                      );
-                                    },
-                                    child: Image.asset(
-                                      AppIcons.whatsappP,
-                                      height: 30,
-                                      width: 30,
+                            child: Column(
+                              children: [
+                                LinearProgressIndicator(
+                                  value: _progress.clamp(0.0, 1.0),
+                                  minHeight: 4,
+                                  backgroundColor: Colors.grey.shade300,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Text(
+                                      _formatTime(_currentPosition),
+                                      style: const TextStyle(fontSize: 12),
                                     ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  ValueListenableBuilder(
-                                    valueListenable: bookMarkNotifier,
-                                    builder: (context, isActive, _) {
-                                      return CircleContainer(
-                                        onTap: () async {
-                                          final bool newStatus = !isActive;
-                                          bookMarkNotifier.value = newStatus;
-                                          await videoController.addSavedVideos(
-                                            videoId: videosData.id ?? 0,
-                                            status: newStatus
-                                                ? 'active'
-                                                : 'inactive',
-                                          );
-                                        },
-
-                                        child: isActive
-                                            ? Image.asset(
-                                                AppIcons.bookmarkP,
-                                                height: 30,
-                                                width: 30,
-                                              )
-                                            : Icon(
-                                                Icons.bookmark_border_outlined,
-                                                size: 30,
-                                                color: AppColors.darkGrey,
+                                    const Spacer(),
+                                    Text(
+                                      _formatTime(_totalDuration),
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (_player != null && _isInitialized) {
+                                          setState(() {
+                                            _player!.controller.value.isPlaying
+                                                ? _player!.controller.pause()
+                                                : _player!.controller.play();
+                                          });
+                                        }
+                                      },
+                                      child: Icon(
+                                        (_player != null &&
+                                                _isInitialized &&
+                                                _player!
+                                                    .controller
+                                                    .value
+                                                    .isPlaying)
+                                            ? Icons.pause_circle_filled
+                                            : Icons.play_circle_fill,
+                                        size: 36,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Flexible(
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    if (_player != null &&
+                                                        _isInitialized) {
+                                                      _player!.controller
+                                                          .pause();
+                                                    }
+                                                    context.pushNamed(
+                                                      AppRoutes.shopDetail,
+                                                      extra: videosData.shopId,
+                                                    );
+                                                  },
+                                                  child: HeaderTextBlack(
+                                                    title:
+                                                        videosData.shopName
+                                                            ?.capitalize() ??
+                                                        '',
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w400,
+                                                    textDecoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                    decorationColor:
+                                                        AppColors.darkText,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.visible,
+                                                  ),
+                                                ),
                                               ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
+                                              SizedBox(width: 10),
+                                              if (videosData.watched == true &&
+                                                  !isMyVideos)
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                  ),
+                                                  child: Center(
+                                                    child: BodyTextColors(
+                                                      title: 'Watched',
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      color:
+                                                          AppColors.whiteText,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 8),
+                                          BodyTextHint(
+                                            title:
+                                                videosData.description
+                                                    ?.capitalize() ??
+                                                '',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                            maxLines: 4,
+                                          ),
+                                          SizedBox(height: 8),
+                                          BodyTextHint(
+                                            title:
+                                                '+91 ${videosData.whatsappNumber}',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    if (!isMyVideos) ...[
+                                      Row(
+                                        children: [
+                                          CircleContainer(
+                                            onTap: () async {
+                                              await CustomLaunchers.openWhatsApp(
+                                                phoneNumber: '9025821501',
+                                              );
+                                            },
+                                            child: Image.asset(
+                                              AppIcons.whatsappP,
+                                              height: 30,
+                                              width: 30,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          ValueListenableBuilder(
+                                            valueListenable: bookMarkNotifier,
+                                            builder: (context, isActive, _) {
+                                              return CircleContainer(
+                                                onTap: () async {
+                                                  final bool newStatus =
+                                                      !isActive;
+                                                  bookMarkNotifier.value =
+                                                      newStatus;
+                                                  await videoController
+                                                      .addSavedVideos(
+                                                        videoId:
+                                                            videosData.id ?? 0,
+                                                        status: newStatus
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                },
+
+                                                child: isActive
+                                                    ? Image.asset(
+                                                        AppIcons.bookmarkP,
+                                                        height: 30,
+                                                        width: 30,
+                                                      )
+                                                    : Icon(
+                                                        Icons
+                                                            .bookmark_border_outlined,
+                                                        size: 30,
+                                                        color:
+                                                            AppColors.darkGrey,
+                                                      ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

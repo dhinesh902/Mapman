@@ -50,7 +50,7 @@ class _MapsState extends State<Maps> {
 
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
-    zoom: 16,
+    zoom: 14.5,
   );
 
   @override
@@ -81,6 +81,9 @@ class _MapsState extends State<Maps> {
     searchController.dispose();
     _searchFocusNode.dispose();
     _positionStream?.cancel();
+    _mapController?.dispose();
+    sheetController.dispose();
+    tapNotifier.dispose();
     super.dispose();
   }
 
@@ -254,132 +257,134 @@ class _MapsState extends State<Maps> {
                       );
                     },
                   ),
-
-                  DraggableScrollableSheet(
-                    controller: sheetController,
-                    initialChildSize: homeController.nearByShopHeight,
-                    minChildSize: 0.0,
-                    maxChildSize: 0.65,
-                    expand: false,
-                    builder: (context, scrollController) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.scaffoldBackground,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
+                  if (homeController.isShowAddNearBy)
+                    DraggableScrollableSheet(
+                      controller: sheetController,
+                      initialChildSize: homeController.nearByShopHeight,
+                      minChildSize: 0.0,
+                      maxChildSize: 0.65,
+                      expand: false,
+                      builder: (context, scrollController) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.scaffoldBackground,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              topRight: Radius.circular(10),
+                            ),
                           ),
-                        ),
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  10,
-                                  15,
-                                  10,
-                                  0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Image.asset(
-                                      AppIcons.nearByShopP,
-                                      height: 24,
-                                      width: 24,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: HeaderTextBlack(
-                                        title:
-                                            'Near By ${homeController.searchCategory.toString().capitalize()}',
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                          child: SingleChildScrollView(
+                            controller: scrollController,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    15,
+                                    10,
+                                    0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        AppIcons.nearByShopP,
+                                        height: 24,
+                                        width: 24,
                                       ),
-                                    ),
-                                    ClearCircleContainer(
-                                      onTap: () {
-                                        tapNotifier.value = null;
-                                        sheetController.animateTo(
-                                          0.0,
-                                          duration: const Duration(
-                                            milliseconds: 300,
-                                          ),
-                                          curve: Curves.easeOut,
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: HeaderTextBlack(
+                                          title:
+                                              'Near By ${homeController.searchCategory.toString().capitalize()}',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      ClearCircleContainer(
+                                        onTap: () {
+                                          tapNotifier.value = null;
+                                          sheetController.animateTo(
+                                            0.0,
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.easeOut,
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 15),
-                              Builder(
-                                builder: (context) {
-                                  switch (homeController
-                                      .shopSearchData
-                                      .status) {
-                                    case Status.INITIAL:
-                                    case Status.LOADING:
-                                      return SizedBox(
-                                        height: 200,
-                                        child: CustomLoadingIndicator(),
-                                      );
-                                    case Status.COMPLETED:
-                                      final nearByShops =
-                                          homeController.nearByShopData.data ??
-                                          [];
-                                      if (nearByShops.isEmpty) {
+                                const SizedBox(height: 15),
+                                Builder(
+                                  builder: (context) {
+                                    switch (homeController
+                                        .shopSearchData
+                                        .status) {
+                                      case Status.INITIAL:
+                                      case Status.LOADING:
                                         return SizedBox(
                                           height: 200,
-                                          child: NoDataText(
-                                            title: Strings.noDataFound,
+                                          child: CustomLoadingIndicator(),
+                                        );
+                                      case Status.COMPLETED:
+                                        final nearByShops =
+                                            homeController
+                                                .nearByShopData
+                                                .data ??
+                                            [];
+                                        if (nearByShops.isEmpty) {
+                                          return SizedBox(
+                                            height: 200,
+                                            child: NoDataText(
+                                              title: Strings.noDataFound,
+                                            ),
+                                          );
+                                        }
+                                        return SizedBox(
+                                          height: 360,
+                                          child: ListView.builder(
+                                            itemCount: nearByShops.length,
+                                            itemBuilder: (context, index) {
+                                              final shop = nearByShops[index];
+                                              return Padding(
+                                                padding: EdgeInsets.only(
+                                                  bottom: 10,
+                                                  top: index == 0 ? 5 : 0,
+                                                ),
+                                                child: LocationShopContainer(
+                                                  searchData: shop,
+                                                  distance:
+                                                      distanceBetweenLatLong(
+                                                        latitude: double.parse(
+                                                          shop.lat.toString(),
+                                                        ),
+                                                        longitude: double.parse(
+                                                          shop.long.toString(),
+                                                        ),
+                                                      ),
+                                                ),
+                                              );
+                                            },
                                           ),
                                         );
-                                      }
-                                      return SizedBox(
-                                        height: 360,
-                                        child: ListView.builder(
-                                          itemCount: nearByShops.length,
-                                          itemBuilder: (context, index) {
-                                            final shop = nearByShops[index];
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: 10,
-                                                top: index == 0 ? 5 : 0,
-                                              ),
-                                              child: LocationShopContainer(
-                                                searchData: shop,
-                                                distance:
-                                                    distanceBetweenLatLong(
-                                                      latitude: double.parse(
-                                                        shop.lat.toString(),
-                                                      ),
-                                                      longitude: double.parse(
-                                                        shop.long.toString(),
-                                                      ),
-                                                    ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    case Status.ERROR:
-                                      return SizedBox(
-                                        height: 200,
-                                        child: CustomErrorTextWidget(
-                                          title:
-                                              '${homeController.shopSearchData.message}',
-                                        ),
-                                      );
-                                  }
-                                },
-                              ),
-                            ],
+                                      case Status.ERROR:
+                                        return SizedBox(
+                                          height: 200,
+                                          child: CustomErrorTextWidget(
+                                            title:
+                                                '${homeController.shopSearchData.message}',
+                                          ),
+                                        );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
                 ],
               );
             case Status.ERROR:

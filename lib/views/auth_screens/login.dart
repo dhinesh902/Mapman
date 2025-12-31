@@ -171,8 +171,14 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset(AppIcons.manLocation),
-                SizedBox(width: 10),
+                SizedBox(
+                  height: 40,
+                  width: 40,
+                  child: Image.asset(
+                    AppIcons.mapmanP,
+                    fit: BoxFit.cover,
+                  ),
+                ),
                 HeaderTextBlack(
                   title: 'Map Man',
                   fontSize: 20,
@@ -184,8 +190,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             CustomOutlineButtonWithImage(
               title: 'Continue with Google',
               icon: AppIcons.google,
-              onTap: () {
-              },
+              onTap: () {},
             ),
             SizedBox(height: 15),
             Row(
@@ -211,13 +216,13 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 context.read<AuthController>().animateTo(1);
               },
             ),
-            SizedBox(height: 15),
+            SizedBox(height: 20),
             BodyTextHint(
               title: 'By Continuing you agree to Mapman',
               fontSize: 12,
               fontWeight: FontWeight.w300,
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 15),
             InkWell(
               onTap: () {},
               child: HeaderTextPrimary(
@@ -262,8 +267,8 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     mobileNumberController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -406,8 +411,8 @@ class _OTPScreenState extends State<OTPScreen> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     _timer?.cancel();
+    otpController.dispose();
     super.dispose();
   }
 
@@ -519,7 +524,7 @@ class _OTPScreenState extends State<OTPScreen> {
               children: [
                 SizedBox(width: 10),
                 BodyTextColors(
-                  title: '00.$_remainingTime',
+                  title: '00:$_remainingTime',
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                   color: GenericColors.darkRed,

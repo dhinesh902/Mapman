@@ -21,6 +21,15 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isActiveWhatsappNumber = false;
+
+  bool get isActiveWhatsappNumber => _isActiveWhatsappNumber;
+
+  set setIsActiveWhatsappNumber(bool value) {
+    _isActiveWhatsappNumber = value;
+    notifyListeners();
+  }
+
   /// SHOP DETAILS UPDATE
 
   LatLng? _selectedLatLong;

@@ -8,12 +8,12 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
-import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
+import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -122,7 +122,7 @@ class _SavedVideosState extends State<SavedVideos> {
                       ),
                     ),
                   ],
-                  Expanded(
+                  Flexible(
                     child: Builder(
                       builder: (context) {
                         switch (videoController.savedVideoData.status) {
@@ -133,8 +133,26 @@ class _SavedVideosState extends State<SavedVideos> {
                           case Status.COMPLETED:
                             final savedVideos =
                                 videoController.savedVideoData.data ?? [];
+
+                            ///Start Watching Videos & Earn Rewards
                             if (savedVideos.isEmpty) {
-                              return NoDataText(title: Strings.noDataFound);
+                              return EmptyDataContainer(
+
+                                children: [
+                                  Image.asset(
+                                    AppIcons.savedVideoEmptyP,
+                                    height: 140,
+                                    width: 140,
+                                  ),
+                                  SizedBox(height: 20),
+                                  BodyTextHint(
+                                    title: 'No Data Found here',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              );
                             }
                             return ListView.builder(
                               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),

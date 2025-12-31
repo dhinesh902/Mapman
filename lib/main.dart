@@ -99,7 +99,12 @@ void _handleNotificationNavigation(String? payload) {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Background message: ${message.messageId}');
-  await showLocalNotification(message);
+  
+  // Don't show local notification manually when app is closed/killed
+  // FCM automatically displays notifications with notification payload
+  // Manual display here causes duplicate notifications
+  // Foreground notifications are handled by onMessage listener (line 129)
+  // Background/terminated notifications are handled automatically by FCM
 }
 
 Future<void> main() async {
@@ -150,12 +155,12 @@ Future<void> main() async {
       try {
         String? initialToken = await firebaseMessaging.getToken();
         if (initialToken != null) {
-          print("DEEPAK:Initial FCM token: $initialToken");
+          print("Initial FCM token: $initialToken");
           await sharedPrefs.setString(Keys.fcmToken, initialToken);
           await AuthController().addFcmToken();
         }
       } catch (e) {
-        print("DEEPAK TOKEN FAILED: $e");
+        print("TOKEN FAILED: $e");
       }
     });
   } else {

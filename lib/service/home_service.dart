@@ -77,7 +77,7 @@ class HomeService extends ApiRoutes {
       final response = await dio.get(
         ApiRoutes.notificationOpenStatus,
         options: headerWithToken(token),
-        data: {"notificationId": notificationId},
+        queryParameters: {"notificationId": notificationId},
       );
       return response.data;
     } on DioException catch (e) {
