@@ -161,51 +161,75 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                 ],
                               );
                             } else {
-                              return ListView.builder(
-                                itemCount: videos.length,
-                                shrinkWrap: true,
-                                padding: EdgeInsets.only(bottom: 20),
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    height: 174,
-                                    width: double.maxFinite,
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
-                                    child: Stack(
-                                      children: [
-                                        InkWell(
-                                          onTap: () {
-                                            context.pushNamed(
-                                              AppRoutes.singleVideoScreen,
-                                              extra: {
-                                                Keys.videosData: videos[index],
-                                                Keys.isMyVideos: true,
+                              return ListView(
+                                children: [
+                                  ListView.builder(
+                                    itemCount: videos.length,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.only(bottom: 20),
+                                    itemBuilder: (context, index) {
+                                      return Container(
+                                        height: 174,
+                                        width: double.maxFinite,
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        margin: EdgeInsets.fromLTRB(
+                                          10,
+                                          0,
+                                          10,
+                                          10,
+                                        ),
+                                        child: Stack(
+                                          children: [
+                                            InkWell(
+                                              onTap: () {
+                                                context.pushNamed(
+                                                  AppRoutes.singleVideoScreen,
+                                                  extra: {
+                                                    Keys.videosData: videos,
+                                                    Keys.isMyVideos: true,
+                                                    Keys.initialIndex: index,
+                                                  },
+                                                );
                                               },
-                                            );
-                                          },
-                                          child: MyVideoContainer(
-                                            videoUrl:
-                                                ApiRoutes.baseUrl +
-                                                (videos[index].video ?? ''),
-                                            isViews: false,
-                                          ),
+                                              child: MyVideoContainer(
+                                                videoUrl:
+                                                    ApiRoutes.baseUrl +
+                                                    (videos[index].video ?? ''),
+                                                isViews: false,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: VideoTitleBlurContainer(
+                                                isViews: true,
+                                                videosData: videos[index],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Positioned(
-                                          bottom: 0,
-                                          left: 0,
-                                          right: 0,
-                                          child: VideoTitleBlurContainer(
-                                            isViews: true,
-                                            videosData: videos[index],
-                                          ),
-                                        ),
-                                      ],
+                                      );
+                                    },
+                                  ),
+                                  if (videos.length > 3) ...[
+                                    const SizedBox(height: 40),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 15),
+                                      child: OutlineText(
+                                        title: 'Thanks for \nScrolling!!',
+                                        fontSize: 20,
+                                      ),
                                     ),
-                                  );
-                                },
+                                    const SizedBox(height: 40),
+                                  ],
+                                ],
                               );
                             }
                           case Status.ERROR:

@@ -140,7 +140,7 @@ class ProfileService extends ApiRoutes {
       final response = await dio.get(
         ApiRoutes.deleteShop,
         options: headerWithToken(token),
-        data: {"shopId": shopId},
+        queryParameters: {"shopId": shopId},
       );
       return response.data;
     } on DioException catch (e) {

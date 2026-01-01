@@ -167,17 +167,14 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
       child: Center(
         child: Column(
           children: [
-            SizedBox(height: 30),
+            SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
                   height: 40,
                   width: 40,
-                  child: Image.asset(
-                    AppIcons.mapmanP,
-                    fit: BoxFit.cover,
-                  ),
+                  child: Image.asset(AppIcons.mapmanP, fit: BoxFit.cover),
                 ),
                 HeaderTextBlack(
                   title: 'Map Man',

@@ -8,8 +8,11 @@ class Keys {
   static const String shopId = 'shopId';
   static const String userId = 'userId';
   static const String isViewedVideo = 'isViewedVideo';
+  static const String rating = 'rating';
   static const String shopName = 'shopName';
   static const String shopCategory = 'shopCategory';
   static const String videosData = 'videosData';
+  static const String notificationVideo = 'notificationVideo';
   static const String isMyVideos = 'isMyVideos';
+  static const String initialIndex = 'initialIndex';
 }

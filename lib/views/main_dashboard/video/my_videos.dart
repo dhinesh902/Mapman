@@ -42,8 +42,9 @@ class MyVideos extends StatelessWidget {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
                     extra: {
-                      Keys.videosData: myVideos[index],
+                      Keys.videosData: myVideos,
                       Keys.isMyVideos: true,
+                      Keys.initialIndex: index,
                     },
                   );
                 },

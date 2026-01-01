@@ -24,10 +24,26 @@ class _OnboardScreenState extends State<OnboardScreen> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         body: ListView(
+          physics: NeverScrollableScrollPhysics(),
           children: [
-            Image.asset(AppIcons.onboardP, height: 392, width: 249),
-            BlurContainer(),
-            SizedBox(height: 30),
+            Stack(
+              fit: StackFit.loose,
+              alignment: Alignment.center,
+              children: [
+                Image.asset(
+                  AppIcons.onboardP,
+                  height: MediaQuery.of(context).size.height / 2,
+                  width: 249,
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: BlurContainer(),
+                ),
+              ],
+            ),
+            SizedBox(height: 25),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: HeaderTextBlack(

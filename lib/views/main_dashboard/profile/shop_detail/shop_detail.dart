@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
+import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
@@ -290,6 +293,7 @@ class ShopDetailContainer extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 20),
                 child: EndMessageSection(title: 'Thanks for \nScrolling!!'),
               ),
+              SizedBox(height: 60),
             ],
           ),
         ),
@@ -319,13 +323,14 @@ class ShopVideosList extends StatelessWidget {
               children: [
                 InkWell(
                   onTap: () {
-                    // context.pushNamed(
-                    //   AppRoutes.singleVideoScreen,
-                    //   extra: {
-                    //     Keys.videosData: shopVideos[index],
-                    //     Keys.isMyVideos: false,
-                    //   },
-                    // );
+                    context.pushNamed(
+                      AppRoutes.singleVideoScreen,
+                      extra: {
+                        Keys.videosData: shopVideos,
+                        Keys.isMyVideos: false,
+                        Keys.initialIndex: index,
+                      },
+                    );
                   },
                   child: MyVideoContainer(
                     videoUrl:
@@ -343,20 +348,22 @@ class ShopVideosList extends StatelessWidget {
             ),
           ),
         ],
-        Container(
-          height: 150,
-          alignment: Alignment.centerRight,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Image.asset(AppIcons.locationLastPinP),
-              Transform.rotate(
-                angle: 1.5708,
-                child: OutlineText(title: 'Map Man', fontSize: 24),
-              ),
-            ],
+        if (shopVideos.length > 3) ...[
+          Container(
+            height: 150,
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Image.asset(AppIcons.locationLastPinP),
+                Transform.rotate(
+                  angle: 1.5708,
+                  child: OutlineText(title: 'Map Man', fontSize: 24),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -431,20 +438,6 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
             child: Row(
               children: [
                 const SizedBox(width: 30),
-                Container(
-                  height: 24,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.scaffoldBackground,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: BodyTextHint(
-                    title: 'Image uploaded (${widget.images.length})',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
                 const Spacer(),
                 ImagesBackAndForwardContainer(
                   onTap: _previousPage,

@@ -108,14 +108,17 @@ class _MapsState extends State<Maps> {
     );
 
     _positionStream =
-        Geolocator.getPositionStream(
-          locationSettings: locationSettings,
-        ).listen((Position? position) {
-          if (position != null) {
-            debugPrint('Lat: ${position.latitude}, Lng: ${position.longitude}');
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (Position? position) async {
+            if (position == null) return;
+
             currentLatLng = LatLng(position.latitude, position.longitude);
-          }
-        });
+
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        );
   }
 
   /// Distance calculation
@@ -138,11 +141,12 @@ class _MapsState extends State<Maps> {
     if (mounted) setState(() {});
   }
 
-  void onMapCreated(GoogleMapController controller) {
+  void onMapCreated(GoogleMapController controller) async {
     _mapController = controller;
-    if (_mapStyle != null) {
-      _mapController!.setMapStyle(_mapStyle);
-    }
+
+    _mapStyle ??= await rootBundle.loadString('assets/map_style.json');
+
+    _mapController!.setMapStyle(_mapStyle);
   }
 
   Future<void> getSearchShops() async {

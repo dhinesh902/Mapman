@@ -44,9 +44,10 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleBookmark(int index) {
+  bool toggleBookmark(int index) {
     bookmarked[index] = !bookmarked[index];
     notifyListeners();
+    return bookmarked[index];
   }
 
   /// video
@@ -482,10 +483,14 @@ class VideoController extends ChangeNotifier {
         token: token,
         videoId: videoId,
       );
-      final Map<String, dynamic> data =
-          response[Keys.data] as Map<String, dynamic>;
-      final video = VideosData.fromJson(data);
-      _videoByIdData = ApiResponse.completed(video);
+      if (response[Keys.data] is List) {
+        _videoByIdData = ApiResponse.completed(null);
+      } else {
+        final Map<String, dynamic> data =
+            response[Keys.data] as Map<String, dynamic>;
+        final video = VideosData.fromJson(data);
+        _videoByIdData = ApiResponse.completed(video);
+      }
     } catch (e) {
       _videoByIdData = ApiResponse.error(e.toString());
     }

@@ -15,7 +15,6 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -353,11 +352,7 @@ class HomeTopCard extends StatelessWidget {
                                   ),
                                   SizedBox(height: 15),
                                   InkWell(
-                                    onTap: () {
-                                      CustomDialogues().showRatingDialog(
-                                        context,
-                                      );
-                                    },
+                                    onTap: () {},
                                     child: Container(
                                       height: 28,
                                       width: 100,

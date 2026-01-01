@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/auth_controller.dart';
@@ -11,6 +12,7 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class CustomDialogues {
@@ -640,7 +642,20 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                   color: GenericColors.uploadPrimary,
                   borderRadius: BorderRadius.circular(30),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  onPressed: () {},
+                  onPressed: () {
+                    if (rating.value > 1) {
+                      SessionManager.setRating(status: 1);
+                      context.pop();
+                      Future.delayed(Duration(milliseconds: 300));
+                      SystemNavigator.pop();
+                    } else {
+                      CustomToast.show(
+                        context,
+                        title: 'Please add rating',
+                        isError: true,
+                      );
+                    }
+                  },
                   child: BodyTextColors(
                     title: 'Rate Now',
                     fontSize: 14,
@@ -650,7 +665,11 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  context.pop();
+                  Future.delayed(Duration(milliseconds: 300));
+                  SystemNavigator.pop();
+                },
                 child: BodyTextHint(
                   title: 'Skip',
                   fontSize: 14,
@@ -779,7 +798,20 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      if (rating.value > 1) {
+                        SessionManager.setRating(status: 1);
+                        context.pop();
+                        Future.delayed(Duration(milliseconds: 300));
+                        SystemNavigator.pop();
+                      } else {
+                        CustomToast.show(
+                          context,
+                          title: 'Please add rating',
+                          isError: true,
+                        );
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GenericColors.uploadPrimary,
                       shape: RoundedRectangleBorder(
@@ -796,7 +828,11 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    context.pop();
+                    Future.delayed(Duration(milliseconds: 300));
+                    SystemNavigator.pop();
+                  },
                   child: BodyTextHint(
                     title: 'Skip',
                     fontSize: 14,

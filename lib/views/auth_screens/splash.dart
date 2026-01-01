@@ -133,7 +133,7 @@ class SplashWithLogo extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Positioned(
-            top: size.height / 2.75,
+            top: size.height / 3,
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: -600.0, end: 0.0),
               duration: Duration(seconds: 1),
@@ -145,11 +145,14 @@ class SplashWithLogo extends StatelessWidget {
                 );
               },
               child: Center(
-                child: Image.asset(
-                  AppIcons.appLogoP,
-                  fit: BoxFit.cover,
-                  height: 200,
-                  width: 200,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.asset(
+                    AppIcons.appLogoP,
+                    fit: BoxFit.cover,
+                    height: 200,
+                    width: 200,
+                  ),
                 ),
               ),
             ),

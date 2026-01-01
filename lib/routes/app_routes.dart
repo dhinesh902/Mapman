@@ -16,6 +16,7 @@ class AppRoutes {
   static String chatInfo = 'chat_info';
   static String uploadVideo = 'upload_video';
   static String singleVideoScreen = 'single_video_screen';
+  static String notificationVideoScreen = 'notification_video_screen';
   static String replaceVideo = 'replace_video';
   static String notifications = 'notifications';
   static String notificationSettings = 'notification_settings';

@@ -4,6 +4,7 @@ import 'package:mapman/model/home_model.dart';
 import 'package:mapman/model/notification_model.dart';
 import 'package:mapman/model/shop_search_data.dart';
 import 'package:mapman/service/home_service.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/handlers/api_response.dart';
@@ -347,9 +348,25 @@ class HomeController extends ChangeNotifier {
     return _apiResponse;
   }
 
+  /// Update notification open status locally
+  void updateNotificationStatusLocally(int notificationId) {
+    if (_notificationsData.status == Status.COMPLETED &&
+        _notificationsData.data != null) {
+      final index = _notificationsData.data!
+          .indexWhere((notification) => notification.id == notificationId);
+      if (index != -1) {
+        _notificationsData.data![index].openStatus = 'opened';
+        notifyListeners();
+      }
+    }
+  }
+
   Future<ApiResponse> getNotificationOpenStatus({
     required int notificationId,
   }) async {
+    // Update local state immediately
+    updateNotificationStatusLocally(notificationId);
+    
     _notificationStatusResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {

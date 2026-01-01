@@ -11,6 +11,7 @@ import 'package:mapman/views/auth_screens/splash.dart';
 import 'package:mapman/views/main_dashboard/home/saved_videos.dart';
 import 'package:mapman/views/main_dashboard/main_dashboard.dart';
 import 'package:mapman/views/main_dashboard/notification/notification_settings.dart';
+import 'package:mapman/views/main_dashboard/notification/notification_video.dart';
 import 'package:mapman/views/main_dashboard/notification/notifications.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/profile/edit_profile.dart';
@@ -73,6 +74,17 @@ class AppRouter {
                     name: AppRoutes.viewedVideos,
                     builder: (context, state) => ViewedVideos(),
                   ),
+                  GoRoute(
+                    path: '/notification_video_screen',
+                    name: AppRoutes.notificationVideoScreen,
+                    builder: (context, state) {
+                      final data = state.extra as Map<String, dynamic>;
+                      return NotificationVideoScreen(
+                        videosData: data[Keys.notificationVideo] as VideosData,
+                        isMyVideos: data[Keys.isMyVideos] as bool,
+                      );
+                    },
+                  ),
                 ],
               ),
             ],
@@ -99,9 +111,35 @@ class AppRouter {
             name: AppRoutes.singleVideoScreen,
             builder: (context, state) {
               final data = state.extra as Map<String, dynamic>;
+              final videosDataValue = data[Keys.videosData];
+
+              // Handle both single video and list of videos
+              List<VideosData> videosList;
+              int initialIndex = 0;
+
+              if (videosDataValue is List<VideosData>) {
+                videosList = videosDataValue;
+                initialIndex = (data[Keys.initialIndex] as int?) ?? 0;
+              } else if (videosDataValue is VideosData) {
+                // Single video - wrap in list
+                videosList = [videosDataValue];
+                initialIndex = 0;
+              } else {
+                // Fallback to empty list
+                videosList = [];
+                initialIndex = 0;
+              }
+
+              // Clamp initialIndex to valid range
+              initialIndex = initialIndex.clamp(
+                0,
+                videosList.isNotEmpty ? videosList.length - 1 : 0,
+              );
+
               return SingleVideoScreen(
-                videosData: data[Keys.videosData] as VideosData,
-                isMyVideos: data[Keys.isMyVideos] as bool,
+                videosData: videosList,
+                isMyVideos: (data[Keys.isMyVideos] as bool?) ?? false,
+                initialIndex: initialIndex,
               );
             },
             routes: [

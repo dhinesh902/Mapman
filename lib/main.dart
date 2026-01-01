@@ -99,7 +99,7 @@ void _handleNotificationNavigation(String? payload) {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Background message: ${message.messageId}');
-  
+
   // Don't show local notification manually when app is closed/killed
   // FCM automatically displays notifications with notification payload
   // Manual display here causes duplicate notifications
@@ -109,6 +109,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  PaintingBinding.instance.imageCache
+    ..maximumSize = 100
+    ..maximumSizeBytes = 50 * 1024 * 1024;
+
   await Future.delayed(Duration(milliseconds: 500));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

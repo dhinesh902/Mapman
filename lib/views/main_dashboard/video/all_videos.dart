@@ -174,8 +174,9 @@ class ParticularShopVideoList extends StatelessWidget {
                   context.pushNamed(
                     AppRoutes.singleVideoScreen,
                     extra: {
-                      Keys.videosData: videosData[index],
+                      Keys.videosData: videosData,
                       Keys.isMyVideos: false,
+                      Keys.initialIndex: index,
                     },
                   );
                 },

@@ -66,7 +66,15 @@ class SessionManager {
   }
 
   static int getViewedVideoStatus() {
-    return _sessionStorage!.getInt(Keys.isViewedVideo) ?? 0;
+    return _sessionStorage!.getInt(Keys.isViewedVideo) ?? 1;
+  }
+
+  static Future<bool> setRating({required int status}) async {
+    return _sessionStorage!.setInt(Keys.rating, status);
+  }
+
+  static int getRating() {
+    return _sessionStorage!.getInt(Keys.rating) ?? 0;
   }
 
   static Future<bool> setShopName({required String shopName}) async {

@@ -204,22 +204,24 @@ class _ViewedVideosState extends State<ViewedVideos> {
                                       '${ApiRoutes.baseUrl}${video.video ?? ''}',
                                   isBookMark: videoController.bookmarked[index],
                                   bookMarkOnTap: () async {
-                                    videoController.toggleBookmark(index);
+                                    final isBookmarked = videoController
+                                        .toggleBookmark(index);
+
                                     await addSavedVideos(
                                       videoId: viewedVideos[index].id ?? 0,
-                                      status:
-                                          videoController.bookmarked[index] ==
-                                              true
-                                          ? 'inactive'
-                                          : 'active',
+                                      status: isBookmarked
+                                          ? 'active'
+                                          : 'inactive',
                                     );
                                   },
+
                                   onTap: () {
                                     context.pushNamed(
                                       AppRoutes.singleVideoScreen,
                                       extra: {
-                                        Keys.videosData: video,
+                                        Keys.videosData: viewedVideos,
                                         Keys.isMyVideos: false,
+                                        Keys.initialIndex: index,
                                       },
                                     );
                                   },

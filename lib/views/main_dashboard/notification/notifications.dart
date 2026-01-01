@@ -31,11 +31,11 @@ class _NotificationsState extends State<Notifications> {
   @override
   void initState() {
     // TODO: implement initState
+    super.initState();
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getNotifications();
     });
-    super.initState();
   }
 
   Future<void> getNotifications() async {
@@ -143,8 +143,12 @@ class _NotificationsState extends State<Notifications> {
                               itemCount: notifications.length,
                               shrinkWrap: true,
                               padding: EdgeInsets.zero,
+                              key: const PageStorageKey('notifications_list'),
+                              // Add cache extent to limit off-screen widgets
+                              cacheExtent: 200,
                               itemBuilder: (context, index) {
                                 return NotificationCard(
+                                  key: ValueKey(notifications[index].id),
                                   notificationsData: notifications[index],
                                 );
                               },
@@ -173,10 +177,30 @@ class NotificationCard extends StatelessWidget {
 
   final NotificationsData notificationsData;
 
+  bool _isVideoFile(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.toLowerCase().endsWith('.mp4') ||
+        url.toLowerCase().endsWith('.mov') ||
+        url.toLowerCase().endsWith('.avi');
+  }
+
+  Widget _buildNotificationImage(String imageUrl) {
+    if (_isVideoFile(imageUrl)) {
+      return CustomNetworkImage(imageUrl: '', isProfile: true);
+    } else {
+      return CustomNetworkImage(imageUrl: imageUrl, isProfile: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        // Update status locally immediately
+        final controller = context.read<HomeController>();
+        controller.updateNotificationStatusLocally(notificationsData.id ?? 0);
+
+        // Navigate to the appropriate screen
         if (notificationsData.msgType == 'newShop') {
           context.pushNamed(
             AppRoutes.shopDetail,
@@ -184,16 +208,17 @@ class NotificationCard extends StatelessWidget {
           );
         } else {
           context.pushNamed(
-            AppRoutes.singleVideoScreen,
+            AppRoutes.notificationVideoScreen,
             extra: {
-              Keys.videosData: VideosData(
+              Keys.notificationVideo: VideosData(
                 id: int.parse('${notificationsData.msgLink ?? 0}'),
               ),
               Keys.isMyVideos: false,
             },
           );
         }
-        context.read<HomeController>().getNotificationOpenStatus(
+
+        controller.getNotificationOpenStatus(
           notificationId: notificationsData.id ?? 0,
         );
       },
@@ -227,10 +252,8 @@ class NotificationCard extends StatelessWidget {
                   width: 46,
                   decoration: const BoxDecoration(shape: BoxShape.circle),
                   clipBehavior: Clip.hardEdge,
-                  child: CustomNetworkImage(
-                    imageUrl: notificationsData.msgImage ?? '',
-                    isProfile: true,
-                    // placeHolderHeight: 20,
+                  child: _buildNotificationImage(
+                    notificationsData.msgImage ?? '',
                   ),
                 ),
                 title: HeaderTextBlack(

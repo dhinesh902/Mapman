@@ -161,6 +161,8 @@ class _SavedVideosState extends State<SavedVideos> {
                                 return SavedVideoCard(
                                   videosData: savedVideos[index],
                                   isBookMark: true,
+                                  allVideos: savedVideos,
+                                  currentIndex: index,
                                   bookMarkOnTap: () async {
                                     await addSavedVideos(
                                       videoId: savedVideos[index].id ?? 0,
@@ -274,11 +276,15 @@ class SavedVideoCard extends StatelessWidget {
     required this.videosData,
     required this.isBookMark,
     required this.bookMarkOnTap,
+    this.allVideos,
+    this.currentIndex,
   });
 
   final VideosData videosData;
   final bool isBookMark;
   final VoidCallback bookMarkOnTap;
+  final List<VideosData>? allVideos;
+  final int? currentIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -292,9 +298,15 @@ class SavedVideoCard extends StatelessWidget {
               isBookMark: isBookMark,
               bookMarkOnTap: bookMarkOnTap,
               onTap: () {
+                final videosList = allVideos ?? [videosData];
+                final index = currentIndex ?? 0;
                 context.pushNamed(
                   AppRoutes.singleVideoScreen,
-                  extra: {Keys.videosData: videosData, Keys.isMyVideos: false},
+                  extra: {
+                    Keys.videosData: videosList,
+                    Keys.isMyVideos: false,
+                    Keys.initialIndex: index,
+                  },
                 );
               },
             ),

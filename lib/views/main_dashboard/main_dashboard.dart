@@ -68,9 +68,10 @@ class _MainDashboardState extends State<MainDashboard> {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
+        // If not on home page, go to home
         if (homeController.currentPage != 0) {
           homeController.setCurrentPage = 0;
           return;
@@ -78,16 +79,23 @@ class _MainDashboardState extends State<MainDashboard> {
 
         if (Platform.isIOS) return;
 
+        final int viewedStatus = SessionManager.getRating();
+
+        if (viewedStatus == 0) {
+          CustomDialogues().showRatingDialog(context);
+          return;
+        }
+
         final now = DateTime.now();
         if (_lastBackPressed == null ||
             now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
           _lastBackPressed = now;
-
           CustomToast.show(context, title: 'Press back again to exit');
         } else {
           SystemNavigator.pop();
         }
       },
+
       child: CustomSafeArea(
         color: getBackgroundColor(
           homeController.currentPage,
