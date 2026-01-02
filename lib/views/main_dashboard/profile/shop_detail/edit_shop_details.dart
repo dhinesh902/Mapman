@@ -399,7 +399,12 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     child: Center(
                       child: IconButton(
                         onPressed: () async {
-                          await deleteShop(shopId: shopDetailData.id ?? 0);
+                          CustomDialogues().showDeleteConfirmDialog(
+                            context,
+                            onTap: () async {
+                              await deleteShop(shopId: shopDetailData.id ?? 0);
+                            },
+                          );
                         },
                         icon: Icon(
                           Icons.delete,

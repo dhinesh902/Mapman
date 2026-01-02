@@ -8,8 +8,10 @@ import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
+import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
@@ -209,6 +211,140 @@ class CustomDialogues {
     );
   }
 
+  Future showDeleteConfirmDialog(
+    BuildContext context, {
+    required VoidCallback onTap,
+  }) {
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: context,
+        builder: (ctx) {
+          return CupertinoAlertDialog(
+            content: Column(
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(
+                    AppIcons.logoutImgP,
+                    height: 90,
+                    width: 90,
+                  ),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Delete Shop Detail',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'Are you sure you want to delete this shop detail?',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(context),
+                child: BodyTextColors(
+                  title: "Not Now",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkGrey,
+                ),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  onTap();
+                },
+                child: BodyTextColors(
+                  title: "Confirm",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: GenericColors.darkRed,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: AppColors.scaffoldBackground,
+          child: Container(
+            width: double.maxFinite,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(
+                    AppIcons.logoutImgP,
+                    height: 130,
+                    width: 130,
+                  ),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Delete Shop Detail',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'Are you sure you want to delete this shop detail?',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomOutlineButton(
+                        title: 'Not Now',
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: CustomFullButton(
+                        title: 'Confirm',
+                        isDialogue: true,
+                        color: GenericColors.darkRed,
+                        onTap: () async {
+                          Navigator.of(ctx).pop();
+                          onTap();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   static Future showSuccessDialog(
     BuildContext context, {
     required String title,
@@ -309,11 +445,10 @@ class CustomDialogues {
     BuildContext context, {
     String body = 'Video Permanently deleted by you',
   }) {
+    final navigator = Navigator.of(context, rootNavigator: true);
     Future.delayed(const Duration(milliseconds: 1550), () {
-      if (context.mounted) {
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
+      if (navigator.canPop()) {
+        navigator.pop();
       }
     });
     if (Platform.isIOS) {
@@ -566,6 +701,24 @@ class _RatingDialogContent extends StatefulWidget {
 class _RatingDialogContentState extends State<_RatingDialogContent> {
   final ValueNotifier<int> rating = ValueNotifier(1);
 
+  Future<void> addReview() async {
+    final response = await context.read<AuthController>().addReview(
+      review: rating.value,
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      context.pop();
+      Future.delayed(Duration(milliseconds: 300));
+      SystemNavigator.pop();
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (Platform.isIOS) {
@@ -642,12 +795,9 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                   color: GenericColors.uploadPrimary,
                   borderRadius: BorderRadius.circular(30),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  onPressed: () {
+                  onPressed: () async {
                     if (rating.value > 1) {
-                      SessionManager.setRating(status: 1);
-                      context.pop();
-                      Future.delayed(Duration(milliseconds: 300));
-                      SystemNavigator.pop();
+                      await addReview();
                     } else {
                       CustomToast.show(
                         context,
@@ -798,12 +948,9 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (rating.value > 1) {
-                        SessionManager.setRating(status: 1);
-                        context.pop();
-                        Future.delayed(Duration(milliseconds: 300));
-                        SystemNavigator.pop();
+                        await addReview();
                       } else {
                         CustomToast.show(
                           context,

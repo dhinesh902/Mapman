@@ -431,7 +431,7 @@ class VideoController extends ChangeNotifier {
         shopId: shopId,
       );
       final data = response[Keys.data];
-      if (data != null && (data as Map).isNotEmpty) {
+      if (data != 'Shop not found' && (data as Map).isNotEmpty) {
         _singleShopDetailData = ApiResponse.completed(
           SingleShopDetailData.fromJson(data as Map<String, dynamic>),
         );

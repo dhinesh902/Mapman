@@ -164,4 +164,21 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     return _apiResponse;
   }
+
+  Future<ApiResponse> addReview({required int review}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await authService.addReview(
+        token: token,
+        review: review,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
 }

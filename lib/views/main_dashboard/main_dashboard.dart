@@ -71,7 +71,6 @@ class _MainDashboardState extends State<MainDashboard> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        // If not on home page, go to home
         if (homeController.currentPage != 0) {
           homeController.setCurrentPage = 0;
           return;
@@ -109,6 +108,7 @@ class _MainDashboardState extends State<MainDashboard> {
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: InkWell(
             onTap: () async {
+              int? shopId = SessionManager.getShopId();
               if (shopId != 0) {
                 VideoDialogues().showVideoUploadDialogue(context);
               } else {
@@ -291,7 +291,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryBorder.withOpacity(.4),
+                color: AppColors.primaryBorder.withValues(alpha: .4),
                 spreadRadius: 1,
                 blurRadius: 4,
                 offset: const Offset(0, 4),

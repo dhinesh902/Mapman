@@ -9,7 +9,6 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
-import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
@@ -58,6 +57,16 @@ class _ShopDetailState extends State<ShopDetail> {
     }
   }
 
+  String shopName(Status status, String? shopName) {
+    if (status == Status.LOADING) {
+      return '......';
+    } else if (status == Status.COMPLETED) {
+      return shopName?.capitalize() ?? '';
+    } else {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
@@ -67,103 +76,142 @@ class _ShopDetailState extends State<ShopDetail> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(
-          title:
-              videoController.singleShopDetailData.data?.shop?.shopName
-                  ?.capitalize() ??
-              '......',
-          action: ShopLocationButton(
-            onTap: () async {
-              await CustomLaunchers.openGoogleMaps(
-                latitude: double.parse(lat),
-                longitude: double.parse(long),
-              );
-            },
+          title: shopName(
+            videoController.singleShopDetailData.status,
+            videoController.singleShopDetailData.data?.shop?.shopName,
           ),
+          action: videoController.singleShopDetailData.data != null
+              ? ShopLocationButton(
+                  onTap: () async {
+                    await CustomLaunchers.openGoogleMaps(
+                      latitude: double.parse(lat),
+                      longitude: double.parse(long),
+                    );
+                  },
+                )
+              : null,
           isCenterTitle: false,
         ),
-        body: Column(
-          children: [
-            SizedBox(height: 15),
-            Container(
-              height: 44,
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: AppColors.bgGrey, // background for outer
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: VideoHeadingContainer(
-                      title: 'Shop Details',
-                      icon: AppIcons.shopP,
-                      isActive: videoController.currentShopDetailIndex == 0,
-                      isLeft: true,
-                      onTap: () {
-                        videoController.setCurrentShopDetailIndex = 0;
-                      },
+        body: Builder(
+          builder: (context) {
+            return Column(
+              children: [
+                SizedBox(height: 15),
+                if (videoController.singleShopDetailData.data != null) ...[
+                  Container(
+                    height: 44,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.bgGrey, // background for outer
                     ),
-                  ),
-                  Expanded(
-                    child: VideoHeadingContainer(
-                      title: 'Videos',
-                      icon: AppIcons.videoAppP,
-                      isActive: videoController.currentShopDetailIndex == 1,
-                      isLeft: false,
-                      onTap: () {
-                        videoController.setShowParticularShopVideos = false;
-                        videoController.setCurrentShopDetailIndex = 1;
-                      },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: VideoHeadingContainer(
+                            title: 'Shop Details',
+                            icon: AppIcons.shopP,
+                            isActive:
+                                videoController.currentShopDetailIndex == 0,
+                            isLeft: true,
+                            onTap: () {
+                              videoController.setCurrentShopDetailIndex = 0;
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: VideoHeadingContainer(
+                            title: 'Videos',
+                            icon: AppIcons.videoAppP,
+                            isActive:
+                                videoController.currentShopDetailIndex == 1,
+                            isLeft: false,
+                            onTap: () {
+                              videoController.setShowParticularShopVideos =
+                                  false;
+                              videoController.setCurrentShopDetailIndex = 1;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
 
-            Builder(
-              builder: (context) {
-                switch (videoController.singleShopDetailData.status) {
-                  case Status.INITIAL:
-                  case Status.LOADING:
-                    return Expanded(child: const CustomLoadingIndicator());
-                  case Status.COMPLETED:
-                    if (videoController.singleShopDetailData.data != null) {
-                      return videoController.currentShopDetailIndex == 0
-                          ? ShopDetailContainer(
+                Builder(
+                  builder: (context) {
+                    switch (videoController.singleShopDetailData.status) {
+                      case Status.INITIAL:
+                      case Status.LOADING:
+                        return Expanded(child: const CustomLoadingIndicator());
+                      case Status.COMPLETED:
+                        final shopVideos =
+                            videoController
+                                .singleShopDetailData
+                                .data
+                                ?.shopVideos ??
+                            [];
+                        if (videoController.singleShopDetailData.data != null) {
+                          if (videoController.currentShopDetailIndex == 0) {
+                            return ShopDetailContainer(
                               shop:
                                   videoController
                                       .singleShopDetailData
                                       .data
                                       ?.shop ??
                                   Shop(),
-                            )
-                          : Expanded(
-                              child: ShopVideosList(
-                                shopVideos:
-                                    videoController
-                                        .singleShopDetailData
-                                        .data
-                                        ?.shopVideos ??
-                                    [],
-                              ),
                             );
-                    } else {
-                      return Expanded(
-                        child: NoDataText(title: Strings.noDataFound),
-                      );
-                    }
+                          } else {
+                            if (shopVideos.isEmpty) {
+                              return EmptyDataContainer(
+                                children: [
+                                  Image.asset(AppIcons.playVideoP),
+                                  SizedBox(height: 20),
+                                  BodyTextColors(
+                                    title: 'No shop videos found',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.lightGreyHint,
+                                  ),
+                                ],
+                              );
+                            }
+                            return Expanded(
+                              child: ShopVideosList(shopVideos: shopVideos),
+                            );
+                          }
+                        } else {
+                          return EmptyDataContainer(
+                            children: [
+                              Image.asset(
+                                AppIcons.shopP,
+                                height: 120,
+                                width: 120,
+                              ),
+                              SizedBox(height: 20),
+                              BodyTextColors(
+                                title: 'This shop is currently unavailable!!',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.lightGreyHint,
+                              ),
+                            ],
+                          );
+                        }
 
-                  case Status.ERROR:
-                    return Expanded(
-                      child: CustomErrorTextWidget(
-                        title:
-                            '${videoController.singleShopDetailData.message}',
-                      ),
-                    );
-                }
-              },
-            ),
-          ],
+                      case Status.ERROR:
+                        return Expanded(
+                          child: CustomErrorTextWidget(
+                            title:
+                                '${videoController.singleShopDetailData.message}',
+                          ),
+                        );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -45,16 +45,13 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   int _currentIndex = 0;
   bool _isInitialized = false;
   bool _isCompleted = false;
-  bool _isLoadingFirstVideo = true;
   bool _isDisposed = false;
+  bool _hasShownLastVideoToast = false;
 
   double _progress = 0.0;
-  Duration _currentPosition = Duration.zero;
-  Duration _totalDuration = Duration.zero;
 
   final Map<int, bool> _watchedMap = {};
   final Map<int, bool> _apiCallInProgress = {};
-  bool _hasShownLastVideoToast = false;
 
   /// Bookmark state per video
   final Map<int, ValueNotifier<bool>> _bookmarkMap = {};
@@ -66,7 +63,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     videoController = context.read<VideoController>();
 
-    // Initialize PageController with initial index
     final initialIndex = widget.initialIndex.clamp(
       0,
       widget.videosData.length - 1,
@@ -113,14 +109,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   Future<void> _disposePlayer() async {
     if (_player != null) {
       try {
-        // Remove listener first
         try {
           _player!.controller.removeListener(_videoListener);
         } catch (e) {
           debugPrint('Error removing listener: $e');
         }
 
-        // Pause player
         try {
           if (_player!.controller.value.isInitialized) {
             _player!.controller.pause();
@@ -129,7 +123,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           debugPrint('Error pausing player: $e');
         }
 
-        // Dispose player
         try {
           await _player!.dispose();
         } catch (e) {
@@ -149,7 +142,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   Future<void> _initializeVideo(int index) async {
     if (_isDisposed || index < 0 || index >= widget.videosData.length) return;
 
-    // Dispose previous player first
     await _disposePlayer();
 
     if (_isDisposed) return;
@@ -159,12 +151,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _isInitialized = false;
     _isCompleted = false;
     _progress = 0;
-    _currentPosition = Duration.zero;
-    _totalDuration = Duration.zero;
-
-    if (index == 0) {
-      _isLoadingFirstVideo = true;
-    }
 
     setState(() {});
 
@@ -184,14 +170,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         return;
       }
 
-      // Double check player is still valid after initialization
       if (_player == null || !_player!.controller.value.isInitialized) {
         await _disposePlayer();
-        if (mounted && !_isDisposed) {
-          setState(() {
-            _isLoadingFirstVideo = false;
-          });
-        }
+
         return;
       }
 
@@ -204,17 +185,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       if (mounted && !_isDisposed) {
         setState(() {
           _isInitialized = true;
-          _isLoadingFirstVideo = false;
         });
       }
     } catch (e) {
       debugPrint('Video init error: $e');
       await _disposePlayer();
-      if (mounted && !_isDisposed) {
-        setState(() {
-          _isLoadingFirstVideo = false;
-        });
-      }
     }
   }
 
@@ -231,8 +206,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       if (duration.inMilliseconds > 0) {
         if (mounted && !_isDisposed) {
           setState(() {
-            _currentPosition = position;
-            _totalDuration = duration;
             _progress = position.inMilliseconds / duration.inMilliseconds;
           });
         }
@@ -256,7 +229,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       }
     } catch (e) {
       debugPrint('Error in videoListener: $e');
-      // If player is invalid, try to reinitialize
       if (_player != null && !_player!.controller.value.isInitialized) {
         _isInitialized = false;
       }
@@ -282,25 +254,19 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   Future<void> _callVideoCompletionAPIs(int videoId) async {
     try {
-      videoController.addViewedVideos(videoId: videoId).catchError((e) {
-        debugPrint('Error adding viewed video: $e');
-      });
+      videoController.addViewedVideos(videoId: videoId);
 
       await Future.delayed(const Duration(milliseconds: 300));
 
       if (_isDisposed) return;
 
-      videoController.addVideoPoints().catchError((e) {
-        debugPrint('Error adding video points: $e');
-      });
+      videoController.addVideoPoints();
 
       await Future.delayed(const Duration(milliseconds: 300));
 
       if (_isDisposed) return;
 
-      videoController.getVideoPoints().catchError((e) {
-        debugPrint('Error getting video points: $e');
-      });
+      videoController.getVideoPoints();
     } catch (e) {
       debugPrint('Error in video completion APIs: $e');
     } finally {
@@ -335,12 +301,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         );
       }
     });
-  }
-
-  String _formatTime(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return "$m:$s";
   }
 
   void _onPageChanged(int index) {
@@ -382,45 +342,60 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              shouldShowVideo
-                  ? Builder(
-                      builder: (context) {
-                        try {
-                          if (_player == null ||
-                              !_player!.controller.value.isInitialized) {
-                            return Container(
-                              color: AppColors.scaffoldBackgroundDark,
-                              child: const Center(
-                                child: CustomLoadingIndicator(),
-                              ),
-                            );
-                          }
-                          return SizedBox.expand(
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _player!.controller.value.size.width,
-                                height: _player!.controller.value.size.height,
-                                child: VideoPlayer(_player!.controller),
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          debugPrint('Error displaying video: $e');
-                          return Container(
-                            color: AppColors.scaffoldBackgroundDark,
-                            child: const Center(
-                              child: CustomLoadingIndicator(),
-                            ),
-                          );
-                        }
-                      },
-                    )
-                  : Container(
-                      color: AppColors.scaffoldBackgroundDark,
-                      child: const Center(child: CustomLoadingIndicator()),
-                    ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (_player == null || !_isInitialized) return;
+                  final controller = _player!.controller;
+                  controller.value.isPlaying
+                      ? controller.pause()
+                      : controller.play();
+                  setState(() {});
+                },
+                child:
+                    shouldShowVideo &&
+                        _player != null &&
+                        _player!.controller.value.isInitialized
+                    ? FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _player!.controller.value.size.width,
+                          height: _player!.controller.value.size.height,
+                          child: VideoPlayer(_player!.controller),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.scaffoldBackgroundDark,
+                        child: const Center(child: CustomLoadingIndicator()),
+                      ),
+              ),
 
+              if (_player != null && _isInitialized)
+                Center(
+                  child: AnimatedOpacity(
+                    opacity: _player!.controller.value.isPlaying ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.primaryBorder, Colors.black38],
+                        ),
+                      ),
+                      child: Icon(
+                        _player!.controller.value.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
+                        size: 30,
+                        color: AppColors.whiteText,
+                      ),
+                    ),
+                  ),
+                ),
               Positioned(
                 top: 0,
                 left: 10,
@@ -468,57 +443,29 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 left: 0,
                 right: 0,
                 child: SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.whiteText,
-                          GenericColors.lightPrimary,
-                        ],
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: _progress.clamp(0.0, 1.0),
+                        backgroundColor: Colors.grey.shade300,
+                        valueColor: AlwaysStoppedAnimation(
+                          GenericColors.darkGreen,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        LinearProgressIndicator(
-                          value: _progress.clamp(0.0, 1.0),
-                          backgroundColor: Colors.grey.shade300,
-                          valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                      SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.whiteText,
+                              GenericColors.lightPrimary,
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Text(_formatTime(_currentPosition)),
-                            const Spacer(),
-                            Text(_formatTime(_totalDuration)),
-                            const SizedBox(width: 10),
-                            GestureDetector(
-                              onTap: () {
-                                if (_player == null || !_isInitialized) return;
-
-                                _player!.controller.value.isPlaying
-                                    ? _player!.controller.pause()
-                                    : _player!.controller.play();
-                              },
-                              child: Icon(
-                                (_player != null &&
-                                        _isInitialized &&
-                                        _player!.controller.value.isPlaying)
-                                    ? Icons.pause_circle_filled
-                                    : Icons.play_circle_fill,
-                                size: 36,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        /// DETAILS + ACTIONS
-                        Row(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
@@ -597,7 +544,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                         video.description?.capitalize() ?? '',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
-                                    maxLines: 4,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   SizedBox(height: 8),
                                   BodyTextHint(
@@ -657,8 +605,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             ],
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),

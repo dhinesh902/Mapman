@@ -48,6 +48,8 @@ class _MapsState extends State<Maps> {
   StreamSubscription<Position>? _positionStream;
   LatLng? currentLatLng;
 
+  bool _movedToCurrentLocation = false;
+
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
     zoom: 14.5,
@@ -103,20 +105,25 @@ class _MapsState extends State<Maps> {
     }
 
     const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 100,
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 50, // ✔ realistic value
     );
 
     _positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-          (Position? position) async {
-            if (position == null) return;
-
+          (position) {
             currentLatLng = LatLng(position.latitude, position.longitude);
 
-            if (mounted) {
-              setState(() {});
+            if (!_movedToCurrentLocation && _mapController != null) {
+              _movedToCurrentLocation = true;
+              _mapController!.animateCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(target: currentLatLng!, zoom: 15.5),
+                ),
+              );
             }
+
+            if (mounted) setState(() {});
           },
         );
   }
@@ -127,13 +134,16 @@ class _MapsState extends State<Maps> {
     required double longitude,
   }) {
     if (currentLatLng == null) return 0.0;
-    double distanceInMeters = Geolocator.distanceBetween(
+
+    final meters = Geolocator.distanceBetween(
       currentLatLng!.latitude,
       currentLatLng!.longitude,
       latitude,
       longitude,
     );
-    return (distanceInMeters / 1000);
+
+    final km = meters / 1000;
+    return double.parse(km.toStringAsFixed(1));
   }
 
   Future<void> loadIcon() async {
@@ -146,7 +156,14 @@ class _MapsState extends State<Maps> {
 
     _mapStyle ??= await rootBundle.loadString('assets/map_style.json');
 
-    _mapController!.setMapStyle(_mapStyle);
+    controller.setMapStyle(_mapStyle);
+
+    if (currentLatLng != null && !_movedToCurrentLocation) {
+      _movedToCurrentLocation = true;
+      controller.animateCamera(
+        CameraUpdate.newLatLngZoom(currentLatLng!, 15.5),
+      );
+    }
   }
 
   Future<void> getSearchShops() async {
