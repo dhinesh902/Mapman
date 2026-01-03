@@ -70,6 +70,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _currentIndex = initialIndex;
     _pageController = PageController(initialPage: initialIndex);
 
+    for (final video in widget.videosData) {
+      final id = video.id ?? 0;
+      _watchedMap[id] = video.watched == true;
+      _apiCallInProgress[id] = false;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       videoController.loadViewedVideoStatus();
       _initializeVideo(initialIndex);
@@ -235,46 +241,74 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
-  void _handleVideoCompletion() async {
+  // void _handleVideoCompletion() async {
+  //   if (_isDisposed) return;
+  //
+  //   final video = widget.videosData[_currentIndex];
+  //   final videoId = video.id ?? 0;
+  //
+  //   if (_watchedMap[videoId] != true &&
+  //       !widget.isMyVideos &&
+  //       videoController.isViewedVideo == 1 &&
+  //       !(_apiCallInProgress[videoId] == true)) {
+  //     _watchedMap[videoId] = true;
+  //     _apiCallInProgress[videoId] = true;
+  //
+  //     _callVideoCompletionAPIs(videoId);
+  //   }
+  // }
+
+  void _handleVideoCompletion() {
     if (_isDisposed) return;
 
     final video = widget.videosData[_currentIndex];
     final videoId = video.id ?? 0;
-
-    if (_watchedMap[videoId] != true &&
-        !widget.isMyVideos &&
-        videoController.isViewedVideo == 1 &&
-        !(_apiCallInProgress[videoId] == true)) {
-      _watchedMap[videoId] = true;
-      _apiCallInProgress[videoId] = true;
-
-      _callVideoCompletionAPIs(videoId);
-    }
+    if (_watchedMap[videoId] == true) return;
+    if (_apiCallInProgress[videoId] == true) return;
+    if (widget.isMyVideos || videoController.isViewedVideo != 1) return;
+    _markVideoWatched(videoId);
   }
 
-  Future<void> _callVideoCompletionAPIs(int videoId) async {
+  // Future<void> _callVideoCompletionAPIs(int videoId) async {
+  //   try {
+  //     videoController.addViewedVideos(videoId: videoId);
+  //
+  //     await Future.delayed(const Duration(milliseconds: 300));
+  //
+  //     if (_isDisposed) return;
+  //
+  //     videoController.addVideoPoints();
+  //
+  //     await Future.delayed(const Duration(milliseconds: 300));
+  //
+  //     if (_isDisposed) return;
+  //
+  //     videoController.getVideoPoints();
+  //   } catch (e) {
+  //     debugPrint('Error in video completion APIs: $e');
+  //   } finally {
+  //     Future.delayed(const Duration(seconds: 5), () {
+  //       if (!_isDisposed) {
+  //         _apiCallInProgress.remove(videoId);
+  //       }
+  //     });
+  //   }
+  // }
+
+  Future<void> _markVideoWatched(int videoId) async {
+    _watchedMap[videoId] = true;
+    _apiCallInProgress[videoId] = true;
+
+    setState(() {});
+
     try {
-      videoController.addViewedVideos(videoId: videoId);
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      if (_isDisposed) return;
-
-      videoController.addVideoPoints();
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      if (_isDisposed) return;
-
-      videoController.getVideoPoints();
+      await videoController.addViewedVideos(videoId: videoId);
+      await videoController.addVideoPoints();
+      await videoController.getVideoPoints();
     } catch (e) {
-      debugPrint('Error in video completion APIs: $e');
+      debugPrint('Watched API error: $e');
     } finally {
-      Future.delayed(const Duration(seconds: 5), () {
-        if (!_isDisposed) {
-          _apiCallInProgress.remove(videoId);
-        }
-      });
+      _apiCallInProgress[videoId] = false;
     }
   }
 
@@ -311,7 +345,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       _hasShownLastVideoToast = true;
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted && !_isDisposed) {
-          CustomToast.show(context, title: 'Videos end', isError: false);
+          CustomToast.show(
+            context,
+            title: 'This is the last video',
+            isError: false,
+          );
         }
       });
     }
@@ -361,7 +399,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                         child: SizedBox(
                           width: _player!.controller.value.size.width,
                           height: _player!.controller.value.size.height,
-                          child: VideoPlayer(_player!.controller),
+                          child: RepaintBoundary(
+                            child: VideoPlayer(_player!.controller),
+                          ),
                         ),
                       )
                     : Container(
@@ -452,7 +492,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           GenericColors.darkGreen,
                         ),
                       ),
-                      SizedBox(height: 5),
                       Container(
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
@@ -513,7 +552,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                         ),
                                       ),
                                       SizedBox(width: 10),
-                                      if (video.watched == true &&
+                                      if (_watchedMap[videoId] == true &&
                                           !widget.isMyVideos)
                                         Container(
                                           padding: EdgeInsets.symmetric(
@@ -547,12 +586,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  SizedBox(height: 8),
-                                  BodyTextHint(
-                                    title: '+91 ${video.whatsappNumber}',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                  ),
+                                  // SizedBox(height: 8),
+                                  // BodyTextHint(
+                                  //   title: '+91 ${video.whatsappNumber}',
+                                  //   fontSize: 12,
+                                  //   fontWeight: FontWeight.w400,
+                                  // ),
                                 ],
                               ),
                             ),

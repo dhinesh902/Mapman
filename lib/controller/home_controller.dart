@@ -232,6 +232,7 @@ class HomeController extends ChangeNotifier {
                 item.categoryName?.toLowerCase() == 'others',
           )
           .toList();
+      SessionManager.setRating(status: _homeData.data?.reviewStatus ?? false);
     } catch (e) {
       _homeData = ApiResponse.error(e.toString());
     }
@@ -352,8 +353,9 @@ class HomeController extends ChangeNotifier {
   void updateNotificationStatusLocally(int notificationId) {
     if (_notificationsData.status == Status.COMPLETED &&
         _notificationsData.data != null) {
-      final index = _notificationsData.data!
-          .indexWhere((notification) => notification.id == notificationId);
+      final index = _notificationsData.data!.indexWhere(
+        (notification) => notification.id == notificationId,
+      );
       if (index != -1) {
         _notificationsData.data![index].openStatus = 'opened';
         notifyListeners();
@@ -366,7 +368,7 @@ class HomeController extends ChangeNotifier {
   }) async {
     // Update local state immediately
     updateNotificationStatusLocally(notificationId);
-    
+
     _notificationStatusResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {

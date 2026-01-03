@@ -30,8 +30,8 @@ class EnterYourLocation extends StatefulWidget {
 }
 
 class _EnterYourLocationState extends State<EnterYourLocation> {
-  late PlaceController placeController;
-  late VoidCallback _placeListener;
+  late final PlaceController placeController;
+  late final VoidCallback _placeListener;
 
   GoogleMapController? _mapController;
 
@@ -53,6 +53,14 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
       final latLng = placeController.currentLocationLatLng.data;
       if (latLng != null) {
         _currentLatLng = latLng;
+
+        _ignoreNextCameraIdle = true;
+        await _mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(target: latLng, zoom: 18, tilt: 65, bearing: 30),
+          ),
+        );
+
         _fetchAddressOnce(latLng);
       }
     });
@@ -78,20 +86,28 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 
   @override
   Widget build(BuildContext context) {
-    placeController = context.watch<PlaceController>();
+    final controller = context.watch<PlaceController>();
+
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(title: 'Enter your Location'),
         body: Builder(
           builder: (context) {
-            switch (placeController.currentLocationLatLng.status) {
+            switch (controller.currentLocationLatLng.status) {
               case Status.INITIAL:
               case Status.LOADING:
                 return const CustomLoadingIndicator();
+
+              case Status.ERROR:
+                return CustomErrorTextWidget(
+                  title: controller.currentLocationLatLng.message ?? '',
+                );
+
               case Status.COMPLETED:
-                final state = placeController.currentLocationLatLng;
-                final initial = state.data!;
+                final initial = controller.currentLocationLatLng.data!;
+                final latLng = _currentLatLng ?? initial;
+
                 return Stack(
                   alignment: Alignment.center,
                   children: [
@@ -105,25 +121,24 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
                       buildingsEnabled: true,
-                      tiltGesturesEnabled: true,
                       trafficEnabled: true,
-                      onMapCreated: (c) {
-                        _mapController = c;
-                      },
+                      tiltGesturesEnabled: true,
                       padding: EdgeInsets.only(
                         top: MediaQuery.of(context).size.height * .55,
                       ),
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
                       onCameraMove: (position) {
+                        _currentLatLng = position.target;
                         if (placeController.placeDetails != null) {
                           placeController.resetAddress();
                         }
-                        _currentLatLng = position.target;
                       },
-
                       onCameraIdle: _handleCameraIdle,
                     ),
 
-                    /// LOTTIE ANIMATION
+                    /// LOCATION PIN
                     IgnorePointer(
                       child: Lottie.asset(
                         AppAnimations.locationPin,
@@ -141,9 +156,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                         hintText: 'Search by location name',
                         ontTap: () async {
                           FocusScope.of(context).unfocus();
-
                           await context.pushNamed(AppRoutes.searchLocation);
-
                           if (!context.mounted) return;
                           FocusScope.of(context).unfocus();
                         },
@@ -151,6 +164,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       ),
                     ),
 
+                    /// BOTTOM PANEL
                     Positioned(
                       bottom: 15,
                       left: 0,
@@ -158,43 +172,37 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: _goToMyCurrentLocation,
-                              icon: const Icon(Icons.my_location),
-                              label: const HeaderTextBlack(
-                                title: "Current Location",
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                          ElevatedButton.icon(
+                            onPressed: _goToMyCurrentLocation,
+                            icon: const Icon(Icons.my_location),
+                            label: const HeaderTextBlack(
+                              title: "Current Location",
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              elevation: 4,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                elevation: 4,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           LocationPickContainerDrag(
-                            address: placeController.loadingAddress
+                            address: controller.loadingAddress
                                 ? 'Loading...'
-                                : placeController.currentAddress,
-                            latLng: _currentLatLng ?? initial,
+                                : controller.currentAddress,
+                            latLng: latLng,
                           ),
                         ],
                       ),
                     ),
                   ],
-                );
-              case Status.ERROR:
-                return CustomErrorTextWidget(
-                  title: placeController.currentLocationLatLng.message ?? '',
                 );
             }
           },
@@ -219,40 +227,33 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   }
 
   Future<void> _goToMyCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint('Location services are disabled.');
-      return;
-    }
+    if (!await Geolocator.isLocationServiceEnabled()) return;
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('Location permission denied');
-        return;
-      }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      debugPrint('Location permission permanently denied');
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
       return;
     }
 
-    Position position = await Geolocator.getCurrentPosition(
+    final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    _mapController?.animateCamera(
+    final latLng = LatLng(position.latitude, position.longitude);
+
+    _ignoreNextCameraIdle = true;
+    _currentLatLng = latLng;
+
+    await _mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(position.latitude, position.longitude),
-          zoom: 16,
-          tilt: 0,
-          bearing: 0,
-        ),
+        CameraPosition(target: latLng, zoom: 18, tilt: 0, bearing: 0),
       ),
     );
+
+    _fetchAddressOnce(latLng);
   }
 
   void _handleCameraIdle() {

@@ -78,9 +78,9 @@ class _MainDashboardState extends State<MainDashboard> {
 
         if (Platform.isIOS) return;
 
-        final int viewedStatus = SessionManager.getRating();
+        final bool viewedStatus = SessionManager.getRating();
 
-        if (viewedStatus == 0) {
+        if (!viewedStatus) {
           CustomDialogues().showRatingDialog(context);
           return;
         }

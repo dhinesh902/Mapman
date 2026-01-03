@@ -791,27 +791,35 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
               const SizedBox(height: 35),
               SizedBox(
                 width: double.infinity,
-                child: CupertinoButton(
-                  color: GenericColors.uploadPrimary,
-                  borderRadius: BorderRadius.circular(30),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  onPressed: () async {
-                    if (rating.value > 1) {
-                      await addReview();
-                    } else {
-                      CustomToast.show(
-                        context,
-                        title: 'Please add rating',
-                        isError: true,
-                      );
+                child: Builder(
+                  builder: (context) {
+                    if (context.watch<AuthController>().apiResponse.status ==
+                        Status.LOADING) {
+                      return ButtonProgressBar();
                     }
+                    return CupertinoButton(
+                      color: GenericColors.uploadPrimary,
+                      borderRadius: BorderRadius.circular(30),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      onPressed: () async {
+                        if (rating.value > 1) {
+                          await addReview();
+                        } else {
+                          CustomToast.show(
+                            context,
+                            title: 'Please add rating',
+                            isError: true,
+                          );
+                        }
+                      },
+                      child: BodyTextColors(
+                        title: 'Rate Now',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.whiteText,
+                      ),
+                    );
                   },
-                  child: BodyTextColors(
-                    title: 'Rate Now',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.whiteText,
-                  ),
                 ),
               ),
               TextButton(
@@ -947,31 +955,39 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
                 const SizedBox(height: 35),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (rating.value > 1) {
-                        await addReview();
-                      } else {
-                        CustomToast.show(
-                          context,
-                          title: 'Please add rating',
-                          isError: true,
-                        );
+                  child: Builder(
+                    builder: (context) {
+                      if (context.watch<AuthController>().apiResponse.status ==
+                          Status.LOADING) {
+                        return ButtonProgressBar();
                       }
+                      return ElevatedButton(
+                        onPressed: () async {
+                          if (rating.value > 1) {
+                            await addReview();
+                          } else {
+                            CustomToast.show(
+                              context,
+                              title: 'Please add rating',
+                              isError: true,
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GenericColors.uploadPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: BodyTextColors(
+                          title: 'Rate Now',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.whiteText,
+                        ),
+                      );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GenericColors.uploadPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: BodyTextColors(
-                      title: 'Rate Now',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.whiteText,
-                    ),
                   ),
                 ),
                 TextButton(

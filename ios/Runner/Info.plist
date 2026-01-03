@@ -12,6 +12,7 @@
      <string>sms</string>
      <string>tel</string>
      <string>mailto</string>
+     <string>whatsapp</string>
 
    </array>
 

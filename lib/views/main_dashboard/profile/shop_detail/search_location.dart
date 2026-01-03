@@ -31,7 +31,7 @@ class _SearchLocationState extends State<SearchLocation> {
     focusNode.requestFocus();
     placeController = context.read<PlaceController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // placeController.clearPredictions();
+      placeController.clearPredictions();
     });
     super.initState();
   }

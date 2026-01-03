@@ -71,7 +71,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
     phoneNumberController = TextEditingController(
-      text: SessionManager.getMobile() ?? '',
+      text: getLast10Digits(SessionManager.getMobile() ?? ''),
     );
     shopNumberController = TextEditingController();
     whatsAppNumberController = TextEditingController();
@@ -104,6 +104,16 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     shopImageValidator.dispose();
     shopImagesNotifier.dispose();
     super.dispose();
+  }
+
+  String getLast10Digits(String phone) {
+    String digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+
+    if (digitsOnly.length > 10) {
+      return digitsOnly.substring(digitsOnly.length - 10);
+    }
+
+    return digitsOnly;
   }
 
   Future<void> registerShop() async {
@@ -511,8 +521,9 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 onChanged: (value) {
                   profileController.setIsActiveWhatsappNumber = value!;
                   if (value) {
-                    whatsAppNumberController.text =
-                        SessionManager.getMobile() ?? '';
+                    whatsAppNumberController.text = getLast10Digits(
+                      SessionManager.getMobile() ?? '',
+                    );
                   } else {
                     shopNumberController.clear();
                   }
@@ -537,8 +548,9 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 onChanged: (value) {
                   profileController.setIsActive = value!;
                   if (value) {
-                    shopNumberController.text =
-                        SessionManager.getMobile() ?? '';
+                    shopNumberController.text = getLast10Digits(
+                      SessionManager.getMobile() ?? '',
+                    );
                   } else {
                     shopNumberController.clear();
                   }

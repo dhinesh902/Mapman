@@ -2,14 +2,9 @@ class HomeData {
   String? profile;
   String? userName;
   List<Category>? category;
-  int? notificationCount;
+  bool? reviewStatus;
 
-  HomeData({
-    this.profile,
-    this.userName,
-    this.category,
-    this.notificationCount,
-  });
+  HomeData({this.profile, this.userName, this.category, this.reviewStatus});
 
   HomeData.fromJson(Map<String, dynamic> json) {
     profile = json['profile'];
@@ -20,7 +15,7 @@ class HomeData {
         category!.add(Category.fromJson(v));
       });
     }
-    notificationCount = json['notificationCount'];
+    reviewStatus = json['reviewStatus'];
   }
 }
 

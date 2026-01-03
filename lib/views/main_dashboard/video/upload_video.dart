@@ -42,8 +42,8 @@ class _UploadVideoState extends State<UploadVideo> {
       categoryController,
       shopNameController;
 
-  late String _initialVideoTitle;
-  late String _initialDescription;
+  String _initialVideoTitle = '';
+  String _initialDescription = '';
 
   @override
   void initState() {
@@ -168,7 +168,7 @@ class _UploadVideoState extends State<UploadVideo> {
       onPopInvoked: (didPop) async {
         if (didPop) return;
 
-        if (!hasChanges()) {
+        if (!hasChanges() || widget.videosData.videoTitle == null) {
           Navigator.pop(context);
           return;
         }

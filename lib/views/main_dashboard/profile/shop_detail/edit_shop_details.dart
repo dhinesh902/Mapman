@@ -120,12 +120,18 @@ class _EditShopDetailState extends State<EditShopDetail> {
   void getShopDetails() {
     shopNameController.text = shopDetailData.shopName ?? '';
     descriptionController.text = shopDetailData.description ?? '';
-    phoneNumberController.text = shopDetailData.registerNumber ?? '';
-    shopNumberController.text = shopDetailData.shopNumber ?? '';
+    phoneNumberController.text = getLast10Digits(
+      shopDetailData.registerNumber ?? '',
+    );
+    shopNumberController.text = getLast10Digits(
+      shopDetailData.shopNumber ?? '',
+    );
     locationController.text = shopDetailData.address ?? '';
     openTimeController.text = shopDetailData.openTime ?? '';
     closeTimeController.text = shopDetailData.closeTime ?? '';
-    whatsAppNumberController.text = shopDetailData.whatsappNumber ?? '';
+    whatsAppNumberController.text = getLast10Digits(
+      shopDetailData.whatsappNumber ?? '',
+    );
     homeController.setSelectedCategory = shopDetailData.category ?? '';
     profileController.setShopImages = [
       shopDetailData.image1,
@@ -144,6 +150,16 @@ class _EditShopDetailState extends State<EditShopDetail> {
     _initialCloseTime = closeTimeController.text;
     _initialWhatsapp = whatsAppNumberController.text;
     _initialCategory = shopDetailData.category ?? '';
+  }
+
+  String getLast10Digits(String phone) {
+    String digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+
+    if (digitsOnly.length > 10) {
+      return digitsOnly.substring(digitsOnly.length - 10);
+    }
+
+    return digitsOnly;
   }
 
   Future<void> updateShopDetail() async {

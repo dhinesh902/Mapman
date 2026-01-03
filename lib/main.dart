@@ -1,10 +1,9 @@
 import 'dart:io';
-import 'dart:ui';
-
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mapman/controller/auth_controller.dart';
@@ -37,7 +36,7 @@ Future<void> showLocalNotification(RemoteMessage message) async {
           channelDescription: 'For showing order notifications',
           importance: Importance.max,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@mipmap/launcher_icon',
         );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
@@ -49,7 +48,7 @@ Future<void> showLocalNotification(RemoteMessage message) async {
       notification.title,
       notification.body,
       platformChannelSpecifics,
-      payload: message.data.isNotEmpty ? message.data.toString() : null,
+      payload: 'notifications',
     );
   }
 }
@@ -57,7 +56,7 @@ Future<void> showLocalNotification(RemoteMessage message) async {
 /// Initialization for local notifications
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@mipmap/launcher_icon');
 
   final DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings(
@@ -130,7 +129,9 @@ Future<void> main() async {
     );
 
     if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-      print("User declined notifications");
+      if (kDebugMode) {
+        print("User declined notifications");
+      }
     }
   }
 
@@ -138,9 +139,10 @@ Future<void> main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((message) {
     debugPrint('Foreground message: ${message.notification}');
-    if (message.notification != null) {
-      showLocalNotification(message);
-    }
+    // if (message.notification != null) {
+    //   showLocalNotification(message);
+    // }
+    showLocalNotification(message);
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
@@ -149,7 +151,9 @@ Future<void> main() async {
 
   /// Listen for token updates
   firebaseMessaging.onTokenRefresh.listen((fcmToken) async {
-    print("FCM token available: $fcmToken");
+    if (kDebugMode) {
+      print("FCM token available: $fcmToken");
+    }
     await sharedPrefs.setString(Keys.fcmToken, fcmToken);
     await AuthController().addFcmToken();
   });
@@ -160,12 +164,16 @@ Future<void> main() async {
       try {
         String? initialToken = await firebaseMessaging.getToken();
         if (initialToken != null) {
-          print("Initial FCM token: $initialToken");
+          if (kDebugMode) {
+            print("Initial FCM token: $initialToken");
+          }
           await sharedPrefs.setString(Keys.fcmToken, initialToken);
           await AuthController().addFcmToken();
         }
       } catch (e) {
-        print("TOKEN FAILED: $e");
+        if (kDebugMode) {
+          print("TOKEN FAILED: $e");
+        }
       }
     });
   } else {
@@ -177,7 +185,9 @@ Future<void> main() async {
         await AuthController().addFcmToken();
       }
     } catch (e) {
-      print("Error getting token: $e");
+      if (kDebugMode) {
+        print("Error getting token: $e");
+      }
     }
   }
 

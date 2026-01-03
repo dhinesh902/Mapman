@@ -52,14 +52,14 @@ class _OnboardScreenState extends State<OnboardScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
             GetStartedButton(
               onTap: () {
                 SessionManager.setString(key: Keys.isFirstTime, value: 'true');
                 context.go('/login');
               },
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
             Center(
               child: BodyTextHint(
                 title: 'By Continuing you agree to Mapman',

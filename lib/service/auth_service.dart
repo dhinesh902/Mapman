@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/utils/storage/session_manager.dart';
 
 class AuthService extends ApiRoutes {
   Future<Map<String, dynamic>> sendOTP({required String phoneNumber}) async {
@@ -76,11 +75,10 @@ class AuthService extends ApiRoutes {
     required int review,
   }) async {
     try {
-      int? shopId = SessionManager.getShopId();
       final response = await dio.post(
         ApiRoutes.addReview,
         options: headerWithToken(token),
-        data: {"shopId": shopId, "reviews": review},
+        data: {"reviews": review},
       );
       return response.data;
     } on DioException catch (e) {
