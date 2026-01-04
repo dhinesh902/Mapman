@@ -101,25 +101,31 @@ class _MapsState extends State<Maps> {
       return;
     }
 
+    final Position currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    currentLatLng = LatLng(currentPosition.latitude, currentPosition.longitude);
+
+    if (_mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: currentLatLng!, zoom: 15.5),
+        ),
+      );
+    }
+
+    if (mounted) setState(() {});
+
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 50, // ✔ realistic value
+      distanceFilter: 50, // ✔ realistic
     );
 
     _positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (position) {
             currentLatLng = LatLng(position.latitude, position.longitude);
-
-            if (!_movedToCurrentLocation && _mapController != null) {
-              _movedToCurrentLocation = true;
-              _mapController!.animateCamera(
-                CameraUpdate.newCameraPosition(
-                  CameraPosition(target: currentLatLng!, zoom: 15.5),
-                ),
-              );
-            }
-
             if (mounted) setState(() {});
           },
         );

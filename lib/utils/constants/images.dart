@@ -125,7 +125,7 @@ class AppIcons {
   static const String doctorP = 'assets/images/png/home/doctor.png';
   static const String doctorBgP = 'assets/images/png/home/doctor_bg.png';
   static const String groceryP = 'assets/images/png/home/grocery.png';
-  static const String groceryBgP = 'assets/images/png/home/grocery_bg.jpg';
+  static const String groceryBgP = 'assets/images/png/home/grocery_bg.png';
 
   /// Map
   static const String barsMap = 'assets/images/png/map/bars.png';

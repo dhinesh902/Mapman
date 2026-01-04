@@ -56,8 +56,12 @@ class AppRouter {
       GoRoute(
         path: '/main_dashboard',
         name: AppRoutes.mainDashboard,
-        builder: (context, state) =>
-            MainDashboard(isLogin: state.extra as bool),
+        builder: (context, state) {
+          final bool isLogin = state.extra is bool
+              ? state.extra as bool
+              : false;
+          return MainDashboard(isLogin: isLogin);
+        },
         routes: [
           GoRoute(
             path: '/notifications',

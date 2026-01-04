@@ -89,8 +89,6 @@ class LocationIconService {
     'others': AppIcons.othersMap,
   };
 
-
-
   Future<BitmapDescriptor> getMarkerIcon({required String category}) async {
     final key = category.toLowerCase().trim();
 
@@ -108,8 +106,8 @@ class LocationIconService {
       final ByteData data = await rootBundle.load(assetPath);
       final Uint8List resizedBytes = _resizeImage(
         data.buffer.asUint8List(),
-        60,
         75,
+        85,
       );
 
       final icon = BitmapDescriptor.fromBytes(resizedBytes);

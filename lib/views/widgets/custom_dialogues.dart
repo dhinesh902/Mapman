@@ -702,7 +702,7 @@ class _RatingDialogContent extends StatefulWidget {
 }
 
 class _RatingDialogContentState extends State<_RatingDialogContent> {
-  final ValueNotifier<int> rating = ValueNotifier(1);
+  final ValueNotifier<int> rating = ValueNotifier(0);
 
   Future<void> addReview() async {
     final response = await context.read<AuthController>().addReview(

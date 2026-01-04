@@ -165,7 +165,11 @@ class _ShopDetailState extends State<ShopDetail> {
                             if (shopVideos.isEmpty) {
                               return EmptyDataContainer(
                                 children: [
-                                  Image.asset(AppIcons.playVideoP),
+                                  Image.asset(
+                                    AppIcons.playVideoP,
+                                    height: 130,
+                                    width: 130,
+                                  ),
                                   SizedBox(height: 20),
                                   BodyTextColors(
                                     title: 'No shop videos found',

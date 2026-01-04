@@ -40,6 +40,7 @@ class _NotificationsState extends State<Notifications> {
 
   Future<void> getNotifications() async {
     final response = await homeController.getNotifications();
+    await homeController.getNotificationCount();
     if (!mounted) return;
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(

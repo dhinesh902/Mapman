@@ -29,7 +29,7 @@ Future<void> showLocalNotification(RemoteMessage message) async {
   final android = message.notification?.android;
 
   if (notification != null && android != null) {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'default_channel_id',
           'Default Channel',
@@ -39,15 +39,15 @@ Future<void> showLocalNotification(RemoteMessage message) async {
           icon: '@mipmap/launcher_icon',
         );
 
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
     );
 
     await flutterLocalNotificationsPlugin.show(
       notification.hashCode,
       notification.title,
       notification.body,
-      platformChannelSpecifics,
+      platformDetails,
       payload: 'notifications',
     );
   }
@@ -55,24 +55,23 @@ Future<void> showLocalNotification(RemoteMessage message) async {
 
 /// Initialization for local notifications
 Future<void> initializeLocalNotifications() async {
-  const AndroidInitializationSettings initializationSettingsAndroid =
+  const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/launcher_icon');
 
-  final DarwinInitializationSettings initializationSettingsDarwin =
-      DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
+  final DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
 
-  final InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: initializationSettingsDarwin,
+  final InitializationSettings settings = InitializationSettings(
+    android: androidSettings,
+    iOS: iosSettings,
   );
 
   await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+    settings,
+    onDidReceiveNotificationResponse: (response) {
       debugPrint("Notification tapped: ${response.payload}");
       _handleNotificationNavigation(response.payload);
     },
@@ -86,24 +85,15 @@ void notificationTapBackground(NotificationResponse response) {
 }
 
 void _handleNotificationNavigation(String? payload) {
-  if (payload == null) return;
-
   if (payload == 'notifications') {
     AppRouter.router.go('/main_dashboard/notifications');
   }
 }
 
-/// Background message handler
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Background message: ${message.messageId}');
-
-  // Don't show local notification manually when app is closed/killed
-  // FCM automatically displays notifications with notification payload
-  // Manual display here causes duplicate notifications
-  // Foreground notifications are handled by onMessage listener (line 129)
-  // Background/terminated notifications are handled automatically by FCM
 }
 
 Future<void> main() async {
@@ -113,90 +103,92 @@ Future<void> main() async {
     ..maximumSize = 100
     ..maximumSizeBytes = 50 * 1024 * 1024;
 
-  await Future.delayed(Duration(milliseconds: 500));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final sharedPrefs = await SessionManager.initialize();
-  final firebaseMessaging = FirebaseMessaging.instance;
 
-  /// IOS: request notification permissions
-  if (Platform.isIOS) {
-    NotificationSettings settings = await firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: AuthController()),
+        ChangeNotifierProvider.value(value: HomeController()),
+        ChangeNotifierProvider.value(value: VideoController()),
+        ChangeNotifierProvider.value(value: ProfileController()),
+        ChangeNotifierProvider.value(value: PlaceController()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 
-    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-      if (kDebugMode) {
-        print("User declined notifications");
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await initializeLocalNotifications();
+
+    final firebaseMessaging = FirebaseMessaging.instance;
+
+    if (Platform.isIOS) {
+      NotificationSettings settings = await firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+
+      if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+        if (kDebugMode) print("User declined notifications");
       }
     }
-  }
 
-  /// Background & foreground handlers
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  FirebaseMessaging.onMessage.listen((message) {
-    debugPrint('Foreground message: ${message.notification}');
-    // if (message.notification != null) {
-    //   showLocalNotification(message);
-    // }
-    showLocalNotification(message);
-  });
+    /// Background & foreground handlers
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    debugPrint('App opened from notification: ${message.messageId}');
-  });
+    FirebaseMessaging.onMessage.listen((message) {
+      if (message.notification != null) {
+        showLocalNotification(message);
+      }
+    });
 
-  /// Listen for token updates
-  firebaseMessaging.onTokenRefresh.listen((fcmToken) async {
-    if (kDebugMode) {
-      print("FCM token available: $fcmToken");
-    }
-    await sharedPrefs.setString(Keys.fcmToken, fcmToken);
-    await AuthController().addFcmToken();
-  });
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      debugPrint('App opened from notification: ${message.messageId}');
+    });
 
-  /// Retry fetching token after a short delay for iOS
-  if (Platform.isIOS) {
-    Future.delayed(const Duration(seconds: 2), () async {
-      try {
-        String? initialToken = await firebaseMessaging.getToken();
-        if (initialToken != null) {
-          if (kDebugMode) {
-            print("Initial FCM token: $initialToken");
+    /// FCM token refresh
+    firebaseMessaging.onTokenRefresh.listen((fcmToken) async {
+      await sharedPrefs.setString(Keys.fcmToken, fcmToken);
+      await AuthController().addFcmToken();
+    });
+
+    /// Initial token fetch (iOS retry after small delay)
+    if (Platform.isIOS) {
+      Future.delayed(const Duration(seconds: 2), () async {
+        try {
+          final token = await firebaseMessaging.getToken();
+          if (token != null) {
+            await sharedPrefs.setString(Keys.fcmToken, token);
+            await AuthController().addFcmToken();
           }
-          await sharedPrefs.setString(Keys.fcmToken, initialToken);
+        } catch (e) {
+          if (kDebugMode) print("TOKEN FAILED: $e");
+        }
+      });
+    } else {
+      try {
+        final token = await firebaseMessaging.getToken();
+        if (token != null) {
+          await sharedPrefs.setString(Keys.fcmToken, token);
           await AuthController().addFcmToken();
         }
       } catch (e) {
-        if (kDebugMode) {
-          print("TOKEN FAILED: $e");
-        }
-      }
-    });
-  } else {
-    /// Android: get token immediately
-    try {
-      String? initialToken = await firebaseMessaging.getToken();
-      if (initialToken != null) {
-        await sharedPrefs.setString(Keys.fcmToken, initialToken);
-        await AuthController().addFcmToken();
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error getting token: $e");
+        if (kDebugMode) print("Error getting token: $e");
       }
     }
-  }
 
-  /// IOS foreground notification display
-  await firebaseMessaging.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+    /// iOS foreground notification display
+    await firebaseMessaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  });
 
   const fatalError = true;
 
@@ -226,19 +218,6 @@ Future<void> main() async {
     }
     return true;
   };
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: AuthController()),
-        ChangeNotifierProvider.value(value: HomeController()),
-        ChangeNotifierProvider.value(value: VideoController()),
-        ChangeNotifierProvider.value(value: ProfileController()),
-        ChangeNotifierProvider.value(value: PlaceController()),
-      ],
-      child: const MyApp(),
-    ),
-  );
 }
 
 class MyApp extends StatelessWidget {

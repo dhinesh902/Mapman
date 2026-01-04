@@ -244,7 +244,7 @@ class _HomeState extends State<Home> {
                             },
                           ],
                           homeController: homeController,
-                          height: 120,
+                          height: 100,
                         ),
                         Container(
                           height: 153,

@@ -66,7 +66,7 @@ class SessionManager {
   }
 
   static int getViewedVideoStatus() {
-    return _sessionStorage!.getInt(Keys.isViewedVideo) ?? 1;
+    return _sessionStorage!.getInt(Keys.isViewedVideo) ?? 0;
   }
 
   static Future<bool> setRating({required bool status}) async {
