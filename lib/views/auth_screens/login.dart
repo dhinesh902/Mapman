@@ -185,10 +185,14 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             ),
             SizedBox(height: 15),
             CustomOutlineButtonWithImage(
-              title: 'Continue with Google',
-              icon: AppIcons.google,
-              onTap: () {},
+              title: 'Continue with Mobile',
+              isGoogle: false,
+              icon: AppIcons.phoneP,
+              onTap: () {
+                context.read<AuthController>().animateTo(1);
+              },
             ),
+
             SizedBox(height: 15),
             Row(
               children: [
@@ -206,11 +210,14 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             ),
             SizedBox(height: 15),
             CustomOutlineButtonWithImage(
-              title: 'Continue with Mobile',
-              isGoogle: false,
-              icon: AppIcons.phoneP,
+              title: 'Continue with Google',
+              icon: AppIcons.google,
               onTap: () {
-                context.read<AuthController>().animateTo(1);
+                CustomToast.show(
+                  context,
+                  title: 'This feature is currently unavailable',
+                  isError: true,
+                );
               },
             ),
             SizedBox(height: 20),

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_places_autocomplete/google_places_autocomplete.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -13,7 +12,6 @@ import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/constants/themes.dart';
-import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
@@ -278,86 +276,6 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
   }
 }
 
-class LocationPickContainerPrediction extends StatelessWidget {
-  const LocationPickContainerPrediction({super.key, required this.prediction});
-
-  final Prediction prediction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: Themes.searchFieldDecoration(borderRadius: 6),
-      margin: EdgeInsets.symmetric(horizontal: 10),
-      child: Column(
-        children: [
-          Container(
-            height: 25,
-            width: double.maxFinite,
-            padding: EdgeInsets.only(left: 15),
-            decoration: BoxDecoration(
-              color: GenericColors.lightPrimary.withValues(alpha: .5),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(6),
-                topRight: Radius.circular(6),
-              ),
-            ),
-            alignment: Alignment.centerLeft,
-            child: BodyTextColors(
-              title: 'Shop Location will be pin here',
-              fontSize: 12,
-              fontWeight: FontWeight.w300,
-              color: GenericColors.darkGeryHeading,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsetsGeometry.fromLTRB(15, 15, 15, 5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(AppIcons.mapP, height: 24, width: 24),
-                    SizedBox(width: 15),
-                    Expanded(
-                      child: HeaderTextBlack(
-                        title: prediction.title?.capitalize() ?? '',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                BodyTextHint(
-                  title: prediction.description?.capitalize() ?? '',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-                SizedBox(height: 10),
-                CustomFullButton(
-                  title: 'Confirm & Proceed',
-                  onTap: () async {
-                    context.read<PlaceController>().setConfirmedPrediction =
-                        prediction;
-                    await CustomDialogues.showSuccessDialog(
-                      context,
-                      title: 'SuccessFully Updated!',
-                      body: 'Your location updated successfully!',
-                    );
-                    if (!context.mounted) return;
-                    context.pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class LocationPickContainerDrag extends StatelessWidget {
   const LocationPickContainerDrag({
     super.key,
@@ -423,10 +341,12 @@ class LocationPickContainerDrag extends StatelessWidget {
                 CustomFullButton(
                   title: 'Confirm & Proceed',
                   onTap: () async {
-                    context.read<PlaceController>().setShopAddress = {
+                    final placeController = context.read<PlaceController>();
+                    placeController.setShopAddress = {
                       'address': address,
                       'latLong': latLng,
                     };
+                    placeController.setConfirmedAddress = address;
                     await CustomDialogues.showSuccessDialog(
                       context,
                       title: 'SuccessFully Updated!',
@@ -444,6 +364,87 @@ class LocationPickContainerDrag extends StatelessWidget {
     );
   }
 }
+
+// class LocationPickContainerPrediction extends StatelessWidget {
+//   const LocationPickContainerPrediction({super.key, required this.prediction});
+//
+//   final Prediction prediction;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       decoration: Themes.searchFieldDecoration(borderRadius: 6),
+//       margin: EdgeInsets.symmetric(horizontal: 10),
+//       child: Column(
+//         children: [
+//           Container(
+//             height: 25,
+//             width: double.maxFinite,
+//             padding: EdgeInsets.only(left: 15),
+//             decoration: BoxDecoration(
+//               color: GenericColors.lightPrimary.withValues(alpha: .5),
+//               borderRadius: BorderRadius.only(
+//                 topLeft: Radius.circular(6),
+//                 topRight: Radius.circular(6),
+//               ),
+//             ),
+//             alignment: Alignment.centerLeft,
+//             child: BodyTextColors(
+//               title: 'Shop Location will be pin here',
+//               fontSize: 12,
+//               fontWeight: FontWeight.w300,
+//               color: GenericColors.darkGeryHeading,
+//             ),
+//           ),
+//           Padding(
+//             padding: EdgeInsetsGeometry.fromLTRB(15, 15, 15, 5),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Row(
+//                   crossAxisAlignment: CrossAxisAlignment.center,
+//                   children: [
+//                     Image.asset(AppIcons.mapP, height: 24, width: 24),
+//                     SizedBox(width: 15),
+//                     Expanded(
+//                       child: HeaderTextBlack(
+//                         title: prediction.title?.capitalize() ?? '',
+//                         fontSize: 16,
+//                         fontWeight: FontWeight.w500,
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//                 SizedBox(height: 10),
+//                 BodyTextHint(
+//                   title: prediction.description?.capitalize() ?? '',
+//                   fontSize: 12,
+//                   fontWeight: FontWeight.w400,
+//                 ),
+//                 SizedBox(height: 10),
+//                 CustomFullButton(
+//                   title: 'Confirm & Proceed',
+//                   onTap: () async {
+//                     final placeController = context.read<PlaceController>();
+//                     placeController.setConfirmedAddress =
+//                         placeController.confirmAddress;
+//                     await CustomDialogues.showSuccessDialog(
+//                       context,
+//                       title: 'SuccessFully Updated!',
+//                       body: 'Your location updated successfully!',
+//                     );
+//                     if (!context.mounted) return;
+//                     context.pop();
+//                   },
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 // class LocationAutoCompleteSearchField extends StatelessWidget {
 //   const LocationAutoCompleteSearchField({

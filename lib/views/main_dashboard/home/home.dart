@@ -244,7 +244,7 @@ class _HomeState extends State<Home> {
                             },
                           ],
                           homeController: homeController,
-                          height: 74,
+                          height: 120,
                         ),
                         Container(
                           height: 153,
@@ -580,10 +580,13 @@ class BottomCarousalSlider extends StatelessWidget {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 15),
       child: Stack(
+        alignment: Alignment.center,
         children: [
           CarouselSlider(
             items: List.generate(images.length, (index) {
               return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
                   image: DecorationImage(
@@ -591,59 +594,58 @@ class BottomCarousalSlider extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                child: ListTile(
-                  contentPadding: EdgeInsets.only(left: 15),
-                  title: BodyTextColors(
-                    title: images[index]['title'],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.whiteText,
-                  ),
-                  subtitle: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          homeController.setCurrentPage = 1;
-                          homeController.setIsShowAddNearBy = true;
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        BodyTextColors(
+                          title: images[index]['title'],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.whiteText,
+                        ),
+                        SizedBox(height: 10),
+                        InkWell(
+                          onTap: () {
+                            homeController.setCurrentPage = 1;
+                            homeController.setIsShowAddNearBy = true;
 
-                          const categories = ['bars', 'grocery', 'hospital'];
+                            const categories = ['bars', 'grocery', 'hospital'];
 
-                          if (index < categories.length) {
-                            homeController.setSearchCategory =
-                                categories[index];
-                          }
-                        },
-
-                        child: Container(
-                          height: 28,
-                          width: 88,
-                          margin: EdgeInsets.only(top: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.darkText,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Center(
-                            child: BodyTextColors(
-                              title: 'Explore Now',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                              color: AppColors.whiteText,
+                            if (index < categories.length) {
+                              homeController.setSearchCategory =
+                                  categories[index];
+                            } else {
+                              homeController.setSearchCategory = 'others';
+                            }
+                          },
+                          child: Container(
+                            height: 28,
+                            width: 88,
+                            margin: const EdgeInsets.only(top: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.darkText,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Center(
+                              child: BodyTextColors(
+                                title: 'Explore Now',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w300,
+                                color: AppColors.whiteText,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  trailing: Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Image.asset(
-                      images[index]['image'],
-                      fit: BoxFit.cover,
+                      ],
                     ),
-                  ),
+                    Image.asset(images[index]['image']),
+                  ],
                 ),
               );
             }),
@@ -651,8 +653,7 @@ class BottomCarousalSlider extends StatelessWidget {
               height: height,
               viewportFraction: 1.0,
               autoPlay: false,
-              enlargeFactor: 0.3,
-              autoPlayInterval: Duration(seconds: 2),
+              autoPlayInterval: const Duration(seconds: 2),
               enlargeCenterPage: false,
               enableInfiniteScroll: true,
               onPageChanged: (index, reason) {

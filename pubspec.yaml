@@ -107,6 +107,7 @@ flutter:
     - assets/images/svg/home/
     - assets/images/png/
     - assets/images/png/home/
+    - assets/images/png/map/
     - assets/images/png/login/
     - assets/images/png/empty/
     - assets/lottie/

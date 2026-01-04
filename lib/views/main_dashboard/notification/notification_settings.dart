@@ -146,12 +146,19 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                   children: [
                     ActionBarComponent(
                       title: 'Notification Settings',
-                      // onTap: () {
-                      //   if (!homeController.hasUnsavedChanges) {
-                      //     context.pop();
-                      //     return;
-                      //   }
-                      // },
+                      onTap: () async {
+                        if (!hasChanges()) {
+                          Navigator.pop(context);
+                          return;
+                        }
+
+                        await CustomDialogues().showUpdateReviewDialogue(
+                          context,
+                          onTap: () async {
+                            await addNotificationPreference();
+                          },
+                        );
+                      },
                     ),
                     SizedBox(height: 20),
                     Expanded(

@@ -119,10 +119,12 @@ class CustomTextField extends StatelessWidget {
                       weight: 700,
                       color: AppColors.darkText,
                     )
-                  : Padding(
+                  : suffixWidget != null
+                  ? Padding(
                       padding: const EdgeInsets.only(right: 10),
                       child: suffixWidget,
-                    ),
+                    )
+                  : null,
             ),
             validator: validator,
           ),

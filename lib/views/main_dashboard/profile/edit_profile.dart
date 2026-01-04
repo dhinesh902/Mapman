@@ -143,54 +143,69 @@ class _EditProfileState extends State<EditProfile> {
       child: CustomSafeArea(
         child: Scaffold(
           backgroundColor: AppColors.scaffoldBackgroundDark,
-          appBar: ActionBar(title: 'Edit Profile'),
+          appBar: ActionBar(
+            title: 'Edit Profile',
+            onTap: () async {
+              if (!hasChanges()) {
+                Navigator.pop(context);
+                return;
+              }
+
+              await CustomDialogues().showUpdateReviewDialogue(
+                context,
+                onTap: () async {
+                  await updateProfile();
+                },
+              );
+            },
+          ),
           body: Form(
             key: formKey,
             child: ListView(
               padding: EdgeInsets.all(10),
               children: [
                 Center(
-                  child: Stack(
-                    children: [
-                      Container(
-                        height: 125,
-                        width: 160,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        clipBehavior: Clip.hardEdge,
-                        child: ValueListenableBuilder(
-                          valueListenable: profileImageNotifier,
-                          builder: (context, file, _) {
-                            if (file != null) {
-                              return Image.file(
-                                File(file.path),
-                                fit: BoxFit.cover,
+                  child: InkWell(
+                    onTap: () {
+                      CustomImagePicker.showImagePicker(
+                        context,
+                        cameraOnTap: () {
+                          _pickImage(ImageSource.camera);
+                          Navigator.pop(context);
+                        },
+                        galleryOnTap: () {
+                          _pickImage(ImageSource.gallery);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 125,
+                          width: 160,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          clipBehavior: Clip.hardEdge,
+                          child: ValueListenableBuilder(
+                            valueListenable: profileImageNotifier,
+                            builder: (context, file, _) {
+                              if (file != null) {
+                                return Image.file(
+                                  File(file.path),
+                                  fit: BoxFit.cover,
+                                );
+                              }
+                              return CustomNetworkImage(
+                                imageUrl: widget.profileData.profilePic ?? '',
                               );
-                            }
-                            return CustomNetworkImage(
-                              imageUrl: widget.profileData.profilePic ?? '',
-                            );
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkWell(
-                          onTap: () {
-                            CustomImagePicker.showImagePicker(
-                              context,
-                              cameraOnTap: () {
-                                _pickImage(ImageSource.camera);
-                                Navigator.pop(context);
-                              },
-                              galleryOnTap: () {
-                                _pickImage(ImageSource.gallery);
-                                Navigator.pop(context);
-                              },
-                            );
-                          },
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
                           child: Container(
                             height: 20,
                             width: 20,
@@ -203,8 +218,8 @@ class _EditProfileState extends State<EditProfile> {
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 SizedBox(height: 30),

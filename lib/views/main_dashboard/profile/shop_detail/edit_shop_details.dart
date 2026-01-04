@@ -95,7 +95,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       profileController.setSelectedLatLong = null;
-      homeController.setIsShowAddNewCategory = false;
+
       getShopDetails();
     });
     super.initState();
@@ -139,6 +139,16 @@ class _EditShopDetailState extends State<EditShopDetail> {
       shopDetailData.image3,
       shopDetailData.image4,
     ];
+    if (whatsAppNumberController.text == phoneNumberController.text) {
+      profileController.setIsActiveWhatsappNumber = true;
+    } else {
+      profileController.setIsActiveWhatsappNumber = false;
+    }
+    if (shopNumberController.text == phoneNumberController.text) {
+      profileController.setIsActive = true;
+    } else {
+      profileController.setIsActive = false;
+    }
 
     /// initial data
     _initialShopName = shopNameController.text;
@@ -328,6 +338,19 @@ class _EditShopDetailState extends State<EditShopDetail> {
           backgroundColor: AppColors.scaffoldBackgroundDark,
           appBar: ActionBar(
             title: 'Edit Shop Details',
+            onTap: () async {
+              if (!hasChanges()) {
+                Navigator.pop(context);
+                return;
+              }
+
+              await CustomDialogues().showUpdateReviewDialogue(
+                context,
+                onTap: () async {
+                  await updateShopDetail();
+                },
+              );
+            },
             action: TextButton(
               onPressed: () {
                 context.pushNamed(AppRoutes.analytics);
@@ -453,6 +476,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     ),
                     onSelected: (value) {
                       if (value == 'add_category') {
+                        CategoryDialogue().showAddCategoryDialogue(context);
                       } else {
                         homeController.setSelectedCategory = value;
                       }
@@ -466,7 +490,6 @@ class _EditShopDetailState extends State<EditShopDetail> {
                           children: [
                             InkWell(
                               onTap: () {
-                                homeController.setIsShowAddNewCategory = true;
                                 Navigator.pop(context);
                               },
                               child: Container(
@@ -563,90 +586,6 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     ),
                   ),
                 ),
-                if (homeController.isShowAddNewCategory) ...[
-                  SizedBox(height: 15),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Form(
-                      key: categoryFormKey,
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Image.asset(
-                                AppIcons.addCategoryP,
-                                height: 24,
-                                width: 24,
-                              ),
-                              SizedBox(width: 10),
-                              HeaderTextBlack(
-                                title: 'Add Category',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              Spacer(),
-                              ClearCircleContainer(
-                                onTap: () {
-                                  homeController.setIsShowAddNewCategory =
-                                      false;
-                                },
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 30),
-                          CategoryTextField(
-                            controller: addNewCategoryController,
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Please enter category name';
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              SizedBox(
-                                width: 136,
-                                child: CustomOutlineButton(
-                                  title: 'Cancel',
-                                  onTap: () {
-                                    homeController.setIsShowAddNewCategory =
-                                        false;
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 15),
-                              SizedBox(
-                                width: 136,
-                                child:
-                                    homeController.apiResponse.status ==
-                                        Status.LOADING
-                                    ? ButtonProgressBar()
-                                    : CustomFullButton(
-                                        isDialogue: true,
-                                        title: 'Apply',
-                                        onTap: () async {
-                                          if (categoryFormKey.currentState!
-                                              .validate()) {
-                                            await addShopCategory();
-                                          }
-                                        },
-                                      ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: locationController,

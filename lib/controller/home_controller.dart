@@ -57,14 +57,6 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _isShowAddNewCategory = false;
-
-  bool get isShowAddNewCategory => _isShowAddNewCategory;
-
-  set setIsShowAddNewCategory(bool value) {
-    _isShowAddNewCategory = value;
-    notifyListeners();
-  }
 
   bool _isShowAddNearBy = false;
 

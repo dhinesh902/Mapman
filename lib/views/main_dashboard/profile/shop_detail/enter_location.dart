@@ -37,9 +37,6 @@ class _EnterLocationState extends State<EnterLocation> {
   void initState() {
     // TODO: implement initState
     placeController = context.read<PlaceController>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      placeController.setConfirmedPrediction = null;
-    });
     loadPredictions();
     super.initState();
   }
@@ -86,7 +83,7 @@ class _EnterLocationState extends State<EnterLocation> {
                 ],
               ),
             ),
-            if (placeController.confirmedPrediction != null) ...[
+            if (placeController.confirmAddress != null) ...[
               SizedBox(height: 30),
               BodyTextColors(
                 title: 'Saved Address',
@@ -108,10 +105,7 @@ class _EnterLocationState extends State<EnterLocation> {
                       children: [
                         Expanded(
                           child: HeaderTextBlack(
-                            title:
-                                placeController.confirmedPrediction?.title
-                                    ?.capitalize() ??
-                                "",
+                            title: "Shop Name",
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -137,7 +131,7 @@ class _EnterLocationState extends State<EnterLocation> {
                         SizedBox(width: 10),
                         InkWell(
                           onTap: () {
-                            placeController.setConfirmedPrediction = null;
+                            placeController.setConfirmedAddress = null;
                           },
                           child: SvgPicture.asset(AppIcons.deleteFill),
                         ),
@@ -145,10 +139,7 @@ class _EnterLocationState extends State<EnterLocation> {
                     ),
                     SizedBox(height: 10),
                     BodyTextHint(
-                      title:
-                          placeController.confirmedPrediction?.description
-                              ?.capitalize() ??
-                          "",
+                      title: placeController.confirmAddress?.capitalize() ?? "",
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -158,125 +149,132 @@ class _EnterLocationState extends State<EnterLocation> {
             ],
 
             /// Search Results
-            SizedBox(height: 30),
-            BodyTextColors(
-              title: 'Search Results',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.lightGreyHint,
-            ),
-            SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                if (isLoading) {
-                  return CustomLoadingIndicator(height: 40);
-                }
-                if (predictions.isEmpty) {
-                  return NoDataText(title: Strings.noDataFound);
-                }
-                return ListView.builder(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: predictions.length,
-                  itemBuilder: (context, index) {
-                    final item = predictions[index];
+            if (predictions.isNotEmpty) ...[
+              SizedBox(height: 30),
+              BodyTextColors(
+                title: 'Search Results',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.lightGreyHint,
+              ),
+              SizedBox(height: 8),
+              Builder(
+                builder: (context) {
+                  if (isLoading) {
+                    return CustomLoadingIndicator(height: 40);
+                  }
+                  if (predictions.isEmpty) {
+                    return NoDataText(title: Strings.noDataFound);
+                  }
+                  return ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: predictions.length,
+                    itemBuilder: (context, index) {
+                      final item = predictions[index];
 
-                    return SearchResultContainer(
-                      prediction: item,
-                      onTap: () async {
-                        final placeId = item.placeId;
-                        if (placeId == null || placeId.isEmpty) {
-                          CustomToast.show(
-                            context,
-                            title: 'Invalid place selected',
-                            isError: true,
-                          );
-                          return;
-                        }
-
-                        CustomDialogues.showLoadingDialogue(context);
-
-                        try {
-                          await placeController.fetchPlaceDetails(placeId);
-                          final location =
-                              placeController.placeDetails?.location;
-                          final lat = location?.lat;
-                          final lng = location?.lng;
-
-                          if (lat == null || lng == null) {
-                            throw Exception('LatLng not found');
-                          }
-                          if (!context.mounted) return;
-                          Navigator.of(context).pop();
-
-                          final address = [
-                            item.title,
-                            item.description,
-                            placeController.placeDetails?.zipCode,
-                          ].where((e) => e != null && e.isNotEmpty).join(', ');
-
-                          context.pop({
-                            'address': address,
-                            'latlong': LatLng(lat, lng),
-                          });
-                        } catch (e) {
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
+                      return SearchResultContainer(
+                        prediction: item,
+                        onTap: () async {
+                          final placeId = item.placeId;
+                          if (placeId == null || placeId.isEmpty) {
                             CustomToast.show(
                               context,
-                              title: 'Unable to get location',
+                              title: 'Invalid place selected',
                               isError: true,
                             );
+                            return;
                           }
-                        }
-                      },
-                      clearOnTap: () async {
-                        final placeId = item.placeId;
-                        if (placeId != null) {
-                          await SessionManager().removePlaceDetail(placeId);
-                        }
-                        if (!mounted) return;
-                        setState(() {
-                          if (index < predictions.length) {
-                            predictions.removeAt(index);
-                          }
-                        });
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-            SizedBox(height: 30),
-            CustomFullButton(
-              title: 'Save Location Details',
-              isDialogue: true,
-              onTap: () async {
-                final shopAddress = placeController.shopAddress;
-                if (shopAddress.isEmpty) {
-                  CustomToast.show(
-                    context,
-                    title: 'Please select address',
-                    isError: true,
-                  );
-                  return;
-                }
 
-                try {
-                  context.pop({
-                    'address': shopAddress['address'],
-                    'latlong': shopAddress['latLong'],
-                  });
-                } catch (e) {
-                  CustomToast.show(
-                    context,
-                    title: 'Unable to fetch location details',
-                    isError: true,
+                          CustomDialogues.showLoadingDialogue(context);
+
+                          try {
+                            await placeController.fetchPlaceDetails(placeId);
+                            final location =
+                                placeController.placeDetails?.location;
+                            final lat = location?.lat;
+                            final lng = location?.lng;
+
+                            if (lat == null || lng == null) {
+                              throw Exception('LatLng not found');
+                            }
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+
+                            final address =
+                                [
+                                      item.title,
+                                      item.description,
+                                      placeController.placeDetails?.zipCode,
+                                    ]
+                                    .where((e) => e != null && e.isNotEmpty)
+                                    .join(', ');
+
+                            context.pop({
+                              'address': address,
+                              'latlong': LatLng(lat, lng),
+                            });
+                          } catch (e) {
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              CustomToast.show(
+                                context,
+                                title: 'Unable to get location',
+                                isError: true,
+                              );
+                            }
+                          }
+                        },
+                        clearOnTap: () async {
+                          final placeId = item.placeId;
+                          if (placeId != null) {
+                            await SessionManager().removePlaceDetail(placeId);
+                          }
+                          if (!mounted) return;
+                          setState(() {
+                            if (index < predictions.length) {
+                              predictions.removeAt(index);
+                            }
+                          });
+                        },
+                      );
+                    },
                   );
-                }
-              },
-            ),
+                },
+              ),
+            ],
+            if (placeController.confirmAddress != null) ...[
+              SizedBox(height: 50),
+              CustomFullButton(
+                title: 'Save Location Details',
+                isDialogue: true,
+                onTap: () async {
+                  final shopAddress = placeController.shopAddress;
+                  if (shopAddress.isEmpty) {
+                    CustomToast.show(
+                      context,
+                      title: 'Please select address',
+                      isError: true,
+                    );
+                    return;
+                  }
+
+                  try {
+                    context.pop({
+                      'address': shopAddress['address'],
+                      'latlong': shopAddress['latLong'],
+                    });
+                  } catch (e) {
+                    CustomToast.show(
+                      context,
+                      title: 'Unable to fetch location details',
+                      isError: true,
+                    );
+                  }
+                },
+              ),
+            ],
           ],
         ),
       ),

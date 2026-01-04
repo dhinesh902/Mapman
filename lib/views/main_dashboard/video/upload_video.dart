@@ -183,7 +183,22 @@ class _UploadVideoState extends State<UploadVideo> {
       child: CustomSafeArea(
         child: Scaffold(
           backgroundColor: AppColors.scaffoldBackgroundDark,
-          appBar: ActionBar(title: 'Video Upload'),
+          appBar: ActionBar(
+            title: 'Video Upload',
+            onTap: () async {
+              if (!hasChanges() || widget.videosData.videoTitle == null) {
+                Navigator.pop(context);
+                return;
+              }
+
+              await CustomDialogues().showUpdateReviewDialogue(
+                context,
+                onTap: () async {
+                  await updateMyVideoDetail();
+                },
+              );
+            },
+          ),
           body: Form(
             key: formKey,
             child: ListView(

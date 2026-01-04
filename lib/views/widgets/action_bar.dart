@@ -11,11 +11,13 @@ class ActionBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.action,
     this.isCenterTitle = true,
+    this.onTap,
   });
 
   final String title;
   final Widget? action;
   final bool isCenterTitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +33,11 @@ class ActionBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       automaticallyImplyLeading: false,
       leading: GestureDetector(
-        onTap: () {
-          context.pop();
-        },
+        onTap:
+            onTap ??
+            () {
+              context.pop();
+            },
         child: Container(
           height: 49,
           width: 52,

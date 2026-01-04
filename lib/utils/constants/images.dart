@@ -127,6 +127,18 @@ class AppIcons {
   static const String groceryP = 'assets/images/png/home/grocery.png';
   static const String groceryBgP = 'assets/images/png/home/grocery_bg.jpg';
 
+  /// Map
+  static const String barsMap = 'assets/images/png/map/bars.png';
+  static const String groceryMap = 'assets/images/png/map/grocery.png';
+  static const String hospitalsMap = 'assets/images/png/map/hospitals.png';
+  static const String hotelsMap = 'assets/images/png/map/hotels.png';
+  static const String othersMap = 'assets/images/png/map/others.png';
+  static const String petrolBunkMap = 'assets/images/png/map/petrol_bunk.png';
+  static const String resortsMap = 'assets/images/png/map/resorts.png';
+  static const String spaMap = 'assets/images/png/map/spa.png';
+  static const String textilesMap = 'assets/images/png/map/textiles.png';
+  static const String theatersMap = 'assets/images/png/map/theaters.png';
+
   ///empty images
   static const String allVideoEmptyP =
       'assets/images/png/empty/allvideo_empty.png';

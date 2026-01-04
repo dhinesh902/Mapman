@@ -40,7 +40,7 @@ class NotificationVideoScreen extends StatefulWidget {
 
 class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     with WidgetsBindingObserver {
-  late final VideoController videoController;
+  late VideoController videoController;
 
   CachedVideoPlayerPlus? _player;
   late final ValueNotifier<bool> bookMarkNotifier;
@@ -146,7 +146,6 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
       _player!.controller
         ..addListener(_videoListener)
-        ..setLooping(true)
         ..setVolume(1.0)
         ..play();
 
@@ -237,7 +236,11 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                   ],
                 );
               }
+              if (_player == null || !_isInitialized) {
+                return CustomLoadingIndicator();
+              }
               return Stack(
+                fit: StackFit.expand,
                 children: [
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -457,7 +460,8 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                                       CircleContainer(
                                         onTap: () async {
                                           await CustomLaunchers.openWhatsApp(
-                                            phoneNumber: '9025821501',
+                                            phoneNumber:
+                                                '${videosData.whatsappNumber}',
                                           );
                                         },
                                         child: Image.asset(

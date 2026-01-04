@@ -24,7 +24,6 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
-import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:mapman/views/widgets/custom_time_picker.dart';
 import 'package:provider/provider.dart';
@@ -41,7 +40,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
   late ProfileController profileController;
 
   final formKey = GlobalKey<FormState>();
-  final categoryFormKey = GlobalKey<FormState>();
   late TextEditingController shopNameController,
       descriptionController,
       locationController,
@@ -82,7 +80,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       homeController.setSelectedCategory = null;
-      homeController.setIsShowAddNewCategory = false;
       profileController.setSelectedLatLong = null;
       profileController.setIsActive = false;
     });
@@ -152,24 +149,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       context.pop();
       context.pop();
       await profileController.getShopDetail();
-    } else {
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
-    }
-  }
-
-  Future<void> addShopCategory() async {
-    final response = await homeController.addNewCategory(
-      categoryName: addNewCategoryController.text.trim(),
-    );
-    if (!mounted) return;
-    if (response.status == Status.COMPLETED) {
-      homeController.setSelectedCategory = null;
-      homeController.setIsShowAddNewCategory = false;
-      CustomToast.show(context, title: 'Your category added successfully');
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -252,6 +231,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 child: PopupMenuButton<String>(
                   position: PopupMenuPosition.under,
                   padding: EdgeInsets.zero,
+                  menuPadding: EdgeInsets.zero,
                   color: AppColors.scaffoldBackground,
                   elevation: 2,
                   offset: Offset(0, 25),
@@ -260,46 +240,49 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                     minWidth: double.maxFinite,
                     maxHeight: 250,
                   ),
-                  onSelected: (value) {
+                  onSelected: (value) async {
                     if (value == 'add_category') {
+                      await CategoryDialogue().showAddCategoryDialogue(context);
                     } else {
                       homeController.setSelectedCategory = value;
                     }
                   },
                   itemBuilder: (context) => [
                     PopupMenuItem<String>(
+                      value: 'add_category',
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        color: const Color(0XFFEAEAEA),
+                        width: double.maxFinite,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 15,
+                        ),
+                        child: Row(
+                          children: const [
+                            BodyTextColors(
+                              title: 'Add Category',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: GenericColors.darkGeryHeading,
+                            ),
+                            Spacer(),
+                            Icon(
+                              CupertinoIcons.add_circled,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    PopupMenuItem<String>(
                       enabled: false,
                       padding: EdgeInsets.zero,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          InkWell(
-                            onTap: () {
-                              homeController.setIsShowAddNewCategory = true;
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              color: Color(0XFFEAEAEA),
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: const [
-                                  BodyTextColors(
-                                    title: 'Add Category',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: GenericColors.darkGeryHeading,
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    CupertinoIcons.add_circled,
-                                    size: 20,
-                                    weight: 700,
-                                    color: AppColors.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                           SizedBox(
                             height: 200,
                             child: ListView.builder(
@@ -370,88 +353,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   ),
                 ),
               ),
-              if (homeController.isShowAddNewCategory) ...[
-                SizedBox(height: 15),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Form(
-                    key: categoryFormKey,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Image.asset(
-                              AppIcons.addCategoryP,
-                              height: 24,
-                              width: 24,
-                            ),
-                            SizedBox(width: 10),
-                            HeaderTextBlack(
-                              title: 'Add Category',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            Spacer(),
-                            ClearCircleContainer(
-                              onTap: () {
-                                homeController.setIsShowAddNewCategory = false;
-                              },
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 30),
-                        CategoryTextField(
-                          controller: addNewCategoryController,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Please enter category name';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                              width: 136,
-                              child: CustomOutlineButton(
-                                title: 'Cancel',
-                                onTap: () {
-                                  homeController.setIsShowAddNewCategory =
-                                      false;
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 15),
-                            SizedBox(
-                              width: 136,
-                              child:
-                                  homeController.apiResponse.status ==
-                                      Status.LOADING
-                                  ? ButtonProgressBar()
-                                  : CustomFullButton(
-                                      isDialogue: true,
-                                      title: 'Apply',
-                                      onTap: () async {
-                                        if (categoryFormKey.currentState!
-                                            .validate()) {
-                                          await addShopCategory();
-                                        }
-                                      },
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
               SizedBox(height: 15),
               CustomTextField(
                 controller: locationController,
@@ -776,7 +677,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 : CustomFullButton(
                     title: 'Update Shop details',
                     onTap: () async {
-                      homeController.getHome();
                       if (formKey.currentState!.validate()) {
                         await registerShop();
                       }

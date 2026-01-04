@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -14,7 +15,9 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
+import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 
 class CustomDialogues {
@@ -1009,5 +1012,146 @@ class _RatingDialogContentState extends State<_RatingDialogContent> {
         ],
       ),
     );
+  }
+}
+
+class CategoryDialogue {
+  final GlobalKey<FormState> categoryFormKey = GlobalKey<FormState>();
+  final TextEditingController addNewCategoryController =
+      TextEditingController();
+
+  Future<void> showAddCategoryDialogue(BuildContext context) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: EdgeInsets.symmetric(horizontal: 10),
+          backgroundColor: AppColors.scaffoldBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadiusGeometry.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+            child: Form(
+              key: categoryFormKey,
+              child: Consumer<HomeController>(
+                builder: (context, homeController, _) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            AppIcons.addCategoryP,
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          const HeaderTextBlack(
+                            title: 'Add Category',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          const Spacer(),
+                          ClearCircleContainer(
+                            onTap: () {
+                              Navigator.pop(dialogContext);
+                            },
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      CategoryTextField(
+                        controller: addNewCategoryController,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter category name';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 136,
+                            child: CustomOutlineButton(
+                              title: 'Cancel',
+                              onTap:
+                                  homeController.apiResponse.status ==
+                                      Status.LOADING
+                                  ? () {}
+                                  : () {
+                                      Navigator.pop(dialogContext);
+                                    },
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          SizedBox(
+                            width: 136,
+                            child:
+                                homeController.newCategoryResponse.status ==
+                                    Status.LOADING
+                                ? const ButtonProgressBar()
+                                : CustomFullButton(
+                                    isDialogue: true,
+                                    title: 'Apply',
+                                    onTap: () async {
+                                      if (!categoryFormKey.currentState!
+                                          .validate()) {
+                                        return;
+                                      }
+                                      final response = await homeController
+                                          .addNewCategory(
+                                            categoryName:
+                                                addNewCategoryController.text
+                                                    .trim(),
+                                          );
+
+                                      if (response.status == Status.COMPLETED) {
+                                        addNewCategoryController.clear();
+                                        homeController.setSelectedCategory =
+                                            null;
+                                        if (!context.mounted) return;
+                                        Navigator.pop(dialogContext);
+
+                                        CustomToast.show(
+                                          context,
+                                          title:
+                                              'Your category added successfully',
+                                        );
+                                      } else {
+                                        if (!context.mounted) return;
+                                        ExceptionHandler.handleUiException(
+                                          context: context,
+                                          status: response.status,
+                                          message: response.message,
+                                        );
+                                      }
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Call this when dialog is no longer needed (optional but recommended)
+  void dispose() {
+    addNewCategoryController.dispose();
   }
 }

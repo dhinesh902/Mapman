@@ -96,7 +96,22 @@ class _ReplaceVideoState extends State<ReplaceVideo> {
       child: CustomSafeArea(
         child: Scaffold(
           backgroundColor: AppColors.scaffoldBackgroundDark,
-          appBar: ActionBar(title: 'Replace Video Details'),
+          appBar: ActionBar(
+            title: 'Replace Video Details',
+            onTap: () async {
+              if (videoNotifier.value == null) {
+                Navigator.pop(context);
+                return;
+              }
+
+              await CustomDialogues().showUpdateReviewDialogue(
+                context,
+                onTap: () async {
+                  await replaceMyVideo();
+                },
+              );
+            },
+          ),
           body: ListView(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 25),
             children: [

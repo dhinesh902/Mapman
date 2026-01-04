@@ -30,12 +30,12 @@ class PlaceController extends ChangeNotifier {
 
   bool get isDetailsLoading => _isDetailsLoading;
 
-  Prediction? _confirmedPrediction;
+  String? _confirmAddress;
 
-  Prediction? get confirmedPrediction => _confirmedPrediction;
+  String? get confirmAddress => _confirmAddress;
 
-  set setConfirmedPrediction(Prediction? value) {
-    _confirmedPrediction = value;
+  set setConfirmedAddress(String? value) {
+    _confirmAddress = value;
     notifyListeners();
   }
 

@@ -40,7 +40,6 @@ class _MapsState extends State<Maps> {
   GoogleMapController? _mapController;
   late DraggableScrollableController sheetController;
 
-  BitmapDescriptor? customIcon;
   String? _mapStyle;
 
   /// Current Location notifier
@@ -69,8 +68,6 @@ class _MapsState extends State<Maps> {
     rootBundle.loadString('assets/map_style.json').then((string) {
       _mapStyle = string;
     });
-
-    loadIcon();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       homeController.setNearByShopHeight = 0.18;
@@ -146,11 +143,6 @@ class _MapsState extends State<Maps> {
     return double.parse(km.toStringAsFixed(1));
   }
 
-  Future<void> loadIcon() async {
-    customIcon = await LocationIconService().getMarkerIcon();
-    if (mounted) setState(() {});
-  }
-
   void onMapCreated(GoogleMapController controller) async {
     _mapController = controller;
 
@@ -185,31 +177,59 @@ class _MapsState extends State<Maps> {
     await homeController.filterNearbyShops();
   }
 
-  Set<Marker> get markers {
-    if (customIcon == null) return {};
+  final List<String> _iconMap = [
+    'theater',
+    'restaurant',
+    'hospital',
+    'bars',
+    'grocery',
+    'textile',
+    'resort',
+    'bunk',
+    'spa',
+    'hotels',
+    'others',
+  ];
 
+  Future<Set<Marker>> loadMarkers() async {
     final response = homeController.shopSearchData;
 
     if (response.status != Status.COMPLETED || response.data == null) {
       return {};
     }
 
-    return response.data!.asMap().entries.map((entry) {
-      int index = entry.key;
-      final shop = entry.value;
+    final Set<Marker> markerSet = {};
 
-      return Marker(
-        markerId: MarkerId(shop.id?.toString() ?? 'marker_$index'),
-        position: LatLng(
-          double.parse(shop.lat.toString()),
-          double.parse(shop.long.toString()),
-        ),
-        icon: customIcon!,
-        onTap: () {
-          tapNotifier.value = shop;
-        },
+    for (int i = 0; i < response.data!.length; i++) {
+      final shop = response.data![i];
+
+      final String rawCategory =
+          shop.category?.toLowerCase().trim() ?? 'others';
+
+      final String category = _iconMap.contains(rawCategory)
+          ? rawCategory
+          : 'others';
+
+      final icon = await LocationIconService().getMarkerIcon(
+        category: category,
       );
-    }).toSet();
+
+      markerSet.add(
+        Marker(
+          markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
+          position: LatLng(
+            double.parse(shop.lat.toString()),
+            double.parse(shop.long.toString()),
+          ),
+          icon: icon,
+          onTap: () {
+            tapNotifier.value = shop;
+          },
+        ),
+      );
+    }
+
+    return markerSet;
   }
 
   Set<Circle> _getLocationCircle() {
@@ -220,8 +240,8 @@ class _MapsState extends State<Maps> {
         circleId: const CircleId('current_location_circle'),
         center: currentLatLng!,
         radius: 100,
-        fillColor: AppColors.primary.withOpacity(0.15),
-        strokeColor: AppColors.primary.withOpacity(0.5),
+        fillColor: AppColors.primary.withValues(alpha: 0.15),
+        strokeColor: AppColors.primary.withValues(alpha: 0.5),
         strokeWidth: 0,
       ),
     };
@@ -242,17 +262,26 @@ class _MapsState extends State<Maps> {
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  GoogleMap(
-                    initialCameraPosition: _kGooglePlex,
-                    markers: markers,
-                    circles: _getLocationCircle(),
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    zoomControlsEnabled: false,
-                    buildingsEnabled: true,
-                    padding: EdgeInsets.only(top: 70),
-                    onMapCreated: onMapCreated,
+                  FutureBuilder<Set<Marker>>(
+                    future: loadMarkers(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return GoogleMap(
+                        initialCameraPosition: _kGooglePlex,
+                        markers: snapshot.data!,
+                        circles: _getLocationCircle(),
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
+                        zoomControlsEnabled: false,
+                        buildingsEnabled: true,
+                        padding: const EdgeInsets.only(top: 70),
+                        onMapCreated: onMapCreated,
+                      );
+                    },
                   ),
+
                   Positioned(
                     top: 15,
                     left: 5,
