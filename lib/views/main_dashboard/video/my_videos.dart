@@ -257,7 +257,7 @@ class VideoTitleBlurContainer extends StatelessWidget {
                       ),
                     ),
 
-                    if (videosData.watched == true)
+                    if (videosData.watched == true && isWatched)
                       Container(
                         height: 23,
                         width: 64,

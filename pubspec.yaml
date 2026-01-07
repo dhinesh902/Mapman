@@ -68,6 +68,7 @@ dependencies:
   firebase_crashlytics: ^5.0.6
   flutter_launcher_icons: ^0.14.4
   geocoding: ^4.0.0
+  better_player_plus: ^1.0.8
 
 flutter_launcher_icons:
   android: "ic_launcher"
