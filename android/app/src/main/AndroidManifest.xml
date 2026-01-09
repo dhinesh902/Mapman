@@ -44,6 +44,9 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:usesCleartextTraffic="true"
         android:label="Mapman">
         <activity
             android:name=".MainActivity"

@@ -70,6 +70,15 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
   }
 
+  int _savedVideoIndex = 0;
+
+  int get savedVideoIndex => _savedVideoIndex;
+
+  set setSavedVideoIndex(int value) {
+    _savedVideoIndex = value;
+    notifyListeners();
+  }
+
   bool _isShowParticularShopVideos = false;
 
   bool get isShowParticularShopVideos => _isShowParticularShopVideos;

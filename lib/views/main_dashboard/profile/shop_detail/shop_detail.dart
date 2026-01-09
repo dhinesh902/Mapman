@@ -40,6 +40,7 @@ class _ShopDetailState extends State<ShopDetail> {
     // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+
       getShopById();
     });
     super.initState();

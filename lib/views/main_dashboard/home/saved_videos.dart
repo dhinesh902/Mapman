@@ -9,12 +9,16 @@ import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/constants/themes.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/views/main_dashboard/notification/notification_video.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
+import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
+import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +37,7 @@ class _SavedVideosState extends State<SavedVideos> {
     // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      videoController.setSavedVideoIndex = 0;
       getMySavedVideos();
     });
     super.initState();
@@ -112,6 +117,40 @@ class _SavedVideosState extends State<SavedVideos> {
                 children: [
                   const ActionBarComponent(title: 'Saved Videos'),
                   TopPromoBanner(),
+                  Container(
+                    height: 44,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.bgGrey, // background for outer
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: VideoHeadingContainer(
+                            title: 'Shop Details',
+                            icon: AppIcons.shopP,
+                            isActive: videoController.savedVideoIndex == 0,
+                            isLeft: true,
+                            onTap: () {
+                              videoController.setSavedVideoIndex = 0;
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: VideoHeadingContainer(
+                            title: 'Videos',
+                            icon: AppIcons.videoAppP,
+                            isActive: videoController.savedVideoIndex == 1,
+                            isLeft: false,
+                            onTap: () {
+                              videoController.setSavedVideoIndex = 1;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   if (videoData.isNotEmpty) ...[
                     Padding(
                       padding: EdgeInsets.only(left: 10, top: 15, bottom: 15),
@@ -122,6 +161,42 @@ class _SavedVideosState extends State<SavedVideos> {
                       ),
                     ),
                   ],
+
+                  /// saved shops
+                  Flexible(
+                    child: Builder(
+                      builder: (context) {
+                        ///Start Watching Videos & Earn Rewards
+                        // if (savedVideos.isEmpty) {
+                        //   return EmptyDataContainer(
+                        //     children: [
+                        //       Image.asset(
+                        //         AppIcons.shopP,
+                        //         height: 140,
+                        //         width: 140,
+                        //       ),
+                        //       SizedBox(height: 20),
+                        //       BodyTextHint(
+                        //         title: 'No Data Found here',
+                        //         fontSize: 16,
+                        //         fontWeight: FontWeight.w400,
+                        //         textAlign: TextAlign.center,
+                        //       ),
+                        //     ],
+                        //   );
+                        // }
+                        return ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                          itemCount: 10,
+                          itemBuilder: (context, index) {
+                            return SavedShopCard();
+                          },
+                        );
+                      },
+                    ),
+                  ),
+
+                  /// saved video
                   Flexible(
                     child: Builder(
                       builder: (context) {
@@ -137,7 +212,6 @@ class _SavedVideosState extends State<SavedVideos> {
                             ///Start Watching Videos & Earn Rewards
                             if (savedVideos.isEmpty) {
                               return EmptyDataContainer(
-
                                 children: [
                                   Image.asset(
                                     AppIcons.savedVideoEmptyP,
@@ -321,6 +395,85 @@ class SavedVideoCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class SavedShopCard extends StatelessWidget {
+  const SavedShopCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: Themes.searchFieldDecoration(borderRadius: 6),
+      padding: EdgeInsets.all(10),
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 98,
+            width: 112,
+            child: CustomNetworkImage(
+              imageUrl:
+                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHu55qoCgPTau60FsS8I6IBbjMWF1ixU6B5g&s',
+            ),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                HeaderTextBlack(
+                  title: 'Shop Name',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    HeaderTextBlack(
+                      title: 'Restaurant',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    Icon(Icons.circle, size: 5, color: AppColors.lightGreyHint),
+                    HeaderTextBlack(
+                      title: '9am - 10pm',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                ShopDetailsButton(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRoutes.shopDetail,
+                      // extra: videosData.shopId,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 10),
+          Container(
+            height: 30,
+            width: 30,
+            decoration: Themes.searchFieldDecoration(
+              borderRadius: 6,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Image.asset(
+                AppIcons.bookmarkP,
+                height: 20,
+                width: 20,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

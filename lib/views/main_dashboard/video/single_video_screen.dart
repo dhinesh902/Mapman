@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'dart:ui';
-
+import 'package:collection/collection.dart';
 import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -38,8 +39,8 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-
   CachedVideoPlayerPlus? _player;
+  CachedVideoPlayerPlus? _nextPlayer;
   late PageController _pageController;
 
   int _currentIndex = 0;
@@ -52,15 +53,16 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   final Map<int, bool> _watchedMap = {};
   final Map<int, bool> _apiCallInProgress = {};
-
-  /// Bookmark state per video
+  final Map<int, bool> _completedVideos = {};
   final Map<int, ValueNotifier<bool>> _bookmarkMap = {};
+  Timer? _debounceTimer;
+
+  final List<CachedVideoPlayerPlus> _preloadQueue = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
     videoController = context.read<VideoController>();
 
     final initialIndex = widget.initialIndex.clamp(
@@ -74,19 +76,24 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       final id = video.id ?? 0;
       _watchedMap[id] = video.watched == true;
       _apiCallInProgress[id] = false;
+      _completedVideos[id] = false;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       videoController.loadViewedVideoStatus();
-      _initializeVideo(initialIndex);
+      await _initializeVideo(initialIndex);
+      _preloadAdjacentVideos(initialIndex);
     });
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _disposePlayer();
+    _disposeNextPlayer();
+    _clearPreloadQueue();
     _pageController.dispose();
     for (final notifier in _bookmarkMap.values) {
       notifier.dispose();
@@ -112,37 +119,79 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
+  Future<void> _preloadAdjacentVideos(int currentIndex) async {
+    final maxPreloads = 2;
+    for (int i = 1; i <= maxPreloads; i++) {
+      final nextIndex = currentIndex + i;
+      if (nextIndex < widget.videosData.length &&
+          !_preloadQueue.any(
+            (p) =>
+                p.controller.dataSource ==
+                ApiRoutes.baseUrl +
+                    widget.videosData[nextIndex].video.toString(),
+          )) {
+        await _preloadVideo(nextIndex);
+      }
+    }
+  }
+
+  Future<void> _preloadVideo(int index) async {
+    if (_isDisposed || index < 0 || index >= widget.videosData.length) return;
+
+    final video = widget.videosData[index];
+    final videoUrl = ApiRoutes.baseUrl + (video.video ?? '');
+
+    try {
+      final player = CachedVideoPlayerPlus.networkUrl(
+        Uri.parse(videoUrl),
+        videoPlayerOptions: VideoPlayerOptions(
+          allowBackgroundPlayback: false,
+          mixWithOthers: false,
+        ),
+      );
+
+      await player.initialize();
+      player.controller
+        ..setLooping(false)
+        ..setVolume(0.0)
+        ..pause();
+
+      _preloadQueue.add(player);
+      debugPrint('✅ Preloaded video ${video.id} at index $index');
+    } catch (e) {
+      debugPrint('❌ Preload failed for index $index: $e');
+    }
+  }
+
   Future<void> _disposePlayer() async {
     if (_player != null) {
       try {
-        try {
-          _player!.controller.removeListener(_videoListener);
-        } catch (e) {
-          debugPrint('Error removing listener: $e');
+        _player!.controller.removeListener(_videoListener);
+        if (_player!.controller.value.isInitialized) {
+          _player!.controller.pause();
         }
-
-        try {
-          if (_player!.controller.value.isInitialized) {
-            _player!.controller.pause();
-          }
-        } catch (e) {
-          debugPrint('Error pausing player: $e');
-        }
-
-        try {
-          await _player!.dispose();
-        } catch (e) {
-          debugPrint('Error disposing player: $e');
-        }
+        await _player!.dispose();
       } catch (e) {
-        debugPrint('Error in disposePlayer: $e');
+        debugPrint('Error disposing player: $e');
       } finally {
         _player = null;
         _isInitialized = false;
       }
-    } else {
-      _isInitialized = false;
     }
+  }
+
+  Future<void> _disposeNextPlayer() async {
+    if (_nextPlayer != null) {
+      await _nextPlayer!.dispose();
+      _nextPlayer = null;
+    }
+  }
+
+  Future<void> _clearPreloadQueue() async {
+    for (final player in _preloadQueue) {
+      await player.dispose();
+    }
+    _preloadQueue.clear();
   }
 
   Future<void> _initializeVideo(int index) async {
@@ -150,49 +199,54 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     await _disposePlayer();
 
-    if (_isDisposed) return;
-
     final video = widget.videosData[index];
     _currentIndex = index;
     _isInitialized = false;
     _isCompleted = false;
     _progress = 0;
 
+    _completedVideos[video.id ?? 0] = false;
+
     setState(() {});
 
     try {
-      _player = CachedVideoPlayerPlus.networkUrl(
-        Uri.parse(ApiRoutes.baseUrl + (video.video ?? '')),
-        videoPlayerOptions: VideoPlayerOptions(
-          allowBackgroundPlayback: false,
-          mixWithOthers: false,
-        ),
+      CachedVideoPlayerPlus? playerToUse;
+
+      final preloadedPlayer = _preloadQueue.firstWhereOrNull(
+        (p) =>
+            p.controller.dataSource == ApiRoutes.baseUrl + (video.video ?? ''),
       );
 
-      await _player!.initialize();
-
-      if (_isDisposed || !mounted) {
-        await _disposePlayer();
-        return;
+      if (preloadedPlayer != null &&
+          preloadedPlayer.controller.value.isInitialized) {
+        playerToUse = preloadedPlayer;
+        _preloadQueue.remove(preloadedPlayer);
+        debugPrint('⚡ Using PRELOADED player for index $index');
+      } else {
+        playerToUse = CachedVideoPlayerPlus.networkUrl(
+          Uri.parse(ApiRoutes.baseUrl + (video.video ?? '')),
+          videoPlayerOptions: VideoPlayerOptions(
+            allowBackgroundPlayback: false,
+            mixWithOthers: false,
+          ),
+        );
+        await playerToUse.initialize();
       }
 
-      if (_player == null || !_player!.controller.value.isInitialized) {
-        await _disposePlayer();
+      if (_isDisposed || !mounted) return;
 
-        return;
-      }
-
+      _player = playerToUse;
       _player!.controller
         ..setLooping(false)
         ..setVolume(1.0)
         ..addListener(_videoListener)
         ..play();
 
-      if (mounted && !_isDisposed) {
-        setState(() {
-          _isInitialized = true;
-        });
+      if (mounted) {
+        setState(() => _isInitialized = true);
       }
+
+      _preloadAdjacentVideos(index);
     } catch (e) {
       debugPrint('Video init error: $e');
       await _disposePlayer();
@@ -217,105 +271,87 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         }
       }
 
-      if (!_isCompleted &&
-          duration.inMilliseconds > 0 &&
-          position >= duration - const Duration(milliseconds: 500)) {
-        _isCompleted = true;
+      final videoId = widget.videosData[_currentIndex].id ?? 0;
+
+      if (!_completedVideos[videoId]! &&
+          position.inMilliseconds >= duration.inMilliseconds) {
+        _completedVideos[videoId] = true;
         _handleVideoCompletion();
       }
 
-      if (position <= const Duration(milliseconds: 200)) {
-        _isCompleted = false;
+      if (position.inMilliseconds < duration.inMilliseconds * 0.1) {
+        _completedVideos[videoId] = false;
       }
 
-      if (duration.inMilliseconds > 0 &&
-          position >= duration &&
+      if (position >= duration &&
           _currentIndex < widget.videosData.length - 1) {
         _autoAdvanceToNext();
       }
     } catch (e) {
       debugPrint('Error in videoListener: $e');
-      if (_player != null && !_player!.controller.value.isInitialized) {
-        _isInitialized = false;
-      }
     }
   }
-
-  // void _handleVideoCompletion() async {
-  //   if (_isDisposed) return;
-  //
-  //   final video = widget.videosData[_currentIndex];
-  //   final videoId = video.id ?? 0;
-  //
-  //   if (_watchedMap[videoId] != true &&
-  //       !widget.isMyVideos &&
-  //       videoController.isViewedVideo == 1 &&
-  //       !(_apiCallInProgress[videoId] == true)) {
-  //     _watchedMap[videoId] = true;
-  //     _apiCallInProgress[videoId] = true;
-  //
-  //     _callVideoCompletionAPIs(videoId);
-  //   }
-  // }
 
   void _handleVideoCompletion() {
     if (_isDisposed) return;
 
-    final video = widget.videosData[_currentIndex];
-    final videoId = video.id ?? 0;
-    if (_watchedMap[videoId] == true) return;
-    if (_apiCallInProgress[videoId] == true) return;
-    if (widget.isMyVideos || videoController.isViewedVideo != 1) return;
-    _markVideoWatched(videoId);
+    final videoId = widget.videosData[_currentIndex].id ?? 0;
+
+    if (_watchedMap[videoId] == true ||
+        _apiCallInProgress[videoId] == true ||
+        !_completedVideos[videoId]! ||
+        widget.isMyVideos ||
+        videoController.isViewedVideo != 1) {
+      return;
+    }
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(seconds: 1), () {
+      if (!_isDisposed && mounted) {
+        _markVideoWatched(videoId);
+      }
+    });
   }
 
-  // Future<void> _callVideoCompletionAPIs(int videoId) async {
-  //   try {
-  //     videoController.addViewedVideos(videoId: videoId);
-  //
-  //     await Future.delayed(const Duration(milliseconds: 300));
-  //
-  //     if (_isDisposed) return;
-  //
-  //     videoController.addVideoPoints();
-  //
-  //     await Future.delayed(const Duration(milliseconds: 300));
-  //
-  //     if (_isDisposed) return;
-  //
-  //     videoController.getVideoPoints();
-  //   } catch (e) {
-  //     debugPrint('Error in video completion APIs: $e');
-  //   } finally {
-  //     Future.delayed(const Duration(seconds: 5), () {
-  //       if (!_isDisposed) {
-  //         _apiCallInProgress.remove(videoId);
-  //       }
-  //     });
-  //   }
-  // }
-
   Future<void> _markVideoWatched(int videoId) async {
+    if (_watchedMap[videoId] == true ||
+        _apiCallInProgress[videoId] == true ||
+        videoController.isViewedVideo != 1 ||
+        _isDisposed) {
+      return;
+    }
+
     _watchedMap[videoId] = true;
     _apiCallInProgress[videoId] = true;
 
-    setState(() {});
+    if (mounted) setState(() {});
 
     try {
-      await videoController.addViewedVideos(videoId: videoId);
+      debugPrint('🎬 Video $videoId FULLY COMPLETED - Calling APIs...');
+
+      if (videoController.isViewedVideo == 1) {
+        await videoController.addViewedVideos(videoId: videoId);
+        debugPrint('✅ addViewedVideos SUCCESS');
+      }
+
+      await Future.delayed(const Duration(milliseconds: 300));
       await videoController.addVideoPoints();
+      debugPrint('✅ addVideoPoints SUCCESS');
+
+      await Future.delayed(const Duration(milliseconds: 300));
       await videoController.getVideoPoints();
+      debugPrint('✅ getVideoPoints SUCCESS');
     } catch (e) {
-      debugPrint('Watched API error: $e');
+      debugPrint('❌ API Error video $videoId: $e');
     } finally {
-      _apiCallInProgress[videoId] = false;
+      if (!_isDisposed) {
+        _apiCallInProgress[videoId] = false;
+      }
     }
   }
 
   void _autoAdvanceToNext() {
-    if (_isDisposed) return;
-
-    if (_currentIndex >= widget.videosData.length - 1) {
+    if (_isDisposed || _currentIndex >= widget.videosData.length - 1) {
       if (!_hasShownLastVideoToast && mounted) {
         _hasShownLastVideoToast = true;
         CustomToast.show(
@@ -327,10 +363,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       return;
     }
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 200), () {
       if (!_isDisposed && _pageController.hasClients) {
         _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
         );
       }
@@ -339,6 +375,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   void _onPageChanged(int index) {
     if (_isDisposed || index == _currentIndex) return;
+
+    final newVideoId = widget.videosData[index].id ?? 0;
+    _completedVideos[newVideoId] = false;
+
     _initializeVideo(index);
 
     if (index == widget.videosData.length - 1 && !_hasShownLastVideoToast) {
@@ -477,7 +517,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 ),
               ),
 
-              /// BOTTOM CONTENT
               Positioned(
                 bottom: 0,
                 left: 0,

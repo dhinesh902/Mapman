@@ -473,8 +473,11 @@ class _MapsState extends State<Maps> {
 
               final shopName = shop.shopName?.toLowerCase() ?? '';
               final address = shop.address?.toLowerCase() ?? '';
+              final description = shop.description?.toLowerCase() ?? '';
 
-              return shopName.contains(query) || address.contains(query);
+              return shopName.contains(query) ||
+                  address.contains(query) ||
+                  description.contains(query);
             });
           },
 
