@@ -167,3 +167,47 @@ class EmptyDataContainer extends StatelessWidget {
     );
   }
 }
+
+class MoreLoadingContainer extends StatelessWidget {
+  const MoreLoadingContainer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          color: AppColors.scaffoldBackground,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.lightGreyHint.withValues(alpha: .5),
+              blurRadius: 5,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 15,
+              width: 15,
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 3,
+              ),
+            ),
+            SizedBox(width: 10),
+            HeaderTextBlack(
+              title: 'Loading more...',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

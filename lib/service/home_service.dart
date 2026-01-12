@@ -99,11 +99,15 @@ class HomeService extends ApiRoutes {
     }
   }
 
-  Future<Map<String, dynamic>> getNotifications({required String token}) async {
+  Future<Map<String, dynamic>> getNotifications({
+    required String token,
+    required int page,
+  }) async {
     try {
       final response = await dio.get(
         ApiRoutes.fetchNotifications,
         options: headerWithToken(token),
+        queryParameters: {'page': page},
       );
       return response.data;
     } on DioException catch (e) {

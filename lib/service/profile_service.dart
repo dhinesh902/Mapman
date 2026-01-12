@@ -159,4 +159,37 @@ class ProfileService extends ApiRoutes {
       throw ExceptionHandler.handleApiException(e);
     }
   }
+
+  Future<Map<String, dynamic>> saveShop({
+    required String token,
+    required int shopId,
+    required String status,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.saveShop,
+        options: headerWithToken(token),
+        data: {'shopId': shopId, 'status': status},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getFetchSavedShops({
+    required String token,
+    required int page,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.fetchSavedShops,
+        options: headerWithToken(token),
+        queryParameters: {'page': page},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 }

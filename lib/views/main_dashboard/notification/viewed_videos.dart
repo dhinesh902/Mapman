@@ -31,31 +31,39 @@ class ViewedVideos extends StatefulWidget {
 }
 
 class _ViewedVideosState extends State<ViewedVideos> {
+  final ScrollController scrollController = ScrollController();
+
   late VideoController videoController;
   late TextEditingController searchController;
 
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
+
     videoController = context.read<VideoController>();
     searchController = TextEditingController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      videoController.resetViewedVideosPagination();
       videoController.loadViewedVideoStatus();
-      getMyViewedVideos();
+      await _getMyViewedVideos();
     });
-    super.initState();
+
+    scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    scrollController.removeListener(_onScroll);
+    scrollController.dispose();
     searchController.dispose();
     super.dispose();
   }
 
-  Future<void> getMyViewedVideos() async {
+  Future<void> _getMyViewedVideos() async {
     final response = await videoController.getMyViewedVideos();
     if (!mounted) return;
+
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
         context: context,
@@ -70,20 +78,21 @@ class _ViewedVideosState extends State<ViewedVideos> {
     required String status,
   }) async {
     CustomDialogues.showLoadingDialogue(context);
+
     final response = await videoController.addSavedVideos(
       videoId: videoId,
       status: status,
     );
+
     if (!mounted) return;
+
+    Navigator.pop(context);
+
     if (response.status == Status.COMPLETED) {
-      CustomToast.show(context, title: 'Video unsaved successfully ');
-      await context.read<VideoController>().getMyViewedVideos(
-        removeBookMark: false,
-      );
-      if (!mounted) return;
-      Navigator.pop(context);
+      CustomToast.show(context, title: 'Video unsaved successfully');
+
+      await videoController.getMyViewedVideos(removeBookMark: false);
     } else {
-      Navigator.pop(context);
       ExceptionHandler.handleUiException(
         context: context,
         status: response.status,
@@ -92,9 +101,24 @@ class _ViewedVideosState extends State<ViewedVideos> {
     }
   }
 
+  void _onScroll() {
+    if (scrollController.position.pixels >=
+            scrollController.position.maxScrollExtent - 200 &&
+        !videoController.isSearching &&
+        videoController.hasMoreViewedVideos &&
+        !videoController.isFetchingMoreViewedVideos) {
+      videoController.loadMoreViewedVideos();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
+
+    final videos = videoController.filteredViewedVideos.isNotEmpty
+        ? videoController.filteredViewedVideos
+        : videoController.viewedVideoData.data ?? [];
+
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -110,9 +134,9 @@ class _ViewedVideosState extends State<ViewedVideos> {
                 activeTrackColor: GenericColors.darkGreen,
                 onChanged: (value) async {
                   final int status = value ? 1 : 0;
-
                   await videoController.setIsViewedVideo(status);
                   if (!context.mounted) return;
+
                   VideoDialogues().showViewedVideoDialogue(
                     context,
                     turnOn: status,
@@ -125,6 +149,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
         body: Column(
           children: [
             const SizedBox(height: 20),
+
             CustomSearchField(
               controller: searchController,
               hintText: 'Search by Video title',
@@ -136,21 +161,17 @@ class _ViewedVideosState extends State<ViewedVideos> {
                 videoController.filterViewedVideosByTitle('');
               },
             ),
-
             const SizedBox(height: 20),
-
-            Flexible(
+            Expanded(
               child: Builder(
                 builder: (context) {
                   switch (videoController.viewedVideoData.status) {
                     case Status.INITIAL:
-                      return CustomLoadingIndicator();
                     case Status.LOADING:
-                      return CustomLoadingIndicator();
-                    case Status.COMPLETED:
-                      final viewedVideos = videoController.filteredViewedVideos;
+                      return const CustomLoadingIndicator();
 
-                      if (viewedVideos.isEmpty) {
+                    case Status.COMPLETED:
+                      if (videos.isEmpty) {
                         return EmptyDataContainer(
                           top: 20,
                           children: [
@@ -159,15 +180,15 @@ class _ViewedVideosState extends State<ViewedVideos> {
                               height: 130,
                               width: 130,
                             ),
-                            SizedBox(height: 20),
-                            BodyTextColors(
+                            const SizedBox(height: 20),
+                            const BodyTextColors(
                               title: 'No viewed videos',
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
                               textAlign: TextAlign.center,
                               color: AppColors.lightGreyHint,
                             ),
-                            SizedBox(height: 15),
+                            const SizedBox(height: 15),
                             TextButton(
                               onPressed: () {
                                 context.read<HomeController>().setCurrentPage =
@@ -177,7 +198,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
                                   extra: false,
                                 );
                               },
-                              child: HeaderTextPrimary(
+                              child: const HeaderTextPrimary(
                                 title: 'Start Watching Videos & Earn Rewards',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -189,56 +210,73 @@ class _ViewedVideosState extends State<ViewedVideos> {
                         );
                       }
 
-                      return ListView.builder(
-                        itemCount: viewedVideos.length,
-                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                        itemBuilder: (context, index) {
-                          final video = viewedVideos[index];
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 15),
-                            child: Stack(
-                              children: [
-                                ViewedVideoCard(
-                                  videoUrl:
-                                      '${ApiRoutes.baseUrl}${video.video ?? ''}',
-                                  isBookMark: videoController.bookmarked[index],
-                                  bookMarkOnTap: () async {
-                                    final isBookmarked = videoController
-                                        .toggleBookmark(index);
-
-                                    await addSavedVideos(
-                                      videoId: viewedVideos[index].id ?? 0,
-                                      status: isBookmarked
-                                          ? 'active'
-                                          : 'inactive',
-                                    );
-                                  },
-
-                                  onTap: () {
-                                    context.pushNamed(
-                                      AppRoutes.singleVideoScreen,
-                                      extra: {
-                                        Keys.videosData: viewedVideos,
-                                        Keys.isMyVideos: false,
-                                        Keys.initialIndex: index,
-                                      },
-                                    );
-                                  },
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: VideoTitleBlurContainer(
-                                    isShopDetail: true,
-                                    videosData: video,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          videoController.resetViewedVideosPagination();
+                          await videoController.getMyViewedVideos(page: 1);
                         },
+                        child: ListView.builder(
+                          controller: scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                          itemCount:
+                              videos.length +
+                              (videoController.isFetchingMoreViewedVideos
+                                  ? 1
+                                  : 0),
+
+                          itemBuilder: (context, index) {
+                            if (index == videos.length) {
+                              return MoreLoadingContainer();
+                            }
+
+                            final video = videos[index];
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 15),
+                              child: Stack(
+                                children: [
+                                  ViewedVideoCard(
+                                    videoUrl:
+                                        '${ApiRoutes.baseUrl}${video.video ?? ''}',
+                                    isBookMark:
+                                        videoController.bookmarked[index],
+                                    bookMarkOnTap: () async {
+                                      final isBookmarked = videoController
+                                          .toggleBookmark(index);
+
+                                      await addSavedVideos(
+                                        videoId: video.id ?? 0,
+                                        status: isBookmarked
+                                            ? 'active'
+                                            : 'inactive',
+                                      );
+                                    },
+                                    onTap: () {
+                                      context.pushNamed(
+                                        AppRoutes.singleVideoScreen,
+                                        extra: {
+                                          Keys.videosData: videos,
+                                          Keys.isMyVideos: false,
+                                          Keys.initialIndex: index,
+                                        },
+                                      );
+                                    },
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: VideoTitleBlurContainer(
+                                      isShopDetail: true,
+                                      videosData: video,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       );
 
                     case Status.ERROR:
@@ -274,8 +312,7 @@ class ViewedVideoCard extends StatefulWidget {
   State<ViewedVideoCard> createState() => _ViewedVideoCardState();
 }
 
-class _ViewedVideoCardState extends State<ViewedVideoCard>
-    with AutomaticKeepAliveClientMixin {
+class _ViewedVideoCardState extends State<ViewedVideoCard> {
   late final CachedVideoPlayerPlus _player;
 
   @override
@@ -301,7 +338,6 @@ class _ViewedVideoCardState extends State<ViewedVideoCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return GestureDetector(
       onTap: widget.onTap,
       child: SizedBox(
@@ -357,7 +393,4 @@ class _ViewedVideoCardState extends State<ViewedVideoCard>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

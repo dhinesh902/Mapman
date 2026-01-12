@@ -9,11 +9,12 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
+import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -38,12 +39,6 @@ class _VideosState extends State<Videos> {
       }
       if (videoController.currentVideoIndex == 0) {
         getCategoryVideos();
-      }
-
-      if (videoController.isShowParticularShopVideos) {
-        context.read<VideoController>().getAllVideos(
-          category: videoController.selectedCategory.toLowerCase(),
-        );
       }
     });
     super.initState();
@@ -230,7 +225,6 @@ class _VideosState extends State<Videos> {
                           isActive: videoController.currentVideoIndex == 1,
                           isLeft: false,
                           onTap: () async {
-                            videoController.setShowParticularShopVideos = false;
                             videoController.setCurrentVideoIndex = 1;
                             await getMyVideos();
                           },
@@ -244,8 +238,7 @@ class _VideosState extends State<Videos> {
           ),
 
           /// ALL VIDEOS
-          if (videoController.currentVideoIndex == 0 &&
-              !videoController.isShowParticularShopVideos) ...[
+          if (videoController.currentVideoIndex == 0) ...[
             SizedBox(height: 15),
             Expanded(
               child: Builder(
@@ -256,7 +249,7 @@ class _VideosState extends State<Videos> {
                     case Status.LOADING:
                       return CustomLoadingIndicator();
                     case Status.COMPLETED:
-                      return AllVideos(
+                      return AllVideosCard(
                         categoryVideoData:
                             videoController.categoryVideoData.data ?? [],
                       );
@@ -268,83 +261,6 @@ class _VideosState extends State<Videos> {
                 },
               ),
             ),
-          ],
-
-          /// Particular Shop video list
-          if (videoController.isShowParticularShopVideos) ...[
-            SizedBox(height: 15),
-            if (videoController.allVideosData.status == Status.COMPLETED) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 0, 15),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        videoController.setShowParticularShopVideos = false;
-                      },
-                      child: Container(
-                        height: 30,
-                        width: 30,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.scaffoldBackground,
-                          border: Border.all(color: GenericColors.borderGrey),
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(AppIcons.backIcon),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    HeaderTextBlack(
-                      title:
-                          '${videoController.selectedCategory} Videos ${videoController.allVideosData.data!.isNotEmpty ? '(${videoController.allVideosData.data?.length})' : ''}',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            Flexible(
-              child: Builder(
-                builder: (context) {
-                  switch (videoController.allVideosData.status) {
-                    case Status.INITIAL:
-                      return CustomLoadingIndicator();
-                    case Status.LOADING:
-                      return CustomLoadingIndicator();
-                    case Status.COMPLETED:
-                      final allVideo = videoController.allVideosData.data ?? [];
-                      if (allVideo.isEmpty) {
-                        return EmptyDataContainer(
-                          top: 10,
-                          children: [
-                            Image.asset(
-                              AppIcons.allVideoEmptyP,
-                              height: 100,
-                              width: 100,
-                            ),
-                            SizedBox(height: 20),
-                            BodyTextColors(
-                              title: 'No videos uploaded yet',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.lightGreyHint,
-                            ),
-                          ],
-                        );
-                      }
-                      return ParticularShopVideoList(videosData: allVideo);
-                    case Status.ERROR:
-                      return CustomErrorTextWidget(
-                        title: '${videoController.allVideosData.message}',
-                      );
-                  }
-                },
-              ),
-            ),
-            SizedBox(height: 60),
           ],
 
           /// MY VIDEOS
@@ -463,6 +379,78 @@ class VideoHeadingContainer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class AllVideosCard extends StatelessWidget {
+  const AllVideosCard({super.key, required this.categoryVideoData});
+
+  final List<CategoryVideosData> categoryVideoData;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisExtent: 206,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 100),
+      itemCount: categoryVideoData.length,
+      itemBuilder: (context, index) {
+        return InkWell(
+          onTap: () async {
+            context.read<VideoController>().setSelectedCategory =
+                categoryVideoData[index].categoryName?.capitalize() ?? '';
+            context.pushNamed(AppRoutes.allVideos);
+          },
+          child: Container(
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.scaffoldBackgroundDark,
+            ),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 163,
+                  child: Stack(
+                    children: [
+                      CustomNetworkImage(
+                        imageUrl:
+                            (categoryVideoData[index].categoryVideo ?? ''),
+                      ),
+                      Positioned.fill(
+                        child: Center(
+                          child: VideoPausePlayCircleContainer(
+                            icon: Icons.play_arrow,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 43,
+                  color: Colors.black,
+                  child: Center(
+                    child: BodyTextColors(
+                      title:
+                          categoryVideoData[index].categoryName?.capitalize() ??
+                          '',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

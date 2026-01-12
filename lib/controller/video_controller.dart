@@ -79,21 +79,21 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _isShowParticularShopVideos = false;
-
-  bool get isShowParticularShopVideos => _isShowParticularShopVideos;
-
-  set setShowParticularShopVideos(bool value) {
-    _isShowParticularShopVideos = value;
-    notifyListeners();
-  }
-
   String _selectedCategory = '';
 
   String get selectedCategory => _selectedCategory;
 
   set setSelectedCategory(String value) {
     _selectedCategory = value;
+    notifyListeners();
+  }
+
+  bool _isSaveShop = false;
+
+  bool get isSaveShop => _isSaveShop;
+
+  void setIsSaveShop(bool value) {
+    _isSaveShop = value;
     notifyListeners();
   }
 
@@ -124,9 +124,19 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse<List<VideosData>> get viewedVideoData => _viewedVideoData;
 
+  int _viewedVideosPage = 1;
+  bool _isFetchingMoreViewedVideos = false;
+  bool _hasMoreViewedVideos = true;
+
+  bool get isFetchingMoreViewedVideos => _isFetchingMoreViewedVideos;
+
+  bool get hasMoreViewedVideos => _hasMoreViewedVideos;
+
   /// Search state
   List<VideosData> _filteredViewedVideos = [];
   bool _isSearching = false;
+
+  bool get isSearching => _isSearching;
 
   List<VideosData> get filteredViewedVideos =>
       _isSearching ? _filteredViewedVideos : (_viewedVideoData.data ?? []);
@@ -137,6 +147,14 @@ class VideoController extends ChangeNotifier {
   );
 
   ApiResponse<List<VideosData>> get savedVideoData => _savedVideoData;
+
+  int _page = 1;
+  bool _isFetchingMore = false;
+  bool _hasMoreData = true;
+
+  bool get isFetchingMore => _isFetchingMore;
+
+  bool get hasMoreData => _hasMoreData;
 
   /// Category Videos
   ApiResponse<List<CategoryVideosData>> _categoryVideoData =
@@ -151,6 +169,14 @@ class VideoController extends ChangeNotifier {
   );
 
   ApiResponse<List<VideosData>> get allVideosData => _allVideosData;
+
+  int _allVideosPage = 1;
+  bool _isFetchingMoreAllVideos = false;
+  bool _hasMoreAllVideos = true;
+
+  bool get isFetchingMoreAllVideos => _isFetchingMoreAllVideos;
+
+  bool get hasMoreAllVideos => _hasMoreAllVideos;
 
   /// Shop detail
   ApiResponse<SingleShopDetailData> _singleShopDetailData = ApiResponse.initial(
@@ -285,28 +311,70 @@ class VideoController extends ChangeNotifier {
 
   Future<ApiResponse<List<VideosData>>> getMyViewedVideos({
     bool removeBookMark = true,
+    int page = 1,
   }) async {
-    if (removeBookMark) {
+    if (page == 1 && removeBookMark) {
       _viewedVideoData = ApiResponse.loading(Strings.loading);
+      _hasMoreViewedVideos = true;
       notifyListeners();
     }
+
     try {
       final String token = SessionManager.getToken() ?? '';
-      final response = await videoService.getMyViewedVideos(token: token);
+      final response = await videoService.getMyViewedVideos(
+        token: token,
+        page: page,
+      );
+
       final List list = response[Keys.data] ?? [];
-      final List<VideosData> videos = list
-          .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
+
+      final List<VideosData> newVideos = list
+          .map((e) => VideosData.fromJson(e))
           .toList();
-      _viewedVideoData = ApiResponse.completed(videos);
-      _filteredViewedVideos.clear();
-      _isSearching = false;
-      initializeBookmarks(videos);
+
+      if (page == 1) {
+        _viewedVideoData = ApiResponse.completed(newVideos);
+        _filteredViewedVideos.clear();
+        _isSearching = false;
+        initializeBookmarks(newVideos);
+        _viewedVideosPage = 1;
+      } else {
+        if (newVideos.isEmpty) {
+          _hasMoreViewedVideos = false;
+        } else {
+          _viewedVideoData.data!.addAll(newVideos);
+          initializeBookmarks(_viewedVideoData.data ?? []);
+          _viewedVideosPage = page;
+        }
+      }
     } catch (e) {
-      _viewedVideoData = ApiResponse.error(e.toString());
+      if (page == 1) {
+        _viewedVideoData = ApiResponse.error(e.toString());
+      } else {
+        debugPrint('Error loading more viewed videos: $e');
+      }
     }
 
     notifyListeners();
     return _viewedVideoData;
+  }
+
+  Future<void> loadMoreViewedVideos() async {
+    if (_isFetchingMoreViewedVideos || !_hasMoreViewedVideos) return;
+
+    _isFetchingMoreViewedVideos = true;
+    notifyListeners();
+
+    await getMyViewedVideos(page: _viewedVideosPage + 1, removeBookMark: false);
+
+    _isFetchingMoreViewedVideos = false;
+    notifyListeners();
+  }
+
+  void resetViewedVideosPagination() {
+    _viewedVideosPage = 1;
+    _hasMoreViewedVideos = true;
+    _isFetchingMoreViewedVideos = false;
   }
 
   void filterViewedVideosByTitle(String query) {
@@ -349,30 +417,70 @@ class VideoController extends ChangeNotifier {
 
   Future<ApiResponse<List<VideosData>>> getMySavedVideos({
     bool removeBookMark = true,
+    int page = 1,
   }) async {
-    if (removeBookMark) {
+    if (page == 1 && removeBookMark) {
       _savedVideoData = ApiResponse.loading(Strings.loading);
+      _hasMoreData = true;
       notifyListeners();
     }
+
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await videoService.getMySavedVideos(token: token);
+      final response = await videoService.getMySavedVideos(
+        token: token,
+        page: page,
+      );
+
       final data = response[Keys.data];
-      if (data != null && data is List) {
-        _savedVideoData = ApiResponse.completed(
-          data
-              .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
-              .toList(),
-        );
-        initializeBookmarks(_savedVideoData.data ?? []);
+
+      final List<VideosData> newVideos = data is List
+          ? data
+                .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
+                .toList()
+          : [];
+
+      if (page == 1) {
+        _savedVideoData = ApiResponse.completed(newVideos);
+        initializeBookmarks(newVideos);
+        _page = 1;
       } else {
-        _savedVideoData = ApiResponse.completed([]);
+        if (newVideos.isEmpty) {
+          _hasMoreData = false;
+        } else {
+          _savedVideoData.data!.addAll(newVideos);
+          initializeBookmarks(_savedVideoData.data ?? []);
+          _page = page;
+        }
       }
     } catch (e) {
-      _savedVideoData = ApiResponse.error(e.toString());
+      if (page == 1) {
+        _savedVideoData = ApiResponse.error(e.toString());
+      } else {
+        debugPrint('Error loading more saved videos: $e');
+      }
     }
+
     notifyListeners();
     return _savedVideoData;
+  }
+
+  Future<void> loadMoreSavedVideos() async {
+    if (_isFetchingMore || !_hasMoreData) return;
+
+    _isFetchingMore = true;
+    notifyListeners();
+
+    await getMySavedVideos(page: _page + 1, removeBookMark: false);
+
+    _isFetchingMore = false;
+    notifyListeners();
+  }
+
+  void resetSavedVideoPagination() {
+    _page = 1;
+    _hasMoreData = true;
+    _isFetchingMore = false;
   }
 
   Future<ApiResponse<List<CategoryVideosData>>> getCategoryVideos() async {
@@ -402,30 +510,69 @@ class VideoController extends ChangeNotifier {
 
   Future<ApiResponse<List<VideosData>>> getAllVideos({
     required String category,
+    int page = 1,
   }) async {
-    _allVideosData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
+    if (page == 1) {
+      _allVideosData = ApiResponse.loading(Strings.loading);
+      _hasMoreAllVideos = true;
+      notifyListeners();
+    }
+
     try {
       final token = SessionManager.getToken() ?? '';
       final response = await videoService.getAllVideos(
         token: token,
         category: category,
+        page: page,
       );
+
       final data = response[Keys.data];
-      if (data != null && data is List) {
-        _allVideosData = ApiResponse.completed(
-          data
-              .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
-              .toList(),
-        );
+
+      final List<VideosData> newVideos = data is List
+          ? data
+                .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
+                .toList()
+          : [];
+
+      if (page == 1) {
+        _allVideosData = ApiResponse.completed(newVideos);
+        _allVideosPage = 1;
       } else {
-        _allVideosData = ApiResponse.completed([]);
+        if (newVideos.isEmpty) {
+          _hasMoreAllVideos = false;
+        } else {
+          _allVideosData.data!.addAll(newVideos);
+          _allVideosPage = page;
+        }
       }
     } catch (e) {
-      _allVideosData = ApiResponse.error(e.toString());
+      if (page == 1) {
+        _allVideosData = ApiResponse.error(e.toString());
+      } else {
+        debugPrint('Error loading more all videos: $e');
+      }
     }
+
     notifyListeners();
     return _allVideosData;
+  }
+
+  Future<void> loadMoreAllVideos({required String category}) async {
+    if (_isFetchingMoreAllVideos || !_hasMoreAllVideos) return;
+
+    _isFetchingMoreAllVideos = true;
+    notifyListeners();
+
+    await getAllVideos(category: category, page: _allVideosPage + 1);
+
+    _isFetchingMoreAllVideos = false;
+    notifyListeners();
+  }
+
+  void resetAllVideosPagination() {
+    _allVideosPage = 1;
+    _hasMoreAllVideos = true;
+    _isFetchingMoreAllVideos = false;
   }
 
   Future<ApiResponse<SingleShopDetailData>> getShopById({
@@ -444,6 +591,7 @@ class VideoController extends ChangeNotifier {
         _singleShopDetailData = ApiResponse.completed(
           SingleShopDetailData.fromJson(data as Map<String, dynamic>),
         );
+        setIsSaveShop(_singleShopDetailData.data?.shop?.savedAlready ?? false);
       } else {
         _singleShopDetailData = ApiResponse.completed(null);
       }

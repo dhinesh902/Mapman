@@ -57,7 +57,6 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   bool _isShowAddNearBy = false;
 
   bool get isShowAddNearBy => _isShowAddNearBy;
@@ -198,6 +197,14 @@ class HomeController extends ChangeNotifier {
 
   ApiResponse<List<NotificationsData>> get notificationsData =>
       _notificationsData;
+
+  int _page = 1;
+  bool _isFetchingMore = false;
+  bool _hasMoreData = true;
+
+  bool get isFetchingMore => _isFetchingMore;
+
+  bool get hasMoreData => _hasMoreData;
 
   Future<ApiResponse<HomeData>> getHome() async {
     _homeData = ApiResponse.loading(Strings.loading);
@@ -398,23 +405,66 @@ class HomeController extends ChangeNotifier {
     return _notificationPreferenceData;
   }
 
-  Future<ApiResponse<List<NotificationsData>>> getNotifications() async {
-    _notificationsData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
+  Future<ApiResponse<List<NotificationsData>>> getNotifications({
+    int page = 1,
+  }) async {
+    if (page == 1) {
+      _notificationsData = ApiResponse.loading(Strings.loading);
+      _hasMoreData = true;
+      notifyListeners();
+    }
+
     try {
       final String token = SessionManager.getToken() ?? '';
-      final response = await homeService.getNotifications(token: token);
+      final response = await homeService.getNotifications(
+        token: token,
+        page: page,
+      );
+
       final List list = response[Keys.data] as List;
-      final List<NotificationsData> notifications = list
+      final List<NotificationsData> newNotifications = list
           .map((e) => NotificationsData.fromJson(e))
           .toList();
-      _notificationsData = ApiResponse.completed(notifications);
+
+      if (page == 1) {
+        _notificationsData = ApiResponse.completed(newNotifications);
+        _page = 1;
+      } else {
+        if (newNotifications.isEmpty) {
+          _hasMoreData = false;
+        } else {
+          _notificationsData.data!.addAll(newNotifications);
+          _page = page;
+        }
+      }
     } catch (e) {
-      _notificationsData = ApiResponse.error(e.toString());
+      if (page == 1) {
+        _notificationsData = ApiResponse.error(e.toString());
+      } else {
+        debugPrint('Error loading more notifications: $e');
+      }
     }
 
     notifyListeners();
     return _notificationsData;
+  }
+
+  Future<void> loadMoreNotifications() async {
+    if (_isFetchingMore || !_hasMoreData) return;
+
+    _isFetchingMore = true;
+    notifyListeners();
+
+    await getNotifications(page: _page + 1);
+
+    _isFetchingMore = false;
+    notifyListeners();
+  }
+
+  void resetPagination() {
+    _page = 1;
+    _hasMoreData = true;
+    _isFetchingMore = false;
   }
 
   Future<ApiResponse> getNotificationCount() async {

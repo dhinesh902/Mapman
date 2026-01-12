@@ -1150,7 +1150,6 @@ class CategoryDialogue {
     );
   }
 
-  /// Call this when dialog is no longer needed (optional but recommended)
   void dispose() {
     addNewCategoryController.dispose();
   }

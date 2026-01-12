@@ -90,6 +90,20 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse<AnalyticsData> get analyticsData => _analyticsData;
 
+  ApiResponse<List<ShopDetailData>> _fetchSavedShop = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<List<ShopDetailData>> get fetchSavedShop => _fetchSavedShop;
+
+  int _page = 1;
+  bool _isFetchingMore = false;
+  bool _hasMoreData = true;
+
+  bool get hasMoreData => _hasMoreData;
+
+  bool get isFetchingMore => _isFetchingMore;
+
   Future<ApiResponse<ProfileData>> getProfile() async {
     _profileData = ApiResponse.loading(Strings.loading);
     notifyListeners();
@@ -238,5 +252,83 @@ class ProfileController extends ChangeNotifier {
     }
     notifyListeners();
     return _analyticsData;
+  }
+
+  Future<ApiResponse> saveShop({
+    required int shopId,
+    required String status,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken()!;
+      final response = await profileService.saveShop(
+        token: token,
+        shopId: shopId,
+        status: status,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse<List<ShopDetailData>>> getFetchSavedShops({
+    required int page,
+  }) async {
+    if (page == 1) {
+      _fetchSavedShop = ApiResponse.loading(Strings.loading);
+      notifyListeners();
+    }
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.getFetchSavedShops(
+        token: token,
+        page: page,
+      );
+      final List list = response[Keys.data] as List;
+      final List<ShopDetailData> newNotifications = list
+          .map((e) => ShopDetailData.fromJson(e))
+          .toList();
+      if (page == 1) {
+        _fetchSavedShop = ApiResponse.completed(newNotifications);
+        _page = 1;
+      } else {
+        if (newNotifications.isEmpty) {
+          _hasMoreData = false;
+        } else {
+          _fetchSavedShop.data!.addAll(newNotifications);
+          _page = page;
+        }
+      }
+    } catch (e) {
+      if (page == 1) {
+        _fetchSavedShop = ApiResponse.error(e.toString());
+      } else {
+        debugPrint('Error loading more shops: $e');
+      }
+    }
+    notifyListeners();
+    return _fetchSavedShop;
+  }
+
+  Future<void> loadMoreShops() async {
+    if (_isFetchingMore || !_hasMoreData) return;
+
+    _isFetchingMore = true;
+    notifyListeners();
+
+    await getFetchSavedShops(page: _page + 1);
+
+    _isFetchingMore = false;
+    notifyListeners();
+  }
+
+  void resetShopPagination() {
+    _page = 1;
+    _hasMoreData = true;
+    _isFetchingMore = false;
   }
 }

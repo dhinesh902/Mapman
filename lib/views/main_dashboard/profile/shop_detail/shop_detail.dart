@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
@@ -12,11 +13,13 @@ import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/views/main_dashboard/video/components/video_shop_dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
+import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
@@ -40,7 +43,6 @@ class _ShopDetailState extends State<ShopDetail> {
     // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
       getShopById();
     });
     super.initState();
@@ -68,11 +70,29 @@ class _ShopDetailState extends State<ShopDetail> {
     }
   }
 
+  Future<void> savedShops({required int shopId, required String status}) async {
+    CustomDialogues.showLoadingDialogue(context);
+    final response = await context.read<ProfileController>().saveShop(
+      shopId: shopId,
+      status: status,
+    );
+    if (!mounted) return;
+    Navigator.pop(context);
+    if (response.status == Status.COMPLETED) {
+      videoController.setIsSaveShop(status == 'active' ? true : false);
+    } else {
+      if (!mounted) return;
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
-    final lat = videoController.singleShopDetailData.data?.shop?.lat ?? '0.0';
-    final long = videoController.singleShopDetailData.data?.shop?.long ?? '0.0';
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -82,13 +102,28 @@ class _ShopDetailState extends State<ShopDetail> {
             videoController.singleShopDetailData.data?.shop?.shopName,
           ),
           action: videoController.singleShopDetailData.data != null
-              ? ShopLocationButton(
-                  onTap: () async {
-                    await CustomLaunchers.openGoogleMaps(
-                      latitude: double.parse(lat),
-                      longitude: double.parse(long),
+              ? ShopShopButton(
+                  onTap: () {
+                    VideoShopDialogue().showSaveOrRemoveVideoDialogue(
+                      context,
+                      isRemoveShop: videoController.isSaveShop,
+                      onTap: () async {
+                        await savedShops(
+                          shopId:
+                              videoController
+                                  .singleShopDetailData
+                                  .data
+                                  ?.shop
+                                  ?.id ??
+                              0,
+                          status: videoController.isSaveShop
+                              ? 'inactive'
+                              : 'active',
+                        );
+                      },
                     );
                   },
+                  isSelected: videoController.isSaveShop,
                 )
               : null,
           isCenterTitle: false,
@@ -128,8 +163,6 @@ class _ShopDetailState extends State<ShopDetail> {
                                 videoController.currentShopDetailIndex == 1,
                             isLeft: false,
                             onTap: () {
-                              videoController.setShowParticularShopVideos =
-                                  false;
                               videoController.setCurrentShopDetailIndex = 1;
                             },
                           ),

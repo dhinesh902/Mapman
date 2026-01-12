@@ -139,6 +139,11 @@ class AppIcons {
   static const String textilesMap = 'assets/images/png/map/textiles.png';
   static const String theatersMap = 'assets/images/png/map/theaters.png';
 
+  static const String saveVideoP = 'assets/images/png/save_video.png';
+  static const String saveShopP = 'assets/images/png/save_shop.png';
+  static const String removeVideoP = 'assets/images/png/remove_video.png';
+  static const String removeShopP = 'assets/images/png/remove_shop.png';
+
   ///empty images
   static const String allVideoEmptyP =
       'assets/images/png/empty/allvideo_empty.png';

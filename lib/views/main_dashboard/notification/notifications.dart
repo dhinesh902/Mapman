@@ -26,22 +26,37 @@ class Notifications extends StatefulWidget {
 }
 
 class _NotificationsState extends State<Notifications> {
+  final ScrollController _scrollController = ScrollController();
+
   late HomeController homeController;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+
     homeController = context.read<HomeController>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      getNotifications();
+      homeController.resetPagination();
+      _getInitialNotifications();
     });
+
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> getNotifications() async {
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      homeController.loadMoreNotifications();
+    }
+  }
+
+  Future<void> _getInitialNotifications() async {
     final response = await homeController.getNotifications();
     await homeController.getNotificationCount();
+
     if (!mounted) return;
+
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
         context: context,
@@ -55,7 +70,9 @@ class _NotificationsState extends State<Notifications> {
     final response = await homeController.getNotificationOpenStatus(
       notificationId: notificationId,
     );
+
     if (!mounted) return;
+
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
         context: context,
@@ -66,8 +83,16 @@ class _NotificationsState extends State<Notifications> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    homeController = context.watch<HomeController>();
+    final homeController = context.watch<HomeController>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Stack(
@@ -77,7 +102,7 @@ class _NotificationsState extends State<Notifications> {
             left: 0,
             right: 0,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
                   bottomRight: Radius.circular(50),
                   bottomLeft: Radius.circular(50),
@@ -101,25 +126,29 @@ class _NotificationsState extends State<Notifications> {
                       onPressed: () {
                         context.pushNamed(AppRoutes.notificationSettings);
                       },
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.settings,
                         size: 24,
                         color: AppColors.whiteText,
                       ),
                     ),
                   ),
-                  TopPromoBanner(),
-                  SizedBox(height: 15),
+
+                  const TopPromoBanner(),
+                  const SizedBox(height: 15),
+
                   Flexible(
                     child: Builder(
                       builder: (context) {
                         switch (homeController.notificationsData.status) {
                           case Status.INITIAL:
                           case Status.LOADING:
-                            return CustomLoadingIndicator();
+                            return const CustomLoadingIndicator();
+
                           case Status.COMPLETED:
                             final notifications =
                                 homeController.notificationsData.data ?? [];
+
                             if (notifications.isEmpty) {
                               return EmptyDataContainer(
                                 children: [
@@ -128,7 +157,7 @@ class _NotificationsState extends State<Notifications> {
                                     height: 130,
                                     width: 130,
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   BodyTextColors(
                                     title:
                                         'You don’t have any notifications yet',
@@ -140,24 +169,39 @@ class _NotificationsState extends State<Notifications> {
                                 ],
                               );
                             }
-                            return ListView.builder(
-                              itemCount: notifications.length,
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              key: const PageStorageKey('notifications_list'),
-                              // Add cache extent to limit off-screen widgets
-                              cacheExtent: 200,
-                              itemBuilder: (context, index) {
-                                return NotificationCard(
-                                  key: ValueKey(notifications[index].id),
-                                  notificationsData: notifications[index],
-                                );
+
+                            return RefreshIndicator(
+                              onRefresh: () async {
+                                homeController.resetPagination();
+                                await homeController.getNotifications(page: 1);
+                                await homeController.getNotificationCount();
                               },
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                padding: EdgeInsets.zero,
+                                key: const PageStorageKey('notifications_list'),
+                                cacheExtent: 200,
+                                itemCount:
+                                    notifications.length +
+                                    (homeController.isFetchingMore ? 1 : 0),
+
+                                itemBuilder: (context, index) {
+                                  if (index == notifications.length) {
+                                    return MoreLoadingContainer();
+                                  }
+                                  return NotificationCard(
+                                    key: ValueKey(notifications[index].id),
+                                    notificationsData: notifications[index],
+                                  );
+                                },
+                              ),
                             );
+
                           case Status.ERROR:
                             return CustomErrorTextWidget(
                               title:
-                                  '${homeController.notificationsData.message}',
+                                  homeController.notificationsData.message ??
+                                  '',
                             );
                         }
                       },

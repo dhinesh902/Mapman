@@ -372,8 +372,7 @@ class MyVideoContainer extends StatefulWidget {
   State<MyVideoContainer> createState() => _MyVideoContainerState();
 }
 
-class _MyVideoContainerState extends State<MyVideoContainer>
-    with AutomaticKeepAliveClientMixin {
+class _MyVideoContainerState extends State<MyVideoContainer> {
   late final CachedVideoPlayerPlus _player;
 
   @override
@@ -396,7 +395,6 @@ class _MyVideoContainerState extends State<MyVideoContainer>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return SizedBox(
       height: 174,
       child: Stack(
@@ -448,9 +446,6 @@ class _MyVideoContainerState extends State<MyVideoContainer>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
 
 class NoVideoContainer extends StatelessWidget {

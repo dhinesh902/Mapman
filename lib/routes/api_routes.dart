@@ -38,6 +38,8 @@ abstract class ApiRoutes {
   static const String addNewCategory = '/shop/addNewCategory';
   static const String searchShops = '/shop/search';
   static const String fetchShop = '/shop/fetchShop';
+  static const String saveShop = '/shop/saveShop';
+  static const String fetchSavedShops = '/shop/fetchSavedShops';
   static const String deleteShopImage = '/shop/deleteShopImage';
   static const String videoRegister = '/shop/videoRegister';
   static const String myVideos = '/shop/myVideos';

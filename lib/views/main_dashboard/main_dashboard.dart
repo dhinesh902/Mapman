@@ -274,7 +274,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
         return Container(
           height: 65,
           width: 65,
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(5),
           margin: const EdgeInsets.fromLTRB(3, 2, 3, 0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -303,14 +303,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
               shape: BoxShape.circle,
               color: AppColors.whiteText,
             ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(AppGifs.upload1, fit: BoxFit.cover),
-                Image.asset(AppGifs.upload2, fit: BoxFit.cover),
-                Center(child: SvgPicture.asset(AppIcons.telegram)),
-              ],
-            ),
+            child: Center(child: SvgPicture.asset(AppIcons.telegram)),
           ),
         );
       },

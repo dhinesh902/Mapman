@@ -130,11 +130,13 @@ class VideoService extends ApiRoutes {
 
   Future<Map<String, dynamic>> getMyViewedVideos({
     required String token,
+    required int page,
   }) async {
     try {
       final response = await dio.get(
         ApiRoutes.fetchMyViewedVideos,
         options: headerWithToken(token),
+        queryParameters: {'page': page},
       );
       return response.data;
     } on DioException catch (e) {
@@ -159,11 +161,15 @@ class VideoService extends ApiRoutes {
     }
   }
 
-  Future<Map<String, dynamic>> getMySavedVideos({required String token}) async {
+  Future<Map<String, dynamic>> getMySavedVideos({
+    required String token,
+    required int page,
+  }) async {
     try {
       final response = await dio.get(
         ApiRoutes.fetchMySavedVideos,
         options: headerWithToken(token),
+        queryParameters: ({'page': page}),
       );
       return response.data;
     } on DioException catch (e) {
@@ -188,12 +194,13 @@ class VideoService extends ApiRoutes {
   Future<Map<String, dynamic>> getAllVideos({
     required String token,
     required String category,
+    required int page,
   }) async {
     try {
       final response = await dio.get(
         ApiRoutes.allVideos,
         options: headerWithToken(token),
-        queryParameters: {'category': category},
+        queryParameters: {'category': category, 'page': page},
       );
       return response.data;
     } on DioException catch (e) {

@@ -23,6 +23,7 @@ import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_de
 import 'package:mapman/views/main_dashboard/profile/shop_detail/search_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_analytics.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_detail.dart';
+import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/replace_video.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/upload_video.dart';
@@ -160,6 +161,11 @@ class AppRouter {
             name: AppRoutes.editProfile,
             builder: (context, state) =>
                 EditProfile(profileData: state.extra as ProfileData),
+          ),
+          GoRoute(
+            path: '/all_videos',
+            name: AppRoutes.allVideos,
+            builder: (context, state) => AllVideos(),
           ),
           // GoRoute(
           //   path: '/chats',

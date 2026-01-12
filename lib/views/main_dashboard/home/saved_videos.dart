@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -10,6 +12,7 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/constants/themes.dart';
+import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/notification/notification_video.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
@@ -30,21 +33,65 @@ class SavedVideos extends StatefulWidget {
 }
 
 class _SavedVideosState extends State<SavedVideos> {
+  final ScrollController shopScrollController = ScrollController();
+  final ScrollController videoScrollController = ScrollController();
+
   late VideoController videoController;
+  late ProfileController profileController;
 
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
+
     videoController = context.read<VideoController>();
+    profileController = context.read<ProfileController>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       videoController.setSavedVideoIndex = 0;
+
+      profileController.resetShopPagination();
+      videoController.resetSavedVideoPagination();
+
       getMySavedVideos();
+      getFetchSavedShops();
     });
-    super.initState();
+
+    shopScrollController.addListener(_onShopScroll);
+    videoScrollController.addListener(_onVideoScroll);
   }
 
   Future<void> getMySavedVideos() async {
     final response = await videoController.getMySavedVideos();
+    if (!mounted) return;
+    if (response.status == Status.ERROR) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  void _onShopScroll() {
+    if (shopScrollController.position.pixels >=
+        shopScrollController.position.maxScrollExtent - 200 &&
+        profileController.hasMoreData &&
+        !profileController.isFetchingMore) {
+      profileController.loadMoreShops();
+    }
+  }
+
+  void _onVideoScroll() {
+    if (videoScrollController.position.pixels >=
+        videoScrollController.position.maxScrollExtent - 200 &&
+        videoController.hasMoreData &&
+        !videoController.isFetchingMore) {
+      videoController.loadMoreSavedVideos();
+    }
+  }
+
+  Future<void> getFetchSavedShops() async {
+    final response = await profileController.getFetchSavedShops(page: 1);
     if (!mounted) return;
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
@@ -83,8 +130,19 @@ class _SavedVideosState extends State<SavedVideos> {
   }
 
   @override
+  void dispose() {
+    shopScrollController.removeListener(_onShopScroll);
+    shopScrollController.dispose();
+
+    videoScrollController.removeListener(_onVideoScroll);
+    videoScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
+    profileController = context.watch<ProfileController>();
     final videoData = videoController.savedVideoData.data ?? [];
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -117,6 +175,7 @@ class _SavedVideosState extends State<SavedVideos> {
                 children: [
                   const ActionBarComponent(title: 'Saved Videos'),
                   TopPromoBanner(),
+                  SizedBox(height: 20),
                   Container(
                     height: 44,
                     margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -163,98 +222,167 @@ class _SavedVideosState extends State<SavedVideos> {
                   ],
 
                   /// saved shops
-                  Flexible(
-                    child: Builder(
-                      builder: (context) {
-                        ///Start Watching Videos & Earn Rewards
-                        // if (savedVideos.isEmpty) {
-                        //   return EmptyDataContainer(
-                        //     children: [
-                        //       Image.asset(
-                        //         AppIcons.shopP,
-                        //         height: 140,
-                        //         width: 140,
-                        //       ),
-                        //       SizedBox(height: 20),
-                        //       BodyTextHint(
-                        //         title: 'No Data Found here',
-                        //         fontSize: 16,
-                        //         fontWeight: FontWeight.w400,
-                        //         textAlign: TextAlign.center,
-                        //       ),
-                        //     ],
-                        //   );
-                        // }
-                        return ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                          itemCount: 10,
-                          itemBuilder: (context, index) {
-                            return SavedShopCard();
-                          },
-                        );
-                      },
+                  if (videoController.savedVideoIndex == 0)
+                    Flexible(
+                      child: Builder(
+                        builder: (context) {
+                          switch (profileController.fetchSavedShop.status) {
+                            case Status.INITIAL:
+                            case Status.LOADING:
+                              return CustomLoadingIndicator();
+                            case Status.COMPLETED:
+                              final shops =
+                                  profileController.fetchSavedShop.data ?? [];
+                              if (shops.isEmpty) {
+                                return EmptyDataContainer(
+                                  children: [
+                                    Image.asset(
+                                      AppIcons.shopP,
+                                      height: 120,
+                                      width: 120,
+                                    ),
+                                    SizedBox(height: 20),
+                                    BodyTextHint(
+                                      title: 'No Data Found here',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                );
+                              }
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  profileController.resetShopPagination();
+                                  await profileController.getFetchSavedShops(
+                                    page: 1,
+                                  );
+                                },
+                                child: ListView.builder(
+                                  controller: shopScrollController,
+                                  physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    0,
+                                    10,
+                                    10,
+                                  ),
+                                  itemCount:
+                                  (profileController
+                                      .fetchSavedShop
+                                      .data
+                                      ?.length ??
+                                      0) +
+                                      (profileController.isFetchingMore
+                                          ? 1
+                                          : 0),
+                                  itemBuilder: (context, index) {
+                                    if (index < shops.length) {
+                                      return SavedShopCard(
+                                        shopDetailData: shops[index],
+                                      );
+                                    }
+                                    return MoreLoadingContainer();
+                                  },
+                                ),
+                              );
+                            case Status.ERROR:
+                              return CustomErrorTextWidget(
+                                title:
+                                '${profileController.fetchSavedShop.message}',
+                              );
+                          }
+                        },
+                      ),
                     ),
-                  ),
 
                   /// saved video
-                  Flexible(
-                    child: Builder(
-                      builder: (context) {
-                        switch (videoController.savedVideoData.status) {
-                          case Status.INITIAL:
-                            return CustomLoadingIndicator();
-                          case Status.LOADING:
-                            return CustomLoadingIndicator();
-                          case Status.COMPLETED:
-                            final savedVideos =
-                                videoController.savedVideoData.data ?? [];
+                  if (videoController.savedVideoIndex == 1)
+                    Flexible(
+                      child: Builder(
+                        builder: (context) {
+                          switch (videoController.savedVideoData.status) {
+                            case Status.INITIAL:
+                              return CustomLoadingIndicator();
+                            case Status.LOADING:
+                              return CustomLoadingIndicator();
+                            case Status.COMPLETED:
+                              final savedVideos =
+                                  videoController.savedVideoData.data ?? [];
 
-                            ///Start Watching Videos & Earn Rewards
-                            if (savedVideos.isEmpty) {
-                              return EmptyDataContainer(
-                                children: [
-                                  Image.asset(
-                                    AppIcons.savedVideoEmptyP,
-                                    height: 140,
-                                    width: 140,
-                                  ),
-                                  SizedBox(height: 20),
-                                  BodyTextHint(
-                                    title: 'No Data Found here',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              );
-                            }
-                            return ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                              itemCount: savedVideos.length,
-                              itemBuilder: (context, index) {
-                                return SavedVideoCard(
-                                  videosData: savedVideos[index],
-                                  isBookMark: true,
-                                  allVideos: savedVideos,
-                                  currentIndex: index,
-                                  bookMarkOnTap: () async {
-                                    await addSavedVideos(
-                                      videoId: savedVideos[index].id ?? 0,
-                                      status: 'inactive',
-                                    );
-                                  },
+                              ///Start Watching Videos & Earn Rewards
+                              if (savedVideos.isEmpty) {
+                                return EmptyDataContainer(
+                                  children: [
+                                    Image.asset(
+                                      AppIcons.savedVideoEmptyP,
+                                      height: 140,
+                                      width: 140,
+                                    ),
+                                    SizedBox(height: 20),
+                                    BodyTextHint(
+                                      title: 'No Data Found here',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
                                 );
-                              },
-                            );
-                          case Status.ERROR:
-                            return CustomErrorTextWidget(
-                              title:
-                                  '${videoController.savedVideoData.message}',
-                            );
-                        }
-                      },
+                              }
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  videoController.resetSavedVideoPagination();
+                                  await videoController.getMySavedVideos(
+                                    page: 1,
+                                  );
+                                },
+                                child: ListView.builder(
+                                  controller: videoScrollController,
+                                  physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    0,
+                                    10,
+                                    10,
+                                  ),
+
+                                  itemCount:
+                                  (videoController
+                                      .savedVideoData
+                                      .data
+                                      ?.length ??
+                                      0) +
+                                      (videoController.isFetchingMore ? 1 : 0),
+                                  itemBuilder: (context, index) {
+                                    if (index < savedVideos.length) {
+                                      return SavedVideoCard(
+                                        videosData: savedVideos[index],
+                                        isBookMark: true,
+                                        allVideos: savedVideos,
+                                        currentIndex: index,
+                                        bookMarkOnTap: () async {
+                                          await addSavedVideos(
+                                            videoId: savedVideos[index].id ?? 0,
+                                            status: 'inactive',
+                                          );
+                                        },
+                                      );
+                                    }
+                                    return MoreLoadingContainer();
+                                  },
+                                ),
+                              );
+                            case Status.ERROR:
+                              return CustomErrorTextWidget(
+                                title:
+                                '${videoController.savedVideoData.message}',
+                              );
+                          }
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -401,44 +529,51 @@ class SavedVideoCard extends StatelessWidget {
 }
 
 class SavedShopCard extends StatelessWidget {
-  const SavedShopCard({super.key});
+  const SavedShopCard({super.key, required this.shopDetailData});
+
+  final ShopDetailData shopDetailData;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: Themes.searchFieldDecoration(borderRadius: 6),
       padding: EdgeInsets.all(10),
-      margin: EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             height: 98,
             width: 112,
-            child: CustomNetworkImage(
-              imageUrl:
-                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHu55qoCgPTau60FsS8I6IBbjMWF1ixU6B5g&s',
-            ),
+            child: CustomNetworkImage(imageUrl: shopDetailData.shopImage ?? ''),
           ),
+          SizedBox(width: 15),
           Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                SizedBox(height: 5),
                 HeaderTextBlack(
-                  title: 'Shop Name',
+                  title: shopDetailData.shopName?.capitalize() ?? '',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 10),
                 Row(
                   children: [
                     HeaderTextBlack(
-                      title: 'Restaurant',
+                      title: shopDetailData.category?.capitalize() ?? '',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
+                    SizedBox(width: 5),
                     Icon(Icons.circle, size: 5, color: AppColors.lightGreyHint),
+                    SizedBox(width: 5),
                     HeaderTextBlack(
-                      title: '9am - 10pm',
+                      title:
+                      '${shopDetailData.openTime ?? ''} - ${shopDetailData
+                          .closeTime ?? ''}',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
@@ -449,7 +584,7 @@ class SavedShopCard extends StatelessWidget {
                   onTap: () {
                     context.pushNamed(
                       AppRoutes.shopDetail,
-                      // extra: videosData.shopId,
+                      extra: shopDetailData.id ?? 0,
                     );
                   },
                 ),
@@ -460,9 +595,17 @@ class SavedShopCard extends StatelessWidget {
           Container(
             height: 30,
             width: 30,
-            decoration: Themes.searchFieldDecoration(
-              borderRadius: 6,
+            decoration: BoxDecoration(
+              color: AppColors.scaffoldBackground,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  spreadRadius: 0,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Center(
               child: Image.asset(

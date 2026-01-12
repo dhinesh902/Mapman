@@ -35,6 +35,7 @@ class Shop {
   String? image2;
   String? image3;
   String? image4;
+  bool? savedAlready;
   dynamic imageApprove;
   String? status;
   String? createdAt;
@@ -54,6 +55,7 @@ class Shop {
     this.shopNumber,
     this.openTime,
     this.closeTime,
+    this.savedAlready,
     this.image1,
     this.image2,
     this.image3,
@@ -78,6 +80,7 @@ class Shop {
     shopNumber = json['shopNumber'];
     openTime = json['openTime'];
     closeTime = json['closeTime'];
+    savedAlready = json['savedAlready'];
     image1 = json['image1'];
     image2 = json['image2'];
     image3 = json['image3'];

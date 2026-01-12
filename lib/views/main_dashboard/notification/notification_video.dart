@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
@@ -471,30 +472,50 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                                         ),
                                       ),
                                       SizedBox(width: 10),
-                                      ValueListenableBuilder(
+                                      ValueListenableBuilder<bool>(
                                         valueListenable: bookMarkNotifier,
-                                        builder: (context, isActive, _) {
+                                        builder: (context, isBookmarked, _) {
                                           return CircleContainer(
                                             onTap: () async {
-                                              final bool newStatus = !isActive;
-                                              bookMarkNotifier.value =
-                                                  newStatus;
-                                              await videoController
-                                                  .addSavedVideos(
-                                                    videoId: videosData.id ?? 0,
-                                                    status: newStatus
-                                                        ? 'active'
-                                                        : 'inactive',
-                                                  );
-                                            },
+                                              final bool updatedStatus =
+                                                  !isBookmarked;
 
-                                            child: isActive
+                                              // Optimistic UI update
+                                              bookMarkNotifier.value =
+                                                  updatedStatus;
+
+                                              try {
+                                                await videoController
+                                                    .addSavedVideos(
+                                                      videoId:
+                                                          videosData.id ?? 0,
+                                                      status: updatedStatus
+                                                          ? 'active'
+                                                          : 'inactive',
+                                                    );
+
+                                                await context
+                                                    .read<ProfileController>()
+                                                    .saveShop(
+                                                      shopId:
+                                                          videosData.shopId ??
+                                                          0,
+                                                      status: updatedStatus
+                                                          ? 'active'
+                                                          : 'inactive',
+                                                    );
+                                              } catch (e) {
+                                                bookMarkNotifier.value =
+                                                    isBookmarked;
+                                              }
+                                            },
+                                            child: isBookmarked
                                                 ? Image.asset(
                                                     AppIcons.bookmarkP,
                                                     height: 30,
                                                     width: 30,
                                                   )
-                                                : Icon(
+                                                : const Icon(
                                                     Icons
                                                         .bookmark_border_outlined,
                                                     size: 30,
