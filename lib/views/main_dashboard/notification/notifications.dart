@@ -40,15 +40,6 @@ class _NotificationsState extends State<Notifications> {
       homeController.resetPagination();
       _getInitialNotifications();
     });
-
-    _scrollController.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      homeController.loadMoreNotifications();
-    }
   }
 
   Future<void> _getInitialNotifications() async {
@@ -84,7 +75,6 @@ class _NotificationsState extends State<Notifications> {
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -170,25 +160,36 @@ class _NotificationsState extends State<Notifications> {
                               );
                             }
 
-                            return RefreshIndicator(
-                              onRefresh: () async {
-                                homeController.resetPagination();
-                                await homeController.getNotifications(page: 1);
-                                await homeController.getNotificationCount();
+                            return NotificationListener<ScrollNotification>(
+                              onNotification: (ScrollNotification scrollInfo) {
+                                if (homeController.isFetchingMore ||
+                                    !homeController.hasMoreData) {
+                                  return false;
+                                }
+
+                                final bool isAtBottom =
+                                    scrollInfo.metrics.pixels >=
+                                    scrollInfo.metrics.maxScrollExtent - 150;
+
+                                if (scrollInfo is ScrollEndNotification &&
+                                    isAtBottom) {
+                                  homeController.loadMoreNotifications();
+                                }
+
+                                return false;
                               },
                               child: ListView.builder(
                                 controller: _scrollController,
                                 padding: EdgeInsets.zero,
                                 key: const PageStorageKey('notifications_list'),
-                                cacheExtent: 200,
                                 itemCount:
                                     notifications.length +
                                     (homeController.isFetchingMore ? 1 : 0),
-
                                 itemBuilder: (context, index) {
                                   if (index == notifications.length) {
-                                    return MoreLoadingContainer();
+                                    return const MoreLoadingContainer();
                                   }
+
                                   return NotificationCard(
                                     key: ValueKey(notifications[index].id),
                                     notificationsData: notifications[index],

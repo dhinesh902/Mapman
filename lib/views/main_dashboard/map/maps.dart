@@ -47,8 +47,6 @@ class _MapsState extends State<Maps> {
   StreamSubscription<Position>? _positionStream;
   LatLng? currentLatLng;
 
-  bool _movedToCurrentLocation = false;
-
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
     zoom: 14.5,
@@ -71,7 +69,11 @@ class _MapsState extends State<Maps> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       homeController.setNearByShopHeight = 0.18;
-      await getSearchShops();
+      // Optimistically start loading icons and shops in parallel
+      await Future.wait([
+        LocationIconService().preloadAllIcons(),
+        getSearchShops(),
+      ]);
     });
   }
 
@@ -101,25 +103,35 @@ class _MapsState extends State<Maps> {
       return;
     }
 
-    final Position currentPosition = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    currentLatLng = LatLng(currentPosition.latitude, currentPosition.longitude);
-
-    if (_mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: currentLatLng!, zoom: 15.5),
-        ),
+    final Position? lastKnownPosition = await Geolocator.getLastKnownPosition();
+    if (lastKnownPosition != null) {
+      currentLatLng = LatLng(
+        lastKnownPosition.latitude,
+        lastKnownPosition.longitude,
       );
+      if (mounted) setState(() {});
+      _animateToCurrentLocation();
     }
 
-    if (mounted) setState(() {});
+    try {
+      final Position currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      currentLatLng = LatLng(
+        currentPosition.latitude,
+        currentPosition.longitude,
+      );
+      if (mounted) setState(() {});
+      _animateToCurrentLocation();
+    } catch (e) {
+      debugPrint('Error getting current location: $e');
+    }
 
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 50, // ✔ realistic
+      distanceFilter: 50,
     );
 
     _positionStream =
@@ -129,6 +141,16 @@ class _MapsState extends State<Maps> {
             if (mounted) setState(() {});
           },
         );
+  }
+
+  void _animateToCurrentLocation() {
+    if (_mapController != null && currentLatLng != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: currentLatLng!, zoom: 15.5),
+        ),
+      );
+    }
   }
 
   /// Distance calculation
@@ -156,11 +178,8 @@ class _MapsState extends State<Maps> {
 
     controller.setMapStyle(_mapStyle);
 
-    if (currentLatLng != null && !_movedToCurrentLocation) {
-      _movedToCurrentLocation = true;
-      controller.animateCamera(
-        CameraUpdate.newLatLngZoom(currentLatLng!, 15.5),
-      );
+    if (currentLatLng != null) {
+      _animateToCurrentLocation();
     }
   }
 
@@ -474,9 +493,11 @@ class _MapsState extends State<Maps> {
               final shopName = shop.shopName?.toLowerCase() ?? '';
               final address = shop.address?.toLowerCase() ?? '';
               final description = shop.description?.toLowerCase() ?? '';
+              final category = shop.category?.toLowerCase() ?? '';
 
               return shopName.contains(query) ||
                   address.contains(query) ||
+                  category.contains(query) ||
                   description.contains(query);
             });
           },

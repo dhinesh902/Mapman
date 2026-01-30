@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
@@ -297,22 +298,23 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (mounted) setState(() {});
 
     try {
-      debugPrint('🎬 Video $videoId FULLY COMPLETED - Calling APIs...');
+      debugPrint('Video $videoId FULLY COMPLETED - Calling APIs...');
 
       if (videoController.isViewedVideo == 1) {
         await videoController.addViewedVideos(videoId: videoId);
-        debugPrint('✅ addViewedVideos SUCCESS');
+        debugPrint('addViewedVideos SUCCESS');
       }
 
       await Future.delayed(const Duration(milliseconds: 300));
       await videoController.addVideoPoints();
-      debugPrint('✅ addVideoPoints SUCCESS');
+      await videoController.getVideoPoints();
+      debugPrint('addVideoPoints SUCCESS');
 
       await Future.delayed(const Duration(milliseconds: 300));
       await videoController.getVideoPoints();
-      debugPrint('✅ getVideoPoints SUCCESS');
+      debugPrint('getVideoPoints SUCCESS');
     } catch (e) {
-      debugPrint('❌ API Error video $videoId: $e');
+      debugPrint('API Error video $videoId: $e');
     } finally {
       if (!_isDisposed) {
         _apiCallInProgress[videoId] = false;
@@ -671,6 +673,15 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                                             ? 'active'
                                                             : 'inactive',
                                                       );
+                                                  await context
+                                                      .read<ProfileController>()
+                                                      .saveShop(
+                                                        shopId:
+                                                            video.shopId ?? 0,
+                                                        status: newVal
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
                                                 },
                                               );
                                         },
@@ -1007,10 +1018,17 @@ class RewardContainer extends StatelessWidget {
               children: [
                 Image.asset(AppIcons.rupeeCoinP, height: 20, width: 20),
                 SizedBox(width: 5),
-                HeaderTextBlack(
-                  title: 'Rewards',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w300,
+                Consumer<VideoController>(
+                  builder: (context, videoController, child) {
+                    return HeaderTextBlack(
+                      title:
+                          (videoController.coinResponse.data ??
+                                  videoController.coinsCount)
+                              .toString(),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w300,
+                    );
+                  },
                 ),
               ],
             ),

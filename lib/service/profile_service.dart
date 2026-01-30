@@ -84,12 +84,6 @@ class ProfileService extends ApiRoutes {
         data['image4'] = await _fileFromPath(shopImages.image4!.path);
       }
       final formData = FormData.fromMap(data);
-      for (var field in formData.fields) {
-        print('FIELD → ${field.key}: ${field.value}');
-      }
-      for (var file in formData.files) {
-        print('FILE → ${file.key}: ${file.value.filename}');
-      }
 
       final response = await dio.post(
         ApiRoutes.shopRegister,
@@ -166,7 +160,7 @@ class ProfileService extends ApiRoutes {
     required String status,
   }) async {
     try {
-      final response = await dio.get(
+      final response = await dio.post(
         ApiRoutes.saveShop,
         options: headerWithToken(token),
         data: {'shopId': shopId, 'status': status},

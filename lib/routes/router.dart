@@ -118,7 +118,6 @@ class AppRouter {
               final data = state.extra as Map<String, dynamic>;
               final videosDataValue = data[Keys.videosData];
 
-              // Handle both single video and list of videos
               List<VideosData> videosList;
               int initialIndex = 0;
 
@@ -126,16 +125,13 @@ class AppRouter {
                 videosList = videosDataValue;
                 initialIndex = (data[Keys.initialIndex] as int?) ?? 0;
               } else if (videosDataValue is VideosData) {
-                // Single video - wrap in list
                 videosList = [videosDataValue];
                 initialIndex = 0;
               } else {
-                // Fallback to empty list
                 videosList = [];
                 initialIndex = 0;
               }
 
-              // Clamp initialIndex to valid range
               initialIndex = initialIndex.clamp(
                 0,
                 videosList.isNotEmpty ? videosList.length - 1 : 0,

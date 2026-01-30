@@ -80,6 +80,7 @@ class _ShopDetailState extends State<ShopDetail> {
     Navigator.pop(context);
     if (response.status == Status.COMPLETED) {
       videoController.setIsSaveShop(status == 'active' ? true : false);
+      context.read<ProfileController>().getFetchSavedShops(page: 1);
     } else {
       if (!mounted) return;
       ExceptionHandler.handleUiException(
@@ -104,7 +105,7 @@ class _ShopDetailState extends State<ShopDetail> {
           action: videoController.singleShopDetailData.data != null
               ? ShopShopButton(
                   onTap: () {
-                    VideoShopDialogue().showSaveOrRemoveVideoDialogue(
+                    VideoShopDialogue().showSaveOrRemoveShopDialogue(
                       context,
                       isRemoveShop: videoController.isSaveShop,
                       onTap: () async {

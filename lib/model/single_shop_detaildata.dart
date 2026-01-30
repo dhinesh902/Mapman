@@ -3,8 +3,9 @@ import 'package:mapman/model/video_model.dart';
 class SingleShopDetailData {
   Shop? shop;
   List<VideosData>? shopVideos;
+  bool? shopSavedAlready;
 
-  SingleShopDetailData({this.shop, this.shopVideos});
+  SingleShopDetailData({this.shop, this.shopVideos,this.shopSavedAlready});
 
   SingleShopDetailData.fromJson(Map<String, dynamic> json) {
     shop = json['shop'] != null ? Shop.fromJson(json['shop']) : null;
@@ -14,6 +15,7 @@ class SingleShopDetailData {
         shopVideos!.add(VideosData.fromJson(v));
       });
     }
+    shopSavedAlready = json['shopSavedAlready'];
   }
 }
 
@@ -35,7 +37,7 @@ class Shop {
   String? image2;
   String? image3;
   String? image4;
-  bool? savedAlready;
+  bool? shopSavedAlready;
   dynamic imageApprove;
   String? status;
   String? createdAt;
@@ -55,7 +57,7 @@ class Shop {
     this.shopNumber,
     this.openTime,
     this.closeTime,
-    this.savedAlready,
+    this.shopSavedAlready,
     this.image1,
     this.image2,
     this.image3,
@@ -80,7 +82,7 @@ class Shop {
     shopNumber = json['shopNumber'];
     openTime = json['openTime'];
     closeTime = json['closeTime'];
-    savedAlready = json['savedAlready'];
+    shopSavedAlready = json['shopSavedAlready'];
     image1 = json['image1'];
     image2 = json['image2'];
     image3 = json['image3'];

@@ -32,13 +32,17 @@ class _VideosState extends State<Videos> {
   void initState() {
     // TODO: implement initState
     videoController = context.read<VideoController>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      videoController.getVideoPoints();
-      if (videoController.currentVideoIndex == 1) {
-        getMyVideos();
-      }
-      if (videoController.currentVideoIndex == 0) {
-        getCategoryVideos();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await videoController.getVideoPoints();
+        if (videoController.currentVideoIndex == 1) {
+          await getMyVideos();
+        }
+        if (videoController.currentVideoIndex == 0) {
+          await getCategoryVideos();
+        }
+      } catch (e) {
+        debugPrint('Error in Videos initState: $e');
       }
     });
     super.initState();

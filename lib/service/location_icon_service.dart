@@ -139,4 +139,9 @@ class LocationIconService {
     final resized = img.copyResize(image, width: width, height: height);
     return Uint8List.fromList(img.encodePng(resized));
   }
+
+  /// Preload all icons
+  Future<void> preloadAllIcons() async {
+    await Future.wait(_iconMap.keys.map((category) => getMarkerIcon(category: category)));
+  }
 }

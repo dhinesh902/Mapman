@@ -57,6 +57,7 @@ class ProfileController extends ChangeNotifier {
   }
 
   /// ----------------------------- API FUNCTIONS -----------------------------
+  static const int _batchSize = 30;
 
   ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
 
@@ -90,6 +91,7 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse<AnalyticsData> get analyticsData => _analyticsData;
 
+  /// Fetch Shops data
   ApiResponse<List<ShopDetailData>> _fetchSavedShop = ApiResponse.initial(
     Strings.noDataFound,
   );
@@ -98,11 +100,11 @@ class ProfileController extends ChangeNotifier {
 
   int _page = 1;
   bool _isFetchingMore = false;
-  bool _hasMoreData = true;
-
-  bool get hasMoreData => _hasMoreData;
+  bool _hasMoreData = false;
 
   bool get isFetchingMore => _isFetchingMore;
+
+  bool get hasMoreData => _hasMoreData;
 
   Future<ApiResponse<ProfileData>> getProfile() async {
     _profileData = ApiResponse.loading(Strings.loading);
@@ -280,27 +282,41 @@ class ProfileController extends ChangeNotifier {
   }) async {
     if (page == 1) {
       _fetchSavedShop = ApiResponse.loading(Strings.loading);
+      _hasMoreData = false;
       notifyListeners();
     }
+
     try {
       final token = SessionManager.getToken() ?? '';
       final response = await profileService.getFetchSavedShops(
         token: token,
         page: page,
       );
-      final List list = response[Keys.data] as List;
-      final List<ShopDetailData> newNotifications = list
+
+      final List list = response[Keys.data] ?? [];
+      final List<ShopDetailData> newShops = list
           .map((e) => ShopDetailData.fromJson(e))
           .toList();
+
       if (page == 1) {
-        _fetchSavedShop = ApiResponse.completed(newNotifications);
+        _fetchSavedShop = ApiResponse.completed(newShops);
         _page = 1;
+
+        _hasMoreData = newShops.length % _batchSize == 0;
       } else {
-        if (newNotifications.isEmpty) {
+        if (newShops.isEmpty) {
           _hasMoreData = false;
         } else {
-          _fetchSavedShop.data!.addAll(newNotifications);
+          final existingIds = _fetchSavedShop.data!.map((e) => e.id).toSet();
+
+          final uniqueShops = newShops
+              .where((e) => !existingIds.contains(e.id))
+              .toList();
+
+          _fetchSavedShop.data!.addAll(uniqueShops);
           _page = page;
+
+          _hasMoreData = _fetchSavedShop.data!.length % _batchSize == 0;
         }
       }
     } catch (e) {
@@ -310,6 +326,7 @@ class ProfileController extends ChangeNotifier {
         debugPrint('Error loading more shops: $e');
       }
     }
+
     notifyListeners();
     return _fetchSavedShop;
   }
@@ -328,7 +345,7 @@ class ProfileController extends ChangeNotifier {
 
   void resetShopPagination() {
     _page = 1;
-    _hasMoreData = true;
+    _hasMoreData = false;
     _isFetchingMore = false;
   }
 }

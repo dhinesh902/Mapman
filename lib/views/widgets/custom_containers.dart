@@ -49,7 +49,7 @@ class CustomTextFieldContainer extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: child,
             ),
           ],

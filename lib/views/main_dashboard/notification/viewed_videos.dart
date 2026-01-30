@@ -48,13 +48,10 @@ class _ViewedVideosState extends State<ViewedVideos> {
       videoController.loadViewedVideoStatus();
       await _getMyViewedVideos();
     });
-
-    scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    scrollController.removeListener(_onScroll);
     scrollController.dispose();
     searchController.dispose();
     super.dispose();
@@ -98,16 +95,6 @@ class _ViewedVideosState extends State<ViewedVideos> {
         status: response.status,
         message: response.message,
       );
-    }
-  }
-
-  void _onScroll() {
-    if (scrollController.position.pixels >=
-            scrollController.position.maxScrollExtent - 200 &&
-        !videoController.isSearching &&
-        videoController.hasMoreViewedVideos &&
-        !videoController.isFetchingMoreViewedVideos) {
-      videoController.loadMoreViewedVideos();
     }
   }
 
@@ -210,10 +197,25 @@ class _ViewedVideosState extends State<ViewedVideos> {
                         );
                       }
 
-                      return RefreshIndicator(
-                        onRefresh: () async {
-                          videoController.resetViewedVideosPagination();
-                          await videoController.getMyViewedVideos(page: 1);
+                      return NotificationListener<ScrollNotification>(
+                        onNotification: (ScrollNotification scrollInfo) {
+                          if (videoController.isSearching) return false;
+
+                          if (videoController.isFetchingMoreViewedVideos ||
+                              !videoController.hasMoreViewedVideos) {
+                            return false;
+                          }
+
+                          final bool isAtBottom =
+                              scrollInfo.metrics.pixels >=
+                              scrollInfo.metrics.maxScrollExtent - 150;
+
+                          if (scrollInfo is ScrollEndNotification &&
+                              isAtBottom) {
+                            videoController.loadMoreViewedVideos();
+                          }
+
+                          return false;
                         },
                         child: ListView.builder(
                           controller: scrollController,
@@ -227,11 +229,9 @@ class _ViewedVideosState extends State<ViewedVideos> {
 
                           itemBuilder: (context, index) {
                             if (index == videos.length) {
-                              return MoreLoadingContainer();
+                              return const MoreLoadingContainer();
                             }
-
                             final video = videos[index];
-
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 15),
                               child: Stack(

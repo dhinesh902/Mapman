@@ -85,6 +85,7 @@ class VideoController extends ChangeNotifier {
 
   set setSelectedCategory(String value) {
     _selectedCategory = value;
+    resetAllVideosPagination();
     notifyListeners();
   }
 
@@ -97,7 +98,11 @@ class VideoController extends ChangeNotifier {
     notifyListeners();
   }
 
+  int coinsCount = 0;
+
   /// -------------------------- API FUNCTIONS --------------------------
+  static const int _batchSize = 30;
+
   ApiResponse _apiResponse = ApiResponse.initial(Strings.noDataFound);
 
   ApiResponse get response => _apiResponse;
@@ -125,10 +130,12 @@ class VideoController extends ChangeNotifier {
   ApiResponse<List<VideosData>> get viewedVideoData => _viewedVideoData;
 
   int _viewedVideosPage = 1;
+
   bool _isFetchingMoreViewedVideos = false;
-  bool _hasMoreViewedVideos = true;
 
   bool get isFetchingMoreViewedVideos => _isFetchingMoreViewedVideos;
+
+  bool _hasMoreViewedVideos = false;
 
   bool get hasMoreViewedVideos => _hasMoreViewedVideos;
 
@@ -150,7 +157,7 @@ class VideoController extends ChangeNotifier {
 
   int _page = 1;
   bool _isFetchingMore = false;
-  bool _hasMoreData = true;
+  bool _hasMoreData = false;
 
   bool get isFetchingMore => _isFetchingMore;
 
@@ -171,10 +178,12 @@ class VideoController extends ChangeNotifier {
   ApiResponse<List<VideosData>> get allVideosData => _allVideosData;
 
   int _allVideosPage = 1;
+
   bool _isFetchingMoreAllVideos = false;
-  bool _hasMoreAllVideos = true;
 
   bool get isFetchingMoreAllVideos => _isFetchingMoreAllVideos;
+
+  bool _hasMoreAllVideos = false;
 
   bool get hasMoreAllVideos => _hasMoreAllVideos;
 
@@ -327,7 +336,6 @@ class VideoController extends ChangeNotifier {
       );
 
       final List list = response[Keys.data] ?? [];
-
       final List<VideosData> newVideos = list
           .map((e) => VideosData.fromJson(e))
           .toList();
@@ -338,13 +346,24 @@ class VideoController extends ChangeNotifier {
         _isSearching = false;
         initializeBookmarks(newVideos);
         _viewedVideosPage = 1;
+
+        _hasMoreViewedVideos = newVideos.length % _batchSize == 0;
       } else {
         if (newVideos.isEmpty) {
           _hasMoreViewedVideos = false;
         } else {
-          _viewedVideoData.data!.addAll(newVideos);
+          final existingIds = _viewedVideoData.data!.map((e) => e.id).toSet();
+
+          final uniqueNewVideos = newVideos
+              .where((e) => !existingIds.contains(e.id))
+              .toList();
+
+          _viewedVideoData.data!.addAll(uniqueNewVideos);
           initializeBookmarks(_viewedVideoData.data ?? []);
           _viewedVideosPage = page;
+
+          _hasMoreViewedVideos =
+              _viewedVideoData.data!.length % _batchSize == 0;
         }
       }
     } catch (e) {
@@ -421,7 +440,7 @@ class VideoController extends ChangeNotifier {
   }) async {
     if (page == 1 && removeBookMark) {
       _savedVideoData = ApiResponse.loading(Strings.loading);
-      _hasMoreData = true;
+      _hasMoreData = false;
       notifyListeners();
     }
 
@@ -432,25 +451,32 @@ class VideoController extends ChangeNotifier {
         page: page,
       );
 
-      final data = response[Keys.data];
-
-      final List<VideosData> newVideos = data is List
-          ? data
-                .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
-                .toList()
-          : [];
+      final List list = response[Keys.data] ?? [];
+      final List<VideosData> newVideos = list
+          .map((e) => VideosData.fromJson(e))
+          .toList();
 
       if (page == 1) {
         _savedVideoData = ApiResponse.completed(newVideos);
         initializeBookmarks(newVideos);
         _page = 1;
+
+        _hasMoreData = newVideos.length % _batchSize == 0;
       } else {
         if (newVideos.isEmpty) {
           _hasMoreData = false;
         } else {
-          _savedVideoData.data!.addAll(newVideos);
+          final existingIds = _savedVideoData.data!.map((e) => e.id).toSet();
+
+          final uniqueVideos = newVideos
+              .where((e) => !existingIds.contains(e.id))
+              .toList();
+
+          _savedVideoData.data!.addAll(uniqueVideos);
           initializeBookmarks(_savedVideoData.data ?? []);
           _page = page;
+
+          _hasMoreData = _savedVideoData.data!.length % _batchSize == 0;
         }
       }
     } catch (e) {
@@ -479,7 +505,7 @@ class VideoController extends ChangeNotifier {
 
   void resetSavedVideoPagination() {
     _page = 1;
-    _hasMoreData = true;
+    _hasMoreData = false;
     _isFetchingMore = false;
   }
 
@@ -514,7 +540,7 @@ class VideoController extends ChangeNotifier {
   }) async {
     if (page == 1) {
       _allVideosData = ApiResponse.loading(Strings.loading);
-      _hasMoreAllVideos = true;
+      _hasMoreAllVideos = false;
       notifyListeners();
     }
 
@@ -526,23 +552,31 @@ class VideoController extends ChangeNotifier {
         page: page,
       );
 
-      final data = response[Keys.data];
+      final List list = response[Keys.data] ?? [];
 
-      final List<VideosData> newVideos = data is List
-          ? data
-                .map((e) => VideosData.fromJson(e as Map<String, dynamic>))
-                .toList()
-          : [];
+      final List<VideosData> newVideos = list
+          .map((e) => VideosData.fromJson(e))
+          .toList();
 
       if (page == 1) {
         _allVideosData = ApiResponse.completed(newVideos);
         _allVideosPage = 1;
+
+        _hasMoreAllVideos = newVideos.length % _batchSize == 0;
       } else {
         if (newVideos.isEmpty) {
           _hasMoreAllVideos = false;
         } else {
-          _allVideosData.data!.addAll(newVideos);
+          final existingIds = _allVideosData.data!.map((e) => e.id).toSet();
+
+          final uniqueVideos = newVideos
+              .where((e) => !existingIds.contains(e.id))
+              .toList();
+
+          _allVideosData.data!.addAll(uniqueVideos);
           _allVideosPage = page;
+
+          _hasMoreAllVideos = _allVideosData.data!.length % _batchSize == 0;
         }
       }
     } catch (e) {
@@ -571,7 +605,7 @@ class VideoController extends ChangeNotifier {
 
   void resetAllVideosPagination() {
     _allVideosPage = 1;
-    _hasMoreAllVideos = true;
+    _hasMoreAllVideos = false;
     _isFetchingMoreAllVideos = false;
   }
 
@@ -591,7 +625,7 @@ class VideoController extends ChangeNotifier {
         _singleShopDetailData = ApiResponse.completed(
           SingleShopDetailData.fromJson(data as Map<String, dynamic>),
         );
-        setIsSaveShop(_singleShopDetailData.data?.shop?.savedAlready ?? false);
+        setIsSaveShop(_singleShopDetailData.data?.shopSavedAlready ?? false);
       } else {
         _singleShopDetailData = ApiResponse.completed(null);
       }
@@ -609,6 +643,7 @@ class VideoController extends ChangeNotifier {
       final token = SessionManager.getToken() ?? '';
       final response = await videoService.getVideoPoints(token: token);
       _coinResponse = ApiResponse.completed(response[Keys.data]);
+      coinsCount = _coinResponse.data;
     } catch (e) {
       _coinResponse = ApiResponse.error(e.toString());
     }

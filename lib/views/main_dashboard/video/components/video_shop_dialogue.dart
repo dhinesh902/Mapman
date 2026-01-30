@@ -11,6 +11,7 @@ class VideoShopDialogue {
   Future<dynamic> showSaveOrRemoveShopDialogue(
     BuildContext context, {
     required bool isRemoveShop,
+    required VoidCallback onTap,
   }) async {
     if (Platform.isIOS) {
       return showCupertinoDialog(
@@ -60,9 +61,10 @@ class VideoShopDialogue {
                 isDefaultAction: true,
                 onPressed: () async {
                   Navigator.pop(context);
+                  onTap();
                 },
                 child: BodyTextColors(
-                  title: 'Save Shop',
+                  title: isRemoveShop ? 'Remove Shop' : 'Save Shop',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: isRemoveShop
@@ -133,12 +135,15 @@ class VideoShopDialogue {
                       SizedBox(width: 15),
                       Expanded(
                         child: CustomFullButton(
-                          title: 'Save Shop',
+                          title: isRemoveShop ? 'Remove Shop' : 'Save Shop',
                           isDialogue: true,
                           color: isRemoveShop
                               ? GenericColors.darkRed
                               : AppColors.primary,
-                          onTap: () async {},
+                          onTap: () async {
+                            Navigator.pop(context);
+                            onTap();
+                          },
                         ),
                       ),
                     ],

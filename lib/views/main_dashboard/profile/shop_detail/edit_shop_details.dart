@@ -466,97 +466,98 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   child: PopupMenuButton<String>(
                     position: PopupMenuPosition.under,
                     padding: EdgeInsets.zero,
+                    menuPadding: EdgeInsets.zero,
                     color: AppColors.scaffoldBackground,
                     elevation: 2,
-                    offset: Offset(0, 25),
+                    offset: const Offset(0, 25),
                     borderRadius: BorderRadius.circular(5),
                     constraints: const BoxConstraints(
                       minWidth: double.maxFinite,
                       maxHeight: 250,
                     ),
-                    onSelected: (value) {
-                      if (value == 'add_category') {
-                        CategoryDialogue().showAddCategoryDialogue(context);
-                      } else {
-                        homeController.setSelectedCategory = value;
-                      }
-                    },
+                    // onSelected: (value) async {
+                    //   if (value == 'add_category') {
+                    //     await CategoryDialogue().showAddCategoryDialogue(context);
+                    //   } else {
+                    //     homeController.setSelectedCategory = value;
+                    //   }
+                    // },
                     itemBuilder: (context) => [
                       PopupMenuItem<String>(
                         enabled: false,
                         padding: EdgeInsets.zero,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                color: Color(0XFFEAEAEA),
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: const [
-                                    BodyTextColors(
-                                      title: 'Add Category',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: GenericColors.darkGeryHeading,
+                        child: SizedBox(
+                          height: 200,
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: homeController.categories.length,
+                            itemBuilder: (context, index) {
+                              final cat = homeController.categories[index];
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  homeController.setSelectedCategory = cat;
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 15),
+                                      child: BodyTextColors(
+                                        title: cat.capitalize(),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: GenericColors.darkGeryHeading,
+                                      ),
                                     ),
-                                    Spacer(),
-                                    Icon(
-                                      CupertinoIcons.add_circled,
-                                      size: 20,
-                                      weight: 700,
-                                      color: AppColors.primary,
+                                    const SizedBox(height: 10),
+                                    Divider(
+                                      color: Colors.grey.shade100,
+                                      height: 5,
                                     ),
                                   ],
                                 ),
-                              ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      PopupMenuItem<String>(
+                        value: 'add_category',
+                        padding: EdgeInsets.zero,
+                        child: InkWell(
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await CategoryDialogue().showAddCategoryDialogue(
+                              context,
+                            );
+                          },
+                          child: Container(
+                            color: const Color(0XFFEAEAEA),
+                            width: double.maxFinite,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 15,
                             ),
-                            SizedBox(
-                              height: 200,
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                itemCount: homeController.categories.length,
-                                itemBuilder: (context, index) {
-                                  final cat = homeController.categories[index];
-                                  return InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      homeController.setSelectedCategory = cat;
-                                    },
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        SizedBox(height: 10),
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 15,
-                                          ),
-                                          child: BodyTextColors(
-                                            title: cat.capitalize(),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color:
-                                                GenericColors.darkGeryHeading,
-                                          ),
-                                        ),
-                                        SizedBox(height: 10),
-                                        Divider(
-                                          color: Colors.grey.shade100,
-                                          height: 5,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
+                            child: Row(
+                              children: const [
+                                BodyTextColors(
+                                  title: 'Enter your own Category',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: GenericColors.darkGeryHeading,
+                                ),
+                                Spacer(),
+                                Icon(
+                                  CupertinoIcons.add_circled,
+                                  size: 20,
+                                  color: AppColors.primary,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -567,18 +568,17 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         children: [
                           if (homeController.category != null)
                             BodyTextColors(
-                              title: '${homeController.category?.capitalize()}',
+                              title: homeController.category!.capitalize(),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.darkText,
                             )
                           else
-                            BodyTextColors(
+                            const BodyTextColors(
                               title: 'Select category',
-                              overflow: TextOverflow.ellipsis,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: Color(0Xff1f1f1f1f),
+                              color: Color(0XFF1F1F1F),
                             ),
                           SvgPicture.asset(AppIcons.arrowDropdown, height: 24),
                         ],

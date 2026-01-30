@@ -303,7 +303,9 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
               shape: BoxShape.circle,
               color: AppColors.whiteText,
             ),
-            child: Center(child: SvgPicture.asset(AppIcons.telegram)),
+            child: Center(
+              child: Image.asset(AppGifs.uploadArrow, height: 23),
+            ),
           ),
         );
       },

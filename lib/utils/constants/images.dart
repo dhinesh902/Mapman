@@ -22,6 +22,7 @@ class AppIcons {
   static const String eye = 'assets/images/svg/eye.svg';
   static const String videoShop = 'assets/images/svg/video_shop.svg';
   static const String backIcon = 'assets/images/svg/back_icon.svg';
+  static const String directionLine = 'assets/images/svg/direction_line.svg';
 
   /// home bottom icons
   static const String homeFill = 'assets/images/svg/home/home_fill.svg';
@@ -171,6 +172,5 @@ class AppAnimations {
 }
 
 class AppGifs {
-  static const String upload1 = 'assets/gif/upload_1.gif';
-  static const String upload2 = 'assets/gif/upload_2.gif';
+  static const String uploadArrow = 'assets/gif/upload_arrow.gif';
 }

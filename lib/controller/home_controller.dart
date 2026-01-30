@@ -199,12 +199,16 @@ class HomeController extends ChangeNotifier {
       _notificationsData;
 
   int _page = 1;
+
   bool _isFetchingMore = false;
-  bool _hasMoreData = true;
 
   bool get isFetchingMore => _isFetchingMore;
 
+  bool _hasMoreData = false;
+
   bool get hasMoreData => _hasMoreData;
+
+  static const int _batchSize = 30;
 
   Future<ApiResponse<HomeData>> getHome() async {
     _homeData = ApiResponse.loading(Strings.loading);
@@ -410,7 +414,7 @@ class HomeController extends ChangeNotifier {
   }) async {
     if (page == 1) {
       _notificationsData = ApiResponse.loading(Strings.loading);
-      _hasMoreData = true;
+      _hasMoreData = false;
       notifyListeners();
     }
 
@@ -421,7 +425,7 @@ class HomeController extends ChangeNotifier {
         page: page,
       );
 
-      final List list = response[Keys.data] as List;
+      final List list = response[Keys.data] ?? [];
       final List<NotificationsData> newNotifications = list
           .map((e) => NotificationsData.fromJson(e))
           .toList();
@@ -429,12 +433,21 @@ class HomeController extends ChangeNotifier {
       if (page == 1) {
         _notificationsData = ApiResponse.completed(newNotifications);
         _page = 1;
+        _hasMoreData = newNotifications.length % _batchSize == 0;
       } else {
         if (newNotifications.isEmpty) {
           _hasMoreData = false;
         } else {
-          _notificationsData.data!.addAll(newNotifications);
+          final existingIds = _notificationsData.data!.map((e) => e.id).toSet();
+
+          final uniqueNotifications = newNotifications
+              .where((e) => !existingIds.contains(e.id))
+              .toList();
+
+          _notificationsData.data!.addAll(uniqueNotifications);
           _page = page;
+
+          _hasMoreData = _notificationsData.data!.length % _batchSize == 0;
         }
       }
     } catch (e) {
@@ -463,7 +476,7 @@ class HomeController extends ChangeNotifier {
 
   void resetPagination() {
     _page = 1;
-    _hasMoreData = true;
+    _hasMoreData = false;
     _isFetchingMore = false;
   }
 
