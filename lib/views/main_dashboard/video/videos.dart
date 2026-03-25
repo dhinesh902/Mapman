@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
@@ -13,7 +16,6 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
-import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -34,13 +36,13 @@ class _VideosState extends State<Videos> {
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        await videoController.getVideoPoints();
         if (videoController.currentVideoIndex == 1) {
           await getMyVideos();
         }
         if (videoController.currentVideoIndex == 0) {
           await getCategoryVideos();
         }
+        await videoController.getVideoPoints();
       } catch (e) {
         debugPrint('Error in Videos initState: $e');
       }
@@ -92,7 +94,7 @@ class _VideosState extends State<Videos> {
       body: Column(
         children: [
           Container(
-            height: 145,
+            height: 80,
             clipBehavior: Clip.hardEdge,
             decoration: videoController.currentVideoIndex == 1
                 ? BoxDecoration(
@@ -113,97 +115,12 @@ class _VideosState extends State<Videos> {
                       colors: [AppColors.lightViolet, AppColors.violet],
                     ),
                   ),
-            child: Column(
+            child: Row(
               children: [
-                SizedBox(height: 10),
-                Row(
-                  children: [
-                    SizedBox(width: 10),
-                    Image.asset(
-                      videoController.currentVideoIndex == 1
-                          ? AppIcons.videographyP
-                          : AppIcons.videoClipP,
-                      height: 34,
-                      width: 34,
-                    ),
-                    SizedBox(width: 15),
-                    BodyTextColors(
-                      title: 'Videos',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: videoController.currentVideoIndex == 1
-                          ? AppColors.darkText
-                          : AppColors.whiteText,
-                    ),
-                    Spacer(),
-                    GestureDetector(
-                      onTap: () {
-                        VideoDialogues().showRewardsDialogue(
-                          context,
-                          isEarnCoins: true,
-                        );
-                      },
-                      child: Container(
-                        height: 44,
-                        width: 105,
-                        decoration: BoxDecoration(
-                          color: AppColors.scaffoldBackground,
-                          border: Border.all(color: GenericColors.darkYellow),
-                          borderRadius: BorderRadiusGeometry.circular(20),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  AppIcons.rupeeCoinP,
-                                  height: 34,
-                                  width: 34,
-                                ),
-                                SizedBox(width: 5),
-                                Builder(
-                                  builder: (context) {
-                                    if (videoController.coinResponse.status ==
-                                            Status.INITIAL ||
-                                        videoController.coinResponse.status ==
-                                            Status.LOADING) {
-                                      return HeaderTextBlack(
-                                        title: '...',
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w300,
-                                      );
-                                    }
-                                    return HeaderTextBlack(
-                                      title:
-                                          '${videoController.coinResponse.data ?? 0}',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w300,
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              child: Center(
-                                child: Lottie.asset(AppAnimations.confetti),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                  ],
-                ),
-                SizedBox(height: 30),
                 Container(
-                  height: 44,
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                  height: 40,
+                  width: 220,
+                  margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     color: AppColors.bgGrey, // background for outer
@@ -216,6 +133,7 @@ class _VideosState extends State<Videos> {
                           icon: AppIcons.p24,
                           isActive: videoController.currentVideoIndex == 0,
                           isLeft: true,
+                          isVideo: true,
                           onTap: () async {
                             videoController.setCurrentVideoIndex = 0;
                             await getCategoryVideos();
@@ -228,6 +146,7 @@ class _VideosState extends State<Videos> {
                           icon: AppIcons.videoAppP,
                           isActive: videoController.currentVideoIndex == 1,
                           isLeft: false,
+                          isVideo: true,
                           onTap: () async {
                             videoController.setCurrentVideoIndex = 1;
                             await getMyVideos();
@@ -237,6 +156,70 @@ class _VideosState extends State<Videos> {
                     ],
                   ),
                 ),
+                Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    VideoDialogues().showRewardsDialogue(
+                      context,
+                      isEarnCoins: true,
+                    );
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 90,
+                    margin: EdgeInsets.only(bottom: 15),
+                    decoration: BoxDecoration(
+                      color: AppColors.scaffoldBackground,
+                      border: Border.all(color: GenericColors.darkYellow),
+                      borderRadius: BorderRadiusGeometry.circular(20),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              AppIcons.rupeeCoinP,
+                              height: 34,
+                              width: 34,
+                            ),
+                            SizedBox(width: 5),
+                            Builder(
+                              builder: (context) {
+                                if (videoController.coinResponse.status ==
+                                        Status.INITIAL ||
+                                    videoController.coinResponse.status ==
+                                        Status.LOADING) {
+                                  return HeaderTextBlack(
+                                    title: '...',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w300,
+                                  );
+                                }
+                                return HeaderTextBlack(
+                                  title:
+                                      '${videoController.coinResponse.data ?? 0}',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w300,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Lottie.asset(AppAnimations.confetti),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
               ],
             ),
           ),
@@ -348,19 +331,21 @@ class VideoHeadingContainer extends StatelessWidget {
     required this.isActive,
     required this.isLeft,
     required this.onTap,
+    this.isVideo = false,
   });
 
   final String title, icon;
   final bool isActive;
   final bool isLeft;
   final VoidCallback onTap;
+  final bool isVideo;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 44,
+        height: isVideo ? 40 : 44,
         decoration: BoxDecoration(
           color: isActive ? AppColors.darkText : AppColors.whiteText,
           border: Border.all(color: AppColors.whiteText, width: 1),
@@ -372,11 +357,11 @@ class VideoHeadingContainer extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(icon, height: 24, width: 24),
+            Image.asset(icon, height: 16, width: 16),
             const SizedBox(width: 10),
             BodyTextColors(
               title: title,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w400,
               color: isActive ? AppColors.whiteText : AppColors.bgGrey,
             ),
@@ -387,6 +372,185 @@ class VideoHeadingContainer extends StatelessWidget {
   }
 }
 
+// class AllVideosCard extends StatelessWidget {
+//   const AllVideosCard({super.key, required this.categoryVideoData});
+//
+//   final List<CategoryVideosData> categoryVideoData;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return GridView.builder(
+//       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+//         crossAxisCount: 2,
+//         mainAxisExtent: 206,
+//         crossAxisSpacing: 10,
+//         mainAxisSpacing: 10,
+//       ),
+//       padding: const EdgeInsets.fromLTRB(10, 0, 10, 100),
+//       itemCount: categoryVideoData.length,
+//       itemBuilder: (context, index) {
+//         return InkWell(
+//           onTap: () async {
+//             context.read<VideoController>().setSelectedCategory =
+//                 categoryVideoData[index].categoryName?.capitalize() ?? '';
+//             context.pushNamed(AppRoutes.allVideos);
+//           },
+//           child: Container(
+//             clipBehavior: Clip.hardEdge,
+//             decoration: BoxDecoration(
+//               borderRadius: BorderRadius.circular(10),
+//               color: AppColors.scaffoldBackgroundDark,
+//             ),
+//             child: Column(
+//               children: [
+//                 SizedBox(
+//                   height: 163,
+//                   child: Stack(
+//                     children: [
+//                       CustomNetworkImage(
+//                         imageUrl:
+//                             (categoryVideoData[index].categoryVideo ?? ''),
+//                       ),
+//                       Positioned.fill(
+//                         child: Center(
+//                           child: VideoPausePlayCircleContainer(
+//                             icon: Icons.play_arrow,
+//                           ),
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//                 Container(
+//                   height: 43,
+//                   color: Colors.black,
+//                   child: Center(
+//                     child: BodyTextColors(
+//                       title:
+//                           categoryVideoData[index].categoryName?.capitalize() ??
+//                           '',
+//                       fontSize: 16,
+//                       fontWeight: FontWeight.w500,
+//                       color: Colors.white,
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+
+// class AllVideosCard extends StatelessWidget {
+//   const AllVideosCard({super.key, required this.categoryVideoData});
+//
+//   final List<CategoryVideosData> categoryVideoData;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(10, 0, 10, 100),
+//       child: SingleChildScrollView(
+//         child: StaggeredGrid.count(
+//           crossAxisCount: 4,
+//           mainAxisSpacing: 5,
+//           crossAxisSpacing: 5,
+//           children: List.generate(categoryVideoData.length, (index) {
+//             int row = index ~/ 2; // each row has 2 items
+//             bool isEvenRow = row % 2 == 0;
+//
+//             bool isBigTile =
+//                 (isEvenRow && index % 2 == 0) || // left big
+//                     (!isEvenRow && index % 2 == 1);  // right big
+//
+//             return StaggeredGridTile.count(
+//               crossAxisCellCount: isBigTile ? 3 : 1,
+//               mainAxisCellCount: 2,
+//               child: InkWell(
+//                 onTap: () {
+//                   context.read<VideoController>().setSelectedCategory =
+//                       categoryVideoData[index].categoryName?.capitalize() ?? '';
+//                   context.pushNamed(AppRoutes.allVideos);
+//                 },
+//                 child: Container(
+//                   clipBehavior: Clip.hardEdge,
+//                   decoration: BoxDecoration(
+//                     borderRadius: BorderRadius.circular(5),
+//                   ),
+//                   child: Stack(
+//                     children: [
+//                       /// IMAGE
+//                       Positioned.fill(
+//                         child: CustomNetworkImage(
+//                           imageUrl:
+//                               categoryVideoData[index].categoryVideo ?? '',
+//                         ),
+//                       ),
+//
+//                       /// GRADIENT
+//                       Positioned.fill(
+//                         child: DecoratedBox(
+//                           decoration: BoxDecoration(
+//                             gradient: LinearGradient(
+//                               begin: Alignment.topCenter,
+//                               end: Alignment.bottomCenter,
+//                               colors: [
+//                                 Colors.transparent,
+//                                 AppColors.darkText.withValues(alpha: 0.05),
+//                                 AppColors.darkText.withValues(alpha: 0.3),
+//                               ],
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//
+//                       /// TEXT
+//                       Center(
+//                         child: ClipRRect(
+//                           borderRadius: BorderRadius.circular(20),
+//                           child: BackdropFilter(
+//                             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+//                             child: Container(
+//                               padding: const EdgeInsets.symmetric(
+//                                 horizontal: 14,
+//                                 vertical: 4,
+//                               ),
+//                               decoration: BoxDecoration(
+//                                 color: Colors.white.withValues(alpha: .25),
+//                                 borderRadius: BorderRadius.circular(20),
+//                                 border: Border.all(
+//                                   color: Colors.white.withValues(alpha: .2),
+//                                   width: 1,
+//                                 ),
+//                               ),
+//                               child: BodyTextColors(
+//                                 title:
+//                                     categoryVideoData[index].categoryName
+//                                         ?.capitalize() ??
+//                                     '',
+//                                 color: AppColors.whiteText,
+//                                 fontSize: 13,
+//                                 fontWeight: FontWeight.w600,
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             );
+//           }),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class AllVideosCard extends StatelessWidget {
   const AllVideosCard({super.key, required this.categoryVideoData});
 
@@ -394,67 +558,125 @@ class AllVideosCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisExtent: 206,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+      child: SingleChildScrollView(
+        child: StaggeredGrid.count(
+          crossAxisCount: 4,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          children: _buildGridItems(context),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 100),
-      itemCount: categoryVideoData.length,
-      itemBuilder: (context, index) {
-        return InkWell(
-          onTap: () async {
-            context.read<VideoController>().setSelectedCategory =
-                categoryVideoData[index].categoryName?.capitalize() ?? '';
-            context.pushNamed(AppRoutes.allVideos);
-          },
-          child: Container(
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: AppColors.scaffoldBackgroundDark,
+    );
+  }
+
+  List<Widget> _buildGridItems(BuildContext context) {
+    List<Widget> tiles = [];
+    int i = 0;
+    int row = 0;
+
+    while (i < categoryVideoData.length) {
+      bool isOddRow = row % 2 == 0;
+
+      if (isOddRow) {
+        bool isLeftBig = (row ~/ 2) % 3 == 0;
+
+        if (i < categoryVideoData.length) {
+          tiles.add(
+            StaggeredGridTile.count(
+              crossAxisCellCount: isLeftBig ? 3 : 1,
+              mainAxisCellCount: 2,
+              child: _buildItem(context, i),
             ),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 163,
-                  child: Stack(
-                    children: [
-                      CustomNetworkImage(
-                        imageUrl:
-                            (categoryVideoData[index].categoryVideo ?? ''),
+          );
+          i++;
+        }
+
+        if (i < categoryVideoData.length) {
+          tiles.add(
+            StaggeredGridTile.count(
+              crossAxisCellCount: isLeftBig ? 1 : 3,
+              mainAxisCellCount: 2,
+              child: _buildItem(context, i),
+            ),
+          );
+          i++;
+        }
+      } else {
+        tiles.add(
+          StaggeredGridTile.count(
+            crossAxisCellCount: 4,
+            mainAxisCellCount: 2,
+            child: _buildItem(context, i),
+          ),
+        );
+        i++;
+      }
+
+      row++;
+    }
+
+    tiles.add(
+      const StaggeredGridTile.count(
+        crossAxisCellCount: 4,
+        mainAxisCellCount: 1.2,
+        child: SizedBox(),
+      ),
+    );
+
+    return tiles;
+  }
+
+  Widget _buildItem(BuildContext context, int index) {
+    final data = categoryVideoData[index];
+
+    return InkWell(
+      onTap: () {
+        context.read<VideoController>().setSelectedCategory =
+            categoryVideoData[index].categoryName?.capitalize() ?? '';
+        context.pushNamed(AppRoutes.allVideos);
+      },
+      child: Container(
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomNetworkImage(imageUrl: data.categoryVideo ?? ''),
+            ),
+
+            /// GLASS TEXT
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
                       ),
-                      Positioned.fill(
-                        child: Center(
-                          child: VideoPausePlayCircleContainer(
-                            icon: Icons.play_arrow,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 43,
-                  color: Colors.black,
-                  child: Center(
+                    ),
                     child: BodyTextColors(
-                      title:
-                          categoryVideoData[index].categoryName?.capitalize() ??
-                          '',
-                      fontSize: 16,
+                      title: data.categoryName?.capitalize() ?? '',
+                      color: AppColors.whiteText,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white,
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

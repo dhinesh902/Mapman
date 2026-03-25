@@ -17,12 +17,14 @@ import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/profile/edit_profile.dart';
 import 'package:mapman/views/main_dashboard/profile/help_and_support.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
+import 'package:mapman/views/main_dashboard/profile/privacy_policy.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_your_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/search_location.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_analytics.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_detail.dart';
+import 'package:mapman/views/main_dashboard/profile/terms_and_conditions.dart';
 import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/replace_video.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
@@ -48,11 +50,25 @@ class AppRouter {
         path: '/onboard_screen',
         name: AppRoutes.onboardScreen,
         builder: (context, state) => OnboardScreen(),
+        routes: [
+          GoRoute(
+            path: '/privacy_policy',
+            name: AppRoutes.privacyPolicy,
+            builder: (context, state) => PrivacyPolicy(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/login',
         name: AppRoutes.login,
         builder: (context, state) => Login(),
+        routes: [
+          GoRoute(
+            path: '/terms_and_conditions',
+            name: AppRoutes.termsAndConditions,
+            builder: (context, state) => TermsAndConditions(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/main_dashboard',

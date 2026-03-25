@@ -131,6 +131,14 @@ class LocationIconService {
     }
   }
 
+  BitmapDescriptor getMarkerIconSync({required String category}) {
+    final key = category.toLowerCase().trim();
+    if (_iconCache.containsKey(key)) {
+      return _iconCache[key]!;
+    }
+    return BitmapDescriptor.defaultMarker;
+  }
+
   /// Resize image bytes
   Uint8List _resizeImage(Uint8List data, int width, int height) {
     final image = img.decodeImage(data);

@@ -538,14 +538,14 @@ class VideoController extends ChangeNotifier {
     required String category,
     int page = 1,
   }) async {
-    if (page == 1) {
-      _allVideosData = ApiResponse.loading(Strings.loading);
-      _hasMoreAllVideos = false;
-      notifyListeners();
-    }
-
     try {
+      if (page == 1) {
+        _allVideosData = ApiResponse.loading(Strings.loading);
+        notifyListeners();
+      }
+
       final token = SessionManager.getToken() ?? '';
+
       final response = await videoService.getAllVideos(
         token: token,
         category: category,
@@ -558,12 +558,15 @@ class VideoController extends ChangeNotifier {
           .map((e) => VideosData.fromJson(e))
           .toList();
 
+      /// ✅ FIRST PAGE
       if (page == 1) {
         _allVideosData = ApiResponse.completed(newVideos);
         _allVideosPage = 1;
 
-        _hasMoreAllVideos = newVideos.length % _batchSize == 0;
+        /// ✅ Correct logic
+        _hasMoreAllVideos = newVideos.length == _batchSize;
       } else {
+        /// ✅ NEXT PAGES
         if (newVideos.isEmpty) {
           _hasMoreAllVideos = false;
         } else {
@@ -576,14 +579,15 @@ class VideoController extends ChangeNotifier {
           _allVideosData.data!.addAll(uniqueVideos);
           _allVideosPage = page;
 
-          _hasMoreAllVideos = _allVideosData.data!.length % _batchSize == 0;
+          /// ✅ Correct logic
+          _hasMoreAllVideos = newVideos.length == _batchSize;
         }
       }
     } catch (e) {
       if (page == 1) {
         _allVideosData = ApiResponse.error(e.toString());
       } else {
-        debugPrint('Error loading more all videos: $e');
+        debugPrint('Pagination error: $e');
       }
     }
 

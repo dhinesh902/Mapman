@@ -69,7 +69,6 @@ class _MapsState extends State<Maps> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       homeController.setNearByShopHeight = 0.18;
-      // Optimistically start loading icons and shops in parallel
       await Future.wait([
         LocationIconService().preloadAllIcons(),
         getSearchShops(),
@@ -216,9 +215,8 @@ class _MapsState extends State<Maps> {
     'others',
   ];
 
-  Future<Set<Marker>> loadMarkers() async {
+  Set<Marker> getMarkers() {
     final response = homeController.shopSearchData;
-
     if (response.status != Status.COMPLETED || response.data == null) {
       return {};
     }
@@ -230,30 +228,33 @@ class _MapsState extends State<Maps> {
 
       final String rawCategory =
           shop.category?.toLowerCase().trim() ?? 'others';
-
       final String category = _iconMap.contains(rawCategory)
           ? rawCategory
           : 'others';
 
-      final icon = await LocationIconService().getMarkerIcon(
-        category: category,
-      );
+      final icon = LocationIconService().getMarkerIconSync(category: category);
 
-      markerSet.add(
-        Marker(
-          markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
-          position: LatLng(
-            double.parse(shop.lat.toString()),
-            double.parse(shop.long.toString()),
-          ),
-          icon: icon,
-          onTap: () {
-            tapNotifier.value = shop;
-          },
-        ),
-      );
+      try {
+        final double? lat = double.tryParse(shop.lat.toString());
+        final double? long = double.tryParse(shop.long.toString());
+
+        if (lat != null && long != null) {
+          markerSet.add(
+            Marker(
+              markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
+              position: LatLng(lat, long),
+              icon: icon,
+              onTap: () {
+
+                tapNotifier.value = shop;
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error parsing lat/long for shop ${shop.id}: $e');
+      }
     }
-
     return markerSet;
   }
 
@@ -287,24 +288,16 @@ class _MapsState extends State<Maps> {
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  FutureBuilder<Set<Marker>>(
-                    future: loadMarkers(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      return GoogleMap(
-                        initialCameraPosition: _kGooglePlex,
-                        markers: snapshot.data!,
-                        circles: _getLocationCircle(),
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
-                        zoomControlsEnabled: false,
-                        buildingsEnabled: true,
-                        padding: const EdgeInsets.only(top: 70),
-                        onMapCreated: onMapCreated,
-                      );
-                    },
+                  GoogleMap(
+                    initialCameraPosition: _kGooglePlex,
+                    markers: getMarkers(),
+                    circles: _getLocationCircle(),
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    zoomControlsEnabled: false,
+                    buildingsEnabled: true,
+                    padding: const EdgeInsets.only(top: 70),
+                    onMapCreated: onMapCreated,
                   ),
 
                   Positioned(

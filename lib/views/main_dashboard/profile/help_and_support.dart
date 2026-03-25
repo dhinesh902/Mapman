@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
@@ -58,6 +60,24 @@ class _HelpAndSupportState extends State<HelpAndSupport> {
               body: 'Connect With Our Support Team',
               onTap: () async {
                 await CustomLaunchers.openWhatsApp(phoneNumber: '9342376760');
+              },
+            ),
+            SizedBox(height: 15),
+            ProfileListTile(
+              image: AppIcons.privacyPolicyP,
+              title: 'Our Privacy Policy',
+              body: '+919342376760',
+              onTap: () async {
+                context.pushNamed(AppRoutes.privacyPolicy);
+              },
+            ),
+            SizedBox(height: 15),
+            ProfileListTile(
+              image: AppIcons.termsAndConditionsP,
+              title: 'Terms & Conditions',
+              body: 'Connect With Our Support Team',
+              onTap: () async {
+                context.pushNamed(AppRoutes.termsAndConditions);
               },
             ),
             SizedBox(height: 15),

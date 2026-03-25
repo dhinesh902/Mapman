@@ -4,10 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -24,6 +24,7 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:mapman/views/widgets/custom_time_picker.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +39,7 @@ class RegisterShopDetail extends StatefulWidget {
 class _RegisterShopDetailState extends State<RegisterShopDetail> {
   late HomeController homeController;
   late ProfileController profileController;
+  late PlaceController placeController;
 
   final formKey = GlobalKey<FormState>();
   late TextEditingController shopNameController,
@@ -65,11 +67,12 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     // TODO: implement initState
     homeController = context.read<HomeController>();
     profileController = context.read<ProfileController>();
-
+    placeController = context.read<PlaceController>();
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
     phoneNumberController = TextEditingController(
-      text: getLast10Digits(SessionManager.getMobile() ?? ''),
+      // text: getLast10Digits(SessionManager.getMobile() ?? ''),
+      text: SessionManager.getEmail(),
     );
     shopNumberController = TextEditingController();
     whatsAppNumberController = TextEditingController();
@@ -80,8 +83,8 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       homeController.setSelectedCategory = null;
-      profileController.setSelectedLatLong = null;
       profileController.setIsActive = false;
+      placeController.setSelectedShopLatLong = null;
     });
     super.initState();
   }
@@ -121,6 +124,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       image3: shopImagesNotifier.value['photo3'],
       image4: shopImagesNotifier.value['photo4'],
     );
+
     final shopDetail = ShopDetailData(
       shopName: shopNameController.text.trim(),
       category: homeController.category,
@@ -131,8 +135,8 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       whatsappNumber: whatsAppNumberController.text.trim(),
       openTime: openTimeController.text.trim(),
       closeTime: closeTimeController.text.trim(),
-      lat: '${profileController.selectedLatLong?.latitude}',
-      long: '${profileController.selectedLatLong?.longitude}',
+      lat: '${placeController.selectedShopLatLong?.latitude}',
+      long: '${placeController.selectedShopLatLong?.longitude}',
     );
     final response = await profileController.registerShop(
       shopImages: shopImages,
@@ -168,6 +172,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
     profileController = context.watch<ProfileController>();
+    placeController = context.watch<PlaceController>();
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -240,13 +245,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                     minWidth: double.maxFinite,
                     maxHeight: 250,
                   ),
-                  // onSelected: (value) async {
-                  //   if (value == 'add_category') {
-                  //     await CategoryDialogue().showAddCategoryDialogue(context);
-                  //   } else {
-                  //     homeController.setSelectedCategory = value;
-                  //   }
-                  // },
                   itemBuilder: (context) => [
                     PopupMenuItem<String>(
                       enabled: false,
@@ -364,9 +362,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   );
                   if (result != null && result is Map) {
                     final String address = result['address'] as String;
-                    final LatLng latLng = result['latlong'] as LatLng;
                     locationController.text = address;
-                    profileController.setSelectedLatLong = latLng;
                   }
                 },
                 validator: (value) {
@@ -389,25 +385,26 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   return null;
                 },
               ),
-              SizedBox(height: 15),
-              CustomTextField(
-                controller: phoneNumberController,
-                title: 'Register Number',
-                hintText: 'Enter register number',
-                inputType: TextInputType.number,
-                maxLength: 10,
-                isReadOnly: true,
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter register number";
-                  }
-                  if (value.length != 10) {
-                    return "Please enter 10 register number";
-                  }
-                  return null;
-                },
-              ),
+              // SizedBox(height: 15),
+              // CustomTextField(
+              //   controller: phoneNumberController,
+              //   title: 'Register Email',
+              //   hintText: 'Enter register email',
+              //   inputType: TextInputType.emailAddress,
+              //   textCapitalization: TextCapitalization.none,
+              //   // maxLength: 10,
+              //   // isReadOnly: true,
+              //   inputAction: TextInputAction.next,
+              //   validator: (value) {
+              //     if (value!.isEmpty) {
+              //       return "Please enter register email";
+              //     }
+              //     // if (value.length != 10) {
+              //     //   return "Please enter 10 register number";
+              //     // }
+              //     return null;
+              //   },
+              // ),
               SizedBox(height: 15),
               CustomTextField(
                 controller: whatsAppNumberController,
@@ -416,18 +413,18 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 inputType: TextInputType.number,
                 maxLength: 10,
                 inputAction: TextInputAction.next,
-                isSameRegisterNumber: true,
-                isActive: profileController.isActiveWhatsappNumber,
-                onChanged: (value) {
-                  profileController.setIsActiveWhatsappNumber = value!;
-                  if (value) {
-                    whatsAppNumberController.text = getLast10Digits(
-                      SessionManager.getMobile() ?? '',
-                    );
-                  } else {
-                    shopNumberController.clear();
-                  }
-                },
+                // isSameRegisterNumber: true,
+                // isActive: profileController.isActiveWhatsappNumber,
+                // onChanged: (value) {
+                //   profileController.setIsActiveWhatsappNumber = value!;
+                //   if (value) {
+                //     whatsAppNumberController.text = getLast10Digits(
+                //       SessionManager.getMobile() ?? '',
+                //     );
+                //   } else {
+                //     shopNumberController.clear();
+                //   }
+                // },
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter whatsapp number";
@@ -441,20 +438,20 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               SizedBox(height: 15),
               CustomTextField(
                 controller: shopNumberController,
-                isSameRegisterNumber: true,
+                // isSameRegisterNumber: true,
                 inputType: TextInputType.number,
                 maxLength: 10,
-                isActive: profileController.isActive,
-                onChanged: (value) {
-                  profileController.setIsActive = value!;
-                  if (value) {
-                    shopNumberController.text = getLast10Digits(
-                      SessionManager.getMobile() ?? '',
-                    );
-                  } else {
-                    shopNumberController.clear();
-                  }
-                },
+                // isActive: profileController.isActive,
+                // onChanged: (value) {
+                //   profileController.setIsActive = value!;
+                //   if (value) {
+                //     shopNumberController.text = getLast10Digits(
+                //       SessionManager.getMobile() ?? '',
+                //     );
+                //   } else {
+                //     shopNumberController.clear();
+                //   }
+                // },
                 title: 'Public/Shop Contact Number',
                 hintText: 'Enter shop contact number',
                 inputAction: TextInputAction.done,
@@ -510,6 +507,14 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                         return null;
                       },
                       onTap: () async {
+                        if (openTimeController.text.isEmpty) {
+                          CustomToast.show(
+                            context,
+                            title: "Please select open time",
+                            isError: true,
+                          );
+                          return;
+                        }
                         TimeOfDay? pickedTime =
                             await CustomTimePicker.pickReturnTime(context);
                         if (pickedTime != null) {
@@ -677,6 +682,13 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                     title: 'Update Shop details',
                     onTap: () async {
                       if (formKey.currentState!.validate()) {
+                        if (homeController.category == null) {
+                          CustomToast.show(
+                            context,
+                            title: 'Please select category',
+                          );
+                          return;
+                        }
                         await registerShop();
                       }
                     },

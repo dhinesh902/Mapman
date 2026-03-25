@@ -17,6 +17,7 @@ import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class MyVideos extends StatelessWidget {
   const MyVideos({super.key, required this.myVideos});
@@ -25,51 +26,144 @@ class MyVideos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: myVideos.length,
-      shrinkWrap: true,
-      padding: EdgeInsets.only(bottom: 100),
-      itemBuilder: (context, index) {
-        return Container(
-          height: 174,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-          margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
-          child: Stack(
-            children: [
-              InkWell(
-                onTap: () {
-                  context.pushNamed(
-                    AppRoutes.singleVideoScreen,
-                    extra: {
-                      Keys.videosData: myVideos,
-                      Keys.isMyVideos: true,
-                      Keys.initialIndex: index,
-                    },
-                  );
-                },
-                child: MyVideoContainer(
-                  videoUrl:
-                      '${ApiRoutes.baseUrl}${myVideos[index].video ?? ''}',
-                  views: myVideos[index].views.toString(),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 100),
+      child: StaggeredGrid.count(
+        crossAxisCount: 4,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        children: List.generate(myVideos.length, (index) {
+          final video = myVideos[index];
+
+          final pattern = index % 4;
+
+          int crossAxis = 2;
+          double mainAxis = 2;
+
+          switch (pattern) {
+            case 0:
+
+              /// big left (tall)
+              crossAxis = 2;
+              mainAxis = 3;
+              break;
+
+            case 1:
+
+              /// top right small
+              crossAxis = 2;
+              mainAxis = 2.2;
+              break;
+
+            case 2:
+
+              /// bottom right tall
+              crossAxis = 2;
+              mainAxis = 3;
+              break;
+
+            case 3:
+
+              /// next row left medium
+              crossAxis = 2;
+              mainAxis = 2.2;
+              break;
+          }
+
+          return StaggeredGridTile.count(
+            crossAxisCellCount: crossAxis,
+            mainAxisCellCount: mainAxis,
+            child: GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  AppRoutes.singleVideoScreen,
+                  extra: {
+                    Keys.videosData: myVideos,
+                    Keys.isMyVideos: true,
+                    Keys.initialIndex: index,
+                  },
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    MyVideoContainer(
+                      videoUrl: '${ApiRoutes.baseUrl}${video.video ?? ''}',
+                      views: video.views.toString(),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: VideoTitleBlurContainer(
+                        isEditIcon: true,
+                        videosData: video,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: VideoTitleBlurContainer(
-                  isEditIcon: true,
-                  videosData: myVideos[index],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        }),
+      ),
     );
   }
 }
+
+// class MyVideos extends StatelessWidget {
+//   const MyVideos({super.key, required this.myVideos});
+//
+//   final List<VideosData> myVideos;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListView.builder(
+//       itemCount: myVideos.length,
+//       shrinkWrap: true,
+//       padding: EdgeInsets.only(bottom: 100),
+//       itemBuilder: (context, index) {
+//         return Container(
+//           height: 174,
+//           clipBehavior: Clip.antiAlias,
+//           decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
+//           margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
+//           child: Stack(
+//             children: [
+//               InkWell(
+//                 onTap: () {
+//                   context.pushNamed(
+//                     AppRoutes.singleVideoScreen,
+//                     extra: {
+//                       Keys.videosData: myVideos,
+//                       Keys.isMyVideos: true,
+//                       Keys.initialIndex: index,
+//                     },
+//                   );
+//                 },
+//                 child: MyVideoContainer(
+//                   videoUrl:
+//                       '${ApiRoutes.baseUrl}${myVideos[index].video ?? ''}',
+//                   views: myVideos[index].views.toString(),
+//                 ),
+//               ),
+//               Positioned(
+//                 bottom: 0,
+//                 left: 0,
+//                 right: 0,
+//                 child: VideoTitleBlurContainer(
+//                   isEditIcon: true,
+//                   videosData: myVideos[index],
+//                 ),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
 
 // class VideoTitleBlurContainer extends StatelessWidget {
 //   const VideoTitleBlurContainer({
@@ -396,7 +490,6 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 174,
       child: Stack(
         children: [
           Positioned.fill(
@@ -408,9 +501,10 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
             ),
           ),
           Positioned(
-            top: 45,
+            top: 0,
             left: 0,
             right: 0,
+            bottom: 0,
             child: Center(child: VideoPausePlayGradientCircleContainer()),
           ),
           if (widget.isViews) ...[
@@ -478,7 +572,8 @@ class NoVideoContainer extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                if (SessionManager.getShopId() != 0) {
+                final shopId = SessionManager.getShopId();
+                if (shopId != 0) {
                   context.pushNamed(AppRoutes.uploadVideo, extra: VideosData());
                 } else {
                   await showAddShopDetail(context);

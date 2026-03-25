@@ -23,10 +23,12 @@ abstract class ApiRoutes {
   }
 
   static const String baseUrl = 'https://mapman-production.up.railway.app';
-  // static const String baseUrl = 'https://f2lnw5m4-3007.inc1.devtunnels.ms';
+  // static const String baseUrl = 'https://7h4brdq2-3007.inc1.devtunnels.ms';
 
   static const String sendOTP = '/shop/auth/sendOtp';
+  static const String sendMailOTP = '/shop/auth/sendEmailOtp';
   static const String verifyOTP = '/shop/auth/verifyOtp';
+  static const String verifyEmailOtp = '/shop/auth/verifyEmailOtp';
   static const String logout = '/shop/auth/logout';
   static const String deleteAccount = '/shop/deleteAccount';
   static const String addFcmToken = '/shop/auth/addFcmToken';

@@ -38,6 +38,7 @@ class _EditProfileState extends State<EditProfile> {
   final ValueNotifier<File?> profileImageNotifier = ValueNotifier(null);
 
   String? initialName;
+  String? mobileNumber;
   String? initialEmail;
 
   @override
@@ -68,6 +69,7 @@ class _EditProfileState extends State<EditProfile> {
 
     ///initial data
     initialName = profileData.userName;
+    mobileNumber = profileData.phone?.split('-').last ?? '';
     initialEmail = profileData.email;
   }
 
@@ -75,6 +77,7 @@ class _EditProfileState extends State<EditProfile> {
     final ProfileData profile = ProfileData(
       userName: userNameController.text.trim(),
       email: emailAddressController.text.trim(),
+      phone: phoneNumberController.text.trim(),
     );
     final response = await profileController.updateProfile(
       profileData: profile,
@@ -115,6 +118,7 @@ class _EditProfileState extends State<EditProfile> {
   bool hasChanges() {
     if (userNameController.text.trim() != initialName) return true;
     if (emailAddressController.text.trim() != initialEmail) return true;
+    // if (phoneNumberController.text.trim() != mobileNumber) return true;
     if (profileImageNotifier.value != null) return true;
 
     return false;
@@ -235,31 +239,31 @@ class _EditProfileState extends State<EditProfile> {
                     return null;
                   },
                 ),
-                SizedBox(height: 15),
-                CustomTextField(
-                  controller: phoneNumberController,
-                  inputType: TextInputType.number,
-                  maxLength: 10,
-                  isReadOnly: true,
-                  title: 'Register Number',
-                  hintText: 'Enter register number',
-                  inputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return "Please enter register phone number";
-                    }
-                    if (value.length != 10) {
-                      return "Please enter 10 digit register phone number";
-                    }
-                    return null;
-                  },
-                ),
+                // SizedBox(height: 15),
+                // CustomTextField(
+                //   controller: phoneNumberController,
+                //   inputType: TextInputType.number,
+                //   maxLength: 10,
+                //   title: 'Register Number',
+                //   hintText: 'Enter register number',
+                //   inputAction: TextInputAction.next,
+                //   validator: (value) {
+                //     if (value!.isEmpty) {
+                //       return "Please enter register phone number";
+                //     }
+                //     if (value.length != 10) {
+                //       return "Please enter 10 digit register phone number";
+                //     }
+                //     return null;
+                //   },
+                // ),
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: emailAddressController,
                   title: 'Email Address',
                   hintText: 'Enter email address',
                   inputType: TextInputType.emailAddress,
+                  isReadOnly: true,
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.done,
                   validator: (value) {

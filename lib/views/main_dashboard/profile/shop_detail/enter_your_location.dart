@@ -121,9 +121,6 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       buildingsEnabled: true,
                       trafficEnabled: true,
                       tiltGesturesEnabled: true,
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.of(context).size.height * .55,
-                      ),
                       onMapCreated: (controller) {
                         _mapController = controller;
                       },
@@ -138,9 +135,12 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
 
                     /// LOCATION PIN
                     IgnorePointer(
-                      child: Lottie.asset(
-                        AppAnimations.locationPin,
-                        height: 80,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        child: Lottie.asset(
+                          AppAnimations.locationPin,
+                          height: 80,
+                        ),
                       ),
                     ),
 
@@ -341,6 +341,7 @@ class LocationPickContainerDrag extends StatelessWidget {
                 CustomFullButton(
                   title: 'Confirm & Proceed',
                   onTap: () async {
+                    print('-------------------------------------$latLng');
                     final placeController = context.read<PlaceController>();
                     placeController.setShopAddress = {
                       'address': address,

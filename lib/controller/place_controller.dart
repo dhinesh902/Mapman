@@ -200,4 +200,13 @@ class PlaceController extends ChangeNotifier {
     _shopAddress = value;
     notifyListeners();
   }
+
+  LatLng? _selectedShopLatLong;
+
+  LatLng? get selectedShopLatLong => _selectedShopLatLong;
+
+  set setSelectedShopLatLong(LatLng? value) {
+    _selectedShopLatLong = value;
+    notifyListeners();
+  }
 }

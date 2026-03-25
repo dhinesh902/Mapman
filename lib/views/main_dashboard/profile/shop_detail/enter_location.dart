@@ -210,11 +210,11 @@ class _EnterLocationState extends State<EnterLocation> {
                                     ]
                                     .where((e) => e != null && e.isNotEmpty)
                                     .join(', ');
-
-                            context.pop({
-                              'address': address,
-                              'latlong': LatLng(lat, lng),
-                            });
+                            placeController.setSelectedShopLatLong = LatLng(
+                              lat,
+                              lng,
+                            );
+                            context.pop({'address': address});
                           } catch (e) {
                             if (context.mounted) {
                               Navigator.of(context).pop();
@@ -259,12 +259,10 @@ class _EnterLocationState extends State<EnterLocation> {
                     );
                     return;
                   }
-
                   try {
-                    context.pop({
-                      'address': shopAddress['address'],
-                      'latlong': shopAddress['latLong'],
-                    });
+                    placeController.setSelectedShopLatLong =
+                        shopAddress['latLong'] as LatLng;
+                    context.pop({'address': shopAddress['address']});
                   } catch (e) {
                     CustomToast.show(
                       context,

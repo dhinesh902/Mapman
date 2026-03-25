@@ -30,6 +30,7 @@ class ActionBar extends StatelessWidget implements PreferredSizeWidget {
         title: title,
         fontSize: 20,
         fontWeight: FontWeight.w600,
+        overflow: TextOverflow.ellipsis,
       ),
       automaticallyImplyLeading: false,
       leading: GestureDetector(

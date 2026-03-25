@@ -4,10 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -17,7 +17,6 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
@@ -42,6 +41,7 @@ class EditShopDetail extends StatefulWidget {
 class _EditShopDetailState extends State<EditShopDetail> {
   late ProfileController profileController;
   late HomeController homeController;
+  late PlaceController placeController;
 
   late ShopDetailData shopDetailData;
 
@@ -83,6 +83,8 @@ class _EditShopDetailState extends State<EditShopDetail> {
     shopDetailData = widget.shopDetailData;
     homeController = context.read<HomeController>();
     profileController = context.read<ProfileController>();
+    placeController = context.read<PlaceController>();
+
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
     phoneNumberController = TextEditingController();
@@ -94,8 +96,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
     closeTimeController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      profileController.setSelectedLatLong = null;
-
+      placeController.setSelectedShopLatLong = null;
       getShopDetails();
     });
     super.initState();
@@ -190,12 +191,12 @@ class _EditShopDetailState extends State<EditShopDetail> {
     );
 
     final lat =
-        shopDetailData.lat ??
-        profileController.selectedLatLong?.latitude.toString();
+        placeController.selectedShopLatLong?.latitude.toString() ??
+        shopDetailData.lat;
 
     final lng =
-        shopDetailData.long ??
-        profileController.selectedLatLong?.longitude.toString();
+        placeController.selectedShopLatLong?.longitude.toString() ??
+        shopDetailData.long;
 
     final shopDetail = ShopDetailData(
       shopName: shopNameController.text.trim(),
@@ -298,7 +299,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
   bool hasChanges() {
     if (shopNameController.text != _initialShopName) return true;
     if (descriptionController.text != _initialDescription) return true;
-    if (phoneNumberController.text != _initialPhoneNumber) return true;
+    // if (phoneNumberController.text != _initialPhoneNumber) return true;
     if (shopNumberController.text != _initialShopNumber) return true;
     if (locationController.text != _initialLocation) return true;
     if (openTimeController.text != _initialOpenTime) return true;
@@ -316,6 +317,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
     profileController = context.watch<ProfileController>();
+    placeController = context.watch<PlaceController>();
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
@@ -598,9 +600,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     );
                     if (result != null && result is Map) {
                       final String address = result['address'] as String;
-                      final LatLng latLng = result['latlong'] as LatLng;
                       locationController.text = address;
-                      profileController.setSelectedLatLong = latLng;
                     }
                   },
                   validator: (value) {
@@ -623,43 +623,41 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     return null;
                   },
                 ),
-                SizedBox(height: 15),
-                CustomTextField(
-                  controller: phoneNumberController,
-                  title: 'Register Number',
-                  hintText: 'Enter register number',
-                  inputType: TextInputType.number,
-                  maxLength: 10,
-                  isReadOnly: true,
-                  inputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return "Please enter register number";
-                    }
-                    if (value.length != 10) {
-                      return "Please enter 10 register number";
-                    }
-                    return null;
-                  },
-                ),
+                // SizedBox(height: 15),
+                // CustomTextField(
+                //   controller: phoneNumberController,
+                //   title: 'Register Email',
+                //   hintText: 'Enter register email',
+                //   inputType: TextInputType.emailAddress,
+                //   // maxLength: 10,
+                //   // isReadOnly: true,
+                //   textCapitalization: TextCapitalization.none,
+                //   inputAction: TextInputAction.next,
+                //   validator: (value) {
+                //     if (value!.isEmpty) {
+                //       return "Please enter register email";
+                //     }
+                //     return null;
+                //   },
+                // ),
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: whatsAppNumberController,
                   title: 'WhatsApp Number',
                   hintText: 'Enter whatsapp number',
                   inputType: TextInputType.number,
-                  isSameRegisterNumber: true,
+                  // isSameRegisterNumber: true,
                   maxLength: 10,
-                  isActive: profileController.isActiveWhatsappNumber,
-                  onChanged: (value) {
-                    profileController.setIsActiveWhatsappNumber = value!;
-                    if (value) {
-                      whatsAppNumberController.text =
-                          SessionManager.getMobile() ?? '';
-                    } else {
-                      whatsAppNumberController.clear();
-                    }
-                  },
+                  // isActive: profileController.isActiveWhatsappNumber,
+                  // onChanged: (value) {
+                  //   profileController.setIsActiveWhatsappNumber = value!;
+                  //   if (value) {
+                  //     whatsAppNumberController.text =
+                  //         SessionManager.getMobile() ?? '';
+                  //   } else {
+                  //     whatsAppNumberController.clear();
+                  //   }
+                  // },
                   inputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -674,19 +672,19 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: shopNumberController,
-                  isSameRegisterNumber: true,
+                  // isSameRegisterNumber: true,
                   inputType: TextInputType.number,
                   maxLength: 10,
-                  isActive: profileController.isActive,
-                  onChanged: (value) {
-                    profileController.setIsActive = value!;
-                    if (value) {
-                      shopNumberController.text =
-                          SessionManager.getMobile() ?? '';
-                    } else {
-                      shopNumberController.clear();
-                    }
-                  },
+                  // isActive: profileController.isActive,
+                  // onChanged: (value) {
+                  //   profileController.setIsActive = value!;
+                  //   if (value) {
+                  //     shopNumberController.text =
+                  //         SessionManager.getMobile() ?? '';
+                  //   } else {
+                  //     shopNumberController.clear();
+                  //   }
+                  // },
                   title: 'Public/Shop Contact Number',
                   hintText: 'Enter shop contact number',
                   inputAction: TextInputAction.done,
@@ -931,6 +929,13 @@ class _EditShopDetailState extends State<EditShopDetail> {
                       title: 'Update Shop details',
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
+                          if (homeController.category == null) {
+                            CustomToast.show(
+                              context,
+                              title: 'Please select category',
+                            );
+                            return;
+                          }
                           await updateShopDetail();
                         }
                       },

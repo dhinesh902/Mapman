@@ -45,6 +45,14 @@ class SessionManager {
     return _sessionStorage!.getString(Keys.phone);
   }
 
+  static Future<bool> setEmail({required String email}) async {
+    return _sessionStorage!.setString(Keys.email, email);
+  }
+
+  static String? getEmail() {
+    return _sessionStorage!.getString(Keys.email);
+  }
+
   static Future<bool> setShopId({required int shopId}) async {
     return _sessionStorage!.setInt(Keys.shopId, shopId);
   }

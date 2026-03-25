@@ -82,11 +82,15 @@ class AuthController extends ChangeNotifier {
 
   ApiResponse get apiResponse => _apiResponse;
 
-  Future<ApiResponse> sendOTP({required String phoneNumber}) async {
+  ApiResponse _verifyOTPResponse = ApiResponse.initial(Strings.noDataFound);
+
+  ApiResponse get verifyOTPResponse => _verifyOTPResponse;
+
+  Future<ApiResponse> sendMailOTP({required String email}) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final response = await authService.sendOTP(phoneNumber: phoneNumber);
+      final response = await authService.sendMailOTP(email: email);
       _apiResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
       _apiResponse = ApiResponse.error(e.toString());
@@ -95,28 +99,62 @@ class AuthController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse> verifyOTP({
-    required String phoneNumber,
+  // Future<ApiResponse> sendOTP({required String phoneNumber}) async {
+  //   _apiResponse = ApiResponse.loading(Strings.loading);
+  //   notifyListeners();
+  //   try {
+  //     final response = await authService.sendOTP(phoneNumber: phoneNumber);
+  //     _apiResponse = ApiResponse.completed(response[Keys.data]);
+  //   } catch (e) {
+  //     _apiResponse = ApiResponse.error(e.toString());
+  //   }
+  //   notifyListeners();
+  //   return _apiResponse;
+  // }
+
+  // Future<ApiResponse> verifyOTP({
+  //   required String phoneNumber,
+  //   required int otp,
+  // }) async {
+  //   _apiResponse = ApiResponse.loading(Strings.loading);
+  //   notifyListeners();
+  //   try {
+  //     final response = await authService.verifyOTP(
+  //       phoneNumber: phoneNumber,
+  //       otp: otp,
+  //     );
+  //     final String token = response[Keys.data][Keys.token] ?? '';
+  //     final int userId = response[Keys.data][Keys.userId] ?? '';
+  //     await SessionManager.setToken(token: token);
+  //     await SessionManager.setUserId(userId: userId);
+  //     _apiResponse = ApiResponse.completed(response[Keys.data]);
+  //     await addFcmToken();
+  //   } catch (e) {
+  //     _apiResponse = ApiResponse.error(e.toString());
+  //   }
+  //   notifyListeners();
+  //   return _apiResponse;
+  // }
+
+  Future<ApiResponse> verifyEmailOtp({
+    required String email,
     required int otp,
   }) async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
+    _verifyOTPResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final response = await authService.verifyOTP(
-        phoneNumber: phoneNumber,
-        otp: otp,
-      );
+      final response = await authService.verifyEmailOtp(email: email, otp: otp);
       final String token = response[Keys.data][Keys.token] ?? '';
       final int userId = response[Keys.data][Keys.userId] ?? '';
       await SessionManager.setToken(token: token);
       await SessionManager.setUserId(userId: userId);
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);
       await addFcmToken();
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      _verifyOTPResponse = ApiResponse.error(e.toString());
     }
     notifyListeners();
-    return _apiResponse;
+    return _verifyOTPResponse;
   }
 
   Future<ApiResponse> logout() async {

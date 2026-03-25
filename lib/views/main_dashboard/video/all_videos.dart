@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
@@ -35,32 +36,22 @@ class _AllVideosState extends State<AllVideos> {
     videoController = context.read<VideoController>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      videoController.resetAllVideosPagination();
       _getInitialVideos();
     });
 
-    // _scrollController.addListener(_onScroll);
   }
 
   Future<void> _getInitialVideos() async {
+    videoController.resetAllVideosPagination();
     await videoController.getAllVideos(
       category: videoController.selectedCategory.toLowerCase(),
       page: 1,
     );
   }
 
-  // void _onScroll() {
-  //   if (_scrollController.position.pixels >=
-  //       _scrollController.position.maxScrollExtent - 200) {
-  //     videoController.loadMoreAllVideos(
-  //       category: videoController.selectedCategory.toLowerCase(),
-  //     );
-  //   }
-  // }
 
   @override
   void dispose() {
-    // _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -161,26 +152,57 @@ class ParticularShopVideoList extends StatelessWidget {
 
         return false;
       },
-      child: ListView.builder(
+      child: SingleChildScrollView(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 20, bottom: 20),
-        itemCount:
-            videosData.length +
-            (videoController.isFetchingMoreAllVideos ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == videosData.length) {
-            return const MoreLoadingContainer();
-          }
+        padding: const EdgeInsets.all(10),
+        child: StaggeredGrid.count(
+          crossAxisCount: 4,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          children: [
+            ...List.generate(videosData.length, (index) {
+              final video = videosData[index];
 
-          return Container(
-            height: 174,
-            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-            child: Stack(
-              children: [
-                InkWell(
+              final pattern = index % 4;
+
+              int crossAxis = 2;
+              double mainAxis = 2;
+
+              switch (pattern) {
+                case 0:
+
+                  /// big left (tall)
+                  crossAxis = 2;
+                  mainAxis = 3;
+                  break;
+
+                case 1:
+
+                  /// top right small
+                  crossAxis = 2;
+                  mainAxis = 2.2;
+                  break;
+
+                case 2:
+
+                  /// bottom right tall
+                  crossAxis = 2;
+                  mainAxis = 3;
+                  break;
+
+                case 3:
+
+                  /// next row left medium
+                  crossAxis = 2;
+                  mainAxis = 2.2;
+                  break;
+              }
+
+              return StaggeredGridTile.count(
+                crossAxisCellCount: crossAxis,
+                mainAxisCellCount: mainAxis,
+                child: GestureDetector(
                   onTap: () {
                     context.pushNamed(
                       AppRoutes.singleVideoScreen,
@@ -191,29 +213,130 @@ class ParticularShopVideoList extends StatelessWidget {
                       },
                     );
                   },
-                  child: MyVideoContainer(
-                    videoUrl:
-                        ApiRoutes.baseUrl + (videosData[index].video ?? ''),
-                    isViews: false,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Stack(
+                      children: [
+                        MyVideoContainer(
+                          videoUrl: ApiRoutes.baseUrl + (video.video ?? ''),
+                          isViews: false,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: VideoTitleBlurContainer(
+                            isWatched: video.watched ?? false,
+                            videosData: video,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: VideoTitleBlurContainer(
-                    isWatched: videosData[index].watched ?? false,
-                    videosData: videosData[index],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              );
+            }),
+
+            /// Loader at bottom
+            if (videoController.isFetchingMoreAllVideos)
+              const StaggeredGridTile.count(
+                crossAxisCellCount: 4,
+                mainAxisCellCount: 1,
+                child: MoreLoadingContainer(),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
+
+// class ParticularShopVideoList extends StatelessWidget {
+//   const ParticularShopVideoList({
+//     super.key,
+//     required this.videosData,
+//     required this.videoController,
+//     required this.scrollController,
+//   });
+//
+//   final List<VideosData> videosData;
+//   final VideoController videoController;
+//   final ScrollController scrollController;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return NotificationListener<ScrollNotification>(
+//       onNotification: (ScrollNotification scrollInfo) {
+//         if (videoController.isFetchingMoreAllVideos ||
+//             !videoController.hasMoreAllVideos) {
+//           return false;
+//         }
+//
+//         final bool isAtBottom =
+//             scrollInfo.metrics.pixels >=
+//             scrollInfo.metrics.maxScrollExtent - 150;
+//
+//         if (scrollInfo is ScrollEndNotification && isAtBottom) {
+//           videoController.loadMoreAllVideos(
+//             category: videoController.selectedCategory.toLowerCase(),
+//           );
+//         }
+//
+//         return false;
+//       },
+//       child: ListView.builder(
+//         controller: scrollController,
+//         physics: const AlwaysScrollableScrollPhysics(),
+//         padding: const EdgeInsets.only(top: 20, bottom: 20),
+//         itemCount:
+//             videosData.length +
+//             (videoController.isFetchingMoreAllVideos ? 1 : 0),
+//         itemBuilder: (context, index) {
+//           if (index == videosData.length) {
+//             return const MoreLoadingContainer();
+//           }
+//
+//           return Container(
+//             height: 174,
+//             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+//             clipBehavior: Clip.antiAlias,
+//             decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
+//             child: Stack(
+//               children: [
+//                 InkWell(
+//                   onTap: () {
+//                     context.pushNamed(
+//                       AppRoutes.singleVideoScreen,
+//                       extra: {
+//                         Keys.videosData: videosData,
+//                         Keys.isMyVideos: false,
+//                         Keys.initialIndex: index,
+//                       },
+//                     );
+//                   },
+//                   child: MyVideoContainer(
+//                     videoUrl:
+//                         ApiRoutes.baseUrl + (videosData[index].video ?? ''),
+//                     isViews: false,
+//                   ),
+//                 ),
+//                 Positioned(
+//                   bottom: 0,
+//                   left: 0,
+//                   right: 0,
+//                   child: VideoTitleBlurContainer(
+//                     isWatched: videosData[index].watched ?? false,
+//                     videosData: videosData[index],
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
 
 //class VideoContainer extends StatefulWidget {
 //   const VideoContainer({super.key, required this.videoUrl});

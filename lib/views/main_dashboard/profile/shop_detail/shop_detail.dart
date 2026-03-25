@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
@@ -43,6 +44,7 @@ class _ShopDetailState extends State<ShopDetail> {
     // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      videoController.setCurrentShopDetailIndex = 0;
       getShopById();
     });
     super.initState();
@@ -271,6 +273,19 @@ class ShopDetailContainer extends StatelessWidget {
       shop.image4,
     ].where((e) => e != null && e.trim().isNotEmpty).cast<String>().toList();
 
+    bool isShopClosed() {
+      final now = TimeOfDay.now();
+
+      final openTime = const TimeOfDay(hour: 9, minute: 30);
+      final closeTime = const TimeOfDay(hour: 18, minute: 30);
+
+      int nowMinutes = now.hour * 60 + now.minute;
+      int openMinutes = openTime.hour * 60 + openTime.minute;
+      int closeMinutes = closeTime.hour * 60 + closeTime.minute;
+
+      return nowMinutes < openMinutes || nowMinutes > closeMinutes;
+    }
+
     return Column(
       children: [
         Container(
@@ -280,7 +295,45 @@ class ShopDetailContainer extends StatelessWidget {
             borderRadius: BorderRadiusGeometry.circular(10),
           ),
           clipBehavior: Clip.hardEdge,
-          child: CustomNetworkImage(imageUrl: shop.shopImage ?? ''),
+          child: Stack(
+            children: [
+              CustomNetworkImage(imageUrl: shop.shopImage ?? ''),
+              if (isShopClosed()) ...[
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: GenericColors.darkRed,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          AppIcons.videoShop,
+                          height: 16,
+                          width: 16,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.whiteText,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        BodyTextColors(
+                          title: 'Shop Closed',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.whiteText,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         SizedBox(
           height: MediaQuery.of(context).size.height * .6,

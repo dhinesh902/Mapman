@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapman/model/analytics_model.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/shop_detail_model.dart';
@@ -32,14 +31,6 @@ class ProfileController extends ChangeNotifier {
 
   /// SHOP DETAILS UPDATE
 
-  LatLng? _selectedLatLong;
-
-  LatLng? get selectedLatLong => _selectedLatLong;
-
-  set setSelectedLatLong(LatLng? value) {
-    _selectedLatLong = value;
-    notifyListeners();
-  }
 
   List<String?> _shopImages = List.generate(4, (index) => null);
 

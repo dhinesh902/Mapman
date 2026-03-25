@@ -23,6 +23,7 @@ class ProfileService extends ApiRoutes {
     required ProfileData profileData,
   }) async {
     try {
+      print('----------------------------${profileData.phone}  ${profileData.email}');
       FormData formData = FormData.fromMap({
         'image': (image is String && image.startsWith('/images'))
             ? null
@@ -31,6 +32,7 @@ class ProfileService extends ApiRoutes {
                 filename: image.path.split('/').last,
               ),
         'userName': profileData.userName,
+        'phone': profileData.phone,
         'email': profileData.email,
       });
 
@@ -55,6 +57,7 @@ class ProfileService extends ApiRoutes {
     required ShopDetailData shopDetail,
   }) async {
     try {
+      print('-----------------------------------${shopDetail.registerNumber}');
       final Map<String, dynamic> data = {
         'shopName': shopDetail.shopName,
         'category': shopDetail.category,

@@ -20,7 +20,7 @@ import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
-import 'package:phone_number_hint/phone_number_hint.dart';
+// import 'package:phone_number_hint/phone_number_hint.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -185,9 +185,9 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             ),
             SizedBox(height: 15),
             CustomOutlineButtonWithImage(
-              title: 'Continue with Mobile',
+              title: 'Continue with Gmail',
               isGoogle: false,
-              icon: AppIcons.phoneP,
+              icon: AppIcons.emailP,
               onTap: () {
                 context.read<AuthController>().animateTo(1);
               },
@@ -228,11 +228,15 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             ),
             SizedBox(height: 15),
             InkWell(
-              onTap: () {},
+              onTap: () {
+                context.pushNamed(AppRoutes.termsAndConditions);
+              },
               child: HeaderTextPrimary(
                 title: 'Terms and Conditions',
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
+                textDecoration: TextDecoration.underline,
+                decorationColor: AppColors.primary,
               ),
             ),
           ],
@@ -255,53 +259,56 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   late AuthController authController;
 
   final FocusNode _focusNode = FocusNode();
-  final _phoneNumberHintPlugin = PhoneNumberHint();
+  // final _phoneNumberHintPlugin = PhoneNumberHint();
 
-  late TextEditingController mobileNumberController;
+  // late TextEditingController mobileNumberController;
+  late TextEditingController emailController;
   final formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     // TODO: implement initState
     authController = context.read<AuthController>();
-    mobileNumberController = TextEditingController();
-    getPhoneNumber();
+    // mobileNumberController = TextEditingController();
+    emailController = TextEditingController();
+    // getPhoneNumber();
     super.initState();
   }
 
   @override
   void dispose() {
-    mobileNumberController.dispose();
+    // mobileNumberController.dispose();
+    emailController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  Future<void> getPhoneNumber() async {
-    String? result;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      result = await _phoneNumberHintPlugin.requestHint() ?? '';
-      if (result.isNotEmpty) {
-        mobileNumberController.text = formatPhoneNumberWithoutCountryCode(
-          result,
-        );
-      }
-    } on PlatformException {
-      result = 'Failed to get hint.';
-    }
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-    setState(() {
-      if (result != null && result.isEmpty) {
-        Future.delayed(Duration(milliseconds: 500), () {
-          _focusNode.requestFocus();
-        });
-      }
-    });
-  }
+  // Future<void> getPhoneNumber() async {
+  //   String? result;
+  //   // Platform messages may fail, so we use a try/catch PlatformException.
+  //   // We also handle the message potentially returning null.
+  //   try {
+  //     result = await _phoneNumberHintPlugin.requestHint() ?? '';
+  //     if (result.isNotEmpty) {
+  //       mobileNumberController.text = formatPhoneNumberWithoutCountryCode(
+  //         result,
+  //       );
+  //     }
+  //   } on PlatformException {
+  //     result = 'Failed to get hint.';
+  //   }
+  //   // If the widget was removed from the tree while the asynchronous platform
+  //   // message was in flight, we want to discard the reply rather than calling
+  //   // setState to update our non-existent appearance.
+  //   if (!mounted) return;
+  //   setState(() {
+  //     if (result != null && result.isEmpty) {
+  //       Future.delayed(Duration(milliseconds: 500), () {
+  //         _focusNode.requestFocus();
+  //       });
+  //     }
+  //   });
+  // }
 
   String formatPhoneNumberWithoutCountryCode(String phone) {
     String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
@@ -311,14 +318,32 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     return digits;
   }
 
+  // Future<void> sendOTP() async {
+  //   final response = await authController.sendOTP(
+  //     phoneNumber: '+91-${mobileNumberController.text.trim()}',
+  //   );
+  //   if (!mounted) return;
+  //   if (response.status == Status.COMPLETED) {
+  //     if (!mounted) return;
+  //     SessionManager.setMobile(phone: mobileNumberController.text.trim());
+  //     CustomToast.show(context, title: '${response.data}');
+  //     context.read<AuthController>().animateTo(2);
+  //   } else {
+  //     ExceptionHandler.handleUiException(
+  //       context: context,
+  //       status: response.status,
+  //       message: response.message,
+  //     );
+  //   }
+  // }
   Future<void> sendOTP() async {
-    final response = await authController.sendOTP(
-      phoneNumber: '+91-${mobileNumberController.text.trim()}',
+    final response = await authController.sendMailOTP(
+      email: emailController.text.trim(),
     );
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
       if (!mounted) return;
-      SessionManager.setMobile(phone: mobileNumberController.text.trim());
+      SessionManager.setEmail(email: emailController.text.trim());
       CustomToast.show(context, title: '${response.data}');
       context.read<AuthController>().animateTo(2);
     } else {
@@ -354,15 +379,29 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
               ],
             ),
             SizedBox(height: 30),
+            // CustomMobileNumberTextField(
+            //   controller: mobileNumberController,
+            //   focusNode: _focusNode,
+            //   validator: (value) {
+            //     if (value!.isEmpty) {
+            //       return "Please enter mobile number";
+            //     }
+            //     if (value.length != 10) {
+            //       return "Please enter 10 digit mobile number";
+            //     }
+            //     return null;
+            //   },
+            // ),
             CustomMobileNumberTextField(
-              controller: mobileNumberController,
+              controller: emailController,
               focusNode: _focusNode,
               validator: (value) {
-                if (value!.isEmpty) {
-                  return "Please enter mobile number";
+                if (value == null || value.isEmpty) {
+                  return "Please enter email id";
                 }
-                if (value.length != 10) {
-                  return "Please enter 10 digit mobile number";
+                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegex.hasMatch(value)) {
+                  return "Please enter valid email id";
                 }
                 return null;
               },
@@ -421,16 +460,18 @@ class _OTPScreenState extends State<OTPScreen> {
   }
 
   void startTimer() {
+    _timer?.cancel();
     _remainingTime = 60;
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+      if (!mounted) return;
+
+      if (_remainingTime > 0) {
         setState(() {
-          if (_remainingTime > 0) {
-            _remainingTime--;
-          } else {
-            timer.cancel();
-          }
+          _remainingTime--;
         });
+      } else {
+        timer.cancel();
       }
     });
   }
@@ -449,10 +490,29 @@ class _OTPScreenState extends State<OTPScreen> {
     ),
   );
 
-  Future<void> verifyOTP() async {
-    final mobile = SessionManager.getMobile();
-    final response = await authController.verifyOTP(
-      phoneNumber: '+91-$mobile',
+  // Future<void> verifyOTP() async {
+  //   final mobile = SessionManager.getMobile();
+  //   final response = await authController.verifyOTP(
+  //     phoneNumber: '+91-$mobile',
+  //     otp: int.parse(otpController.text.trim()),
+  //   );
+  //   if (!mounted) return;
+  //   if (response.status == Status.COMPLETED) {
+  //     context.read<HomeController>().setCurrentPage = 0;
+  //     context.goNamed(AppRoutes.mainDashboard, extra: true);
+  //   } else {
+  //     ExceptionHandler.handleUiException(
+  //       context: context,
+  //       status: response.status,
+  //       message: response.message,
+  //     );
+  //   }
+  // }
+
+  Future<void> verifyEmailOtp() async {
+    final email = SessionManager.getEmail() ?? '';
+    final response = await authController.verifyEmailOtp(
+      email: email,
       otp: int.parse(otpController.text.trim()),
     );
     if (!mounted) return;
@@ -528,14 +588,35 @@ class _OTPScreenState extends State<OTPScreen> {
               children: [
                 SizedBox(width: 10),
                 BodyTextColors(
-                  title: '00:$_remainingTime',
+                  title: '00:${_remainingTime.toString().padLeft(2, '0')}',
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                   color: GenericColors.darkRed,
                 ),
                 Spacer(),
                 InkWell(
-                  onTap: _remainingTime == 0 ? () {} : null,
+                  onTap: _remainingTime == 0
+                      ? () async {
+                          final email = SessionManager.getEmail() ?? '';
+                          final response = await authController.sendMailOTP(
+                            email: email,
+                          );
+                          if (!context.mounted) return;
+                          if (response.status == Status.COMPLETED) {
+                            CustomToast.show(
+                              context,
+                              title: '${response.data}',
+                            );
+                            startTimer();
+                          } else {
+                            ExceptionHandler.handleUiException(
+                              context: context,
+                              status: response.status,
+                              message: response.message,
+                            );
+                          }
+                        }
+                      : null,
                   child: BodyTextColors(
                     title: "Resend",
                     fontSize: 12,
@@ -553,13 +634,13 @@ class _OTPScreenState extends State<OTPScreen> {
             ),
             SizedBox(height: 40),
             Center(
-              child: authController.apiResponse.status == Status.LOADING
+              child: authController.verifyOTPResponse.status == Status.LOADING
                   ? ButtonProgressBar(isLogin: true)
                   : AuthButton(
                       title: 'Proceed',
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
-                          await verifyOTP();
+                          await verifyEmailOtp();
                         }
                       },
                     ),
@@ -617,19 +698,19 @@ class CustomMobileNumberTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      maxLength: 10,
       focusNode: focusNode,
       style: GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.darkText,
       ),
-      keyboardType: TextInputType.number,
+      keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.email],
       cursorColor: AppColors.primary,
       decoration: InputDecoration(
         border: InputBorder.none,
         isDense: true,
-        hintText: "Enter Phone Number",
+        hintText: "Enter Email Id",
         counterText: '',
         hintStyle: GoogleFonts.outfit(
           fontSize: 14,
@@ -658,7 +739,13 @@ class CustomMobileNumberTextField extends StatelessWidget {
         ),
         prefixIcon: Padding(
           padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
-          child: SvgPicture.asset(AppIcons.mobile),
+          // child: SvgPicture.asset(AppIcons.mobile),
+          child: Image.network(
+            'https://cdn-icons-png.flaticon.com/128/2099/2099199.png',
+            height: 16,
+            width: 16,
+            color: AppColors.darkGrey,
+          ),
         ),
       ),
       validator: validator,

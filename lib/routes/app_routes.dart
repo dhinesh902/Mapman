@@ -24,4 +24,6 @@ class AppRoutes {
   static String savedVideos = 'saved_videos';
   static String searchLocation = 'search_location';
   static String allVideos = 'all_videos';
+  static String privacyPolicy = 'privacy_policy';
+  static String termsAndConditions = 'terms_and_conditions';
 }

@@ -40,6 +40,7 @@ class AppIcons {
   static const String splashLogoP = 'assets/images/png/splash_logo.png';
   static const String onboardP = 'assets/images/png/onboard.png';
   static const String phoneP = 'assets/images/png/phone.png';
+  static const String emailP = 'assets/images/png/email.png';
   static const String bookmarkP = 'assets/images/png/bookmark.png';
   static const String happyP = 'assets/images/png/happy.png';
   static const String happyBgP = 'assets/images/png/happy_bg.png';
@@ -95,6 +96,9 @@ class AppIcons {
   static const String multiMediaP = 'assets/images/png/multi_media.png';
   static const String appLogoP = 'assets/images/png/app_logo.png';
   static const String analyticsP = 'assets/images/png/analytics.png';
+  static const String privacyPolicyP = 'assets/images/png/privacy_policy.png';
+  static const String termsAndConditionsP =
+      'assets/images/png/terms_and_conditions.png';
   static const String profilePlaceholderP =
       'assets/images/png/profile_placeholder.png';
   static const String ratingStarOutlineP =

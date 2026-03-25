@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -70,9 +71,11 @@ class _OnboardScreenState extends State<OnboardScreen> {
             SizedBox(height: 10),
             Center(
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  context.pushNamed(AppRoutes.privacyPolicy);
+                },
                 child: HeaderTextPrimary(
-                  title: 'Terms and Conditions',
+                  title: 'Privacy Policy',
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                   textDecoration: TextDecoration.underline,
