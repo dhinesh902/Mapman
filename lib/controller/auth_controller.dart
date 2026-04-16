@@ -144,8 +144,8 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await authService.verifyEmailOtp(email: email, otp: otp);
-      final String token = response[Keys.data][Keys.token] ?? '';
-      final int userId = response[Keys.data][Keys.userId] ?? '';
+      final String token = response[Keys.data]?[Keys.token] ?? '';
+      final int userId = response[Keys.data]?[Keys.userId] ?? 0;
       await SessionManager.setToken(token: token);
       await SessionManager.setUserId(userId: userId);
       _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);

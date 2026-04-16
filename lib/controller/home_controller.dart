@@ -216,9 +216,12 @@ class HomeController extends ChangeNotifier {
     try {
       final token = SessionManager.getToken() ?? '';
       final response = await homeService.getHome(token: token);
-      _homeData = ApiResponse.completed(
-        HomeData.fromJson(response[Keys.data] as Map<String, dynamic>),
-      );
+      final data = response[Keys.data];
+      if (data != null && data is Map<String, dynamic>) {
+        _homeData = ApiResponse.completed(HomeData.fromJson(data));
+      } else {
+        _homeData = ApiResponse.completed(null);
+      }
       _categories = (_homeData.data?.category ?? [])
           .where(
             (item) =>
@@ -243,24 +246,55 @@ class HomeController extends ChangeNotifier {
     return _homeData;
   }
 
+  final List<String> _iconMap = [
+    'theater',
+    'restaurant',
+    'hospital',
+    'bars',
+    'grocery',
+    'textile',
+    'resort',
+    'bunk',
+    'spa',
+    'hotel',
+  ];
+
   Future<ApiResponse<List<ShopSearchData>>> getSearchShops({
     required String input,
   }) async {
     _shopSearchData = ApiResponse.loading(Strings.loading);
     notifyListeners();
+
     try {
       final token = SessionManager.getToken() ?? '';
+
       final response = await homeService.getSearchShops(
         token: token,
-        input: input,
+        input: input.toLowerCase() == "others" ? 'all' : input,
       );
-      final shopList = (response[Keys.data] as List)
-          .map((e) => ShopSearchData.fromJson(e as Map<String, dynamic>))
-          .toList();
-      _shopSearchData = ApiResponse.completed(shopList);
+
+      final data = response[Keys.data];
+
+      if (data != null && data is List) {
+        final shopList = data
+            .map((e) => ShopSearchData.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        final resultList = input.toLowerCase() == "others"
+            ? shopList.where((shop) {
+                final category = shop.category?.toLowerCase() ?? '';
+                return !_iconMap.contains(category);
+              }).toList()
+            : shopList;
+
+        _shopSearchData = ApiResponse.completed(resultList);
+      } else {
+        _shopSearchData = ApiResponse.completed([]);
+      }
     } catch (e) {
       _shopSearchData = ApiResponse.error(e.toString());
     }
+
     notifyListeners();
     return _shopSearchData;
   }
@@ -397,11 +431,14 @@ class HomeController extends ChangeNotifier {
       final response = await homeService.getNotificationPreference(
         token: token,
       );
-      _notificationPreferenceData = ApiResponse.completed(
-        NotificationPreferenceData.fromJson(
-          response[Keys.data] as Map<String, dynamic>,
-        ),
-      );
+      final data = response[Keys.data];
+      if (data != null && data is Map<String, dynamic>) {
+        _notificationPreferenceData = ApiResponse.completed(
+          NotificationPreferenceData.fromJson(data),
+        );
+      } else {
+        _notificationPreferenceData = ApiResponse.completed(null);
+      }
     } catch (e) {
       _notificationPreferenceData = ApiResponse.error(e.toString());
     }

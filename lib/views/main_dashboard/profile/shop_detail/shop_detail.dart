@@ -104,31 +104,76 @@ class _ShopDetailState extends State<ShopDetail> {
             videoController.singleShopDetailData.status,
             videoController.singleShopDetailData.data?.shop?.shopName,
           ),
-          action: videoController.singleShopDetailData.data != null
-              ? ShopShopButton(
-                  onTap: () {
-                    VideoShopDialogue().showSaveOrRemoveShopDialogue(
-                      context,
-                      isRemoveShop: videoController.isSaveShop,
-                      onTap: () async {
-                        await savedShops(
-                          shopId:
-                              videoController
-                                  .singleShopDetailData
-                                  .data
-                                  ?.shop
-                                  ?.id ??
-                              0,
-                          status: videoController.isSaveShop
-                              ? 'inactive'
-                              : 'active',
+          action: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ShopShopButton(
+                onTap: () {
+                  VideoShopDialogue().showReportShopDialogue(
+                    context,
+                    shopName:
+                        videoController
+                            .singleShopDetailData
+                            .data
+                            ?.shop
+                            ?.shopName ??
+                        '',
+                    shopLocation:
+                        videoController
+                            .singleShopDetailData
+                            .data
+                            ?.shop
+                            ?.address ??
+                        '',
+                  );
+                },
+                child: Center(
+                  child: Image.asset(AppIcons.alertP, height: 24, width: 24),
+                ),
+              ),
+              videoController.singleShopDetailData.data != null
+                  ? ShopShopButton(
+                      onTap: () {
+                        VideoShopDialogue().showSaveOrRemoveShopDialogue(
+                          context,
+                          isRemoveShop: videoController.isSaveShop,
+                          onTap: () async {
+                            await savedShops(
+                              shopId:
+                                  videoController
+                                      .singleShopDetailData
+                                      .data
+                                      ?.shop
+                                      ?.id ??
+                                  0,
+                              status: videoController.isSaveShop
+                                  ? 'inactive'
+                                  : 'active',
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  isSelected: videoController.isSaveShop,
-                )
-              : null,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (videoController.isSaveShop)
+                            Image.asset(
+                              AppIcons.bookmarkP,
+                              height: 24,
+                              width: 24,
+                            )
+                          else
+                            Icon(
+                              Icons.bookmark_border_outlined,
+                              size: 20,
+                              color: AppColors.darkGrey,
+                            ),
+                        ],
+                      ),
+                    )
+                  : SizedBox.shrink(),
+            ],
+          ),
           isCenterTitle: false,
         ),
         body: Builder(
@@ -260,7 +305,7 @@ class _ShopDetailState extends State<ShopDetail> {
 }
 
 class ShopDetailContainer extends StatelessWidget {
-  const ShopDetailContainer({super.key, required this.shop});
+  ShopDetailContainer({super.key, required this.shop});
 
   final Shop shop;
 
@@ -297,7 +342,11 @@ class ShopDetailContainer extends StatelessWidget {
           clipBehavior: Clip.hardEdge,
           child: Stack(
             children: [
-              CustomNetworkImage(imageUrl: shop.shopImage ?? ''),
+              CustomNetworkImage(
+                imageUrl:
+                    shop.shopImage ??
+                    getUnKnownShopImages(shop.shopImage ?? ''),
+              ),
               if (isShopClosed()) ...[
                 Positioned(
                   top: 10,
@@ -385,7 +434,7 @@ class ShopDetailContainer extends StatelessWidget {
                       title: 'Direct Call',
                       onTap: () async {
                         await CustomLaunchers.makePhoneCall(
-                          phoneNumber: '${shop.registerNumber}',
+                          phoneNumber: '${shop.shopNumber}',
                         );
                       },
                       child: Center(
@@ -439,6 +488,33 @@ class ShopDetailContainer extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  final Map<String, String> iconImageMap = {
+    "theater":
+        "https://img.freepik.com/free-photo/3d-rendering-cinema-teather_23-2151169422.jpg?semt=ais_hybrid&w=740&q=80",
+    "restaurant":
+        "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
+    "hospital":
+        "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
+    "bars":
+        "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
+    "grocery":
+        "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",
+    "textile":
+        "https://thumbs.dreamstime.com/b/fashion-store-interior-counter-mannequins-fashion-store-interior-counter-mannequins-hangers-showcase-191363271.jpg",
+    "resort":
+        "https://img.freepik.com/free-vector/outdoor-swimming-pool-colored-background-with-chaise-lounges-umbrella-palm-trees-cartoon-vector-illustration_1284-79719.jpg?semt=ais_hybrid&w=740&q=80",
+    "bunk":
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnf86j1Yv60Wd43cezQvFKwKABzdSvMctmig&s",
+    "spa":
+        "https://img.freepik.com/premium-vector/cosmetology-salon-flat-color-illustration-spa-massage-hair-removal-sugaring-services-skincare-procedures-equipment-2d-cartoon-interior-with-furniture-background_151150-2759.jpg",
+    "hotel":
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4DhNVE0f2RF1DAYAbz5GWoluf-fuMQ5SQUw&s",
+  };
+
+  String getUnKnownShopImages(String category) {
+    return iconImageMap[category] ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
   }
 }
 

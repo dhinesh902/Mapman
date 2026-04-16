@@ -85,7 +85,7 @@ class LocationIconService {
     'resort': AppIcons.resortsMap,
     'bunk': AppIcons.petrolBunkMap,
     'spa': AppIcons.spaMap,
-    'hotels': AppIcons.hotelsMap,
+    'hotel': AppIcons.hotelsMap,
     'others': AppIcons.othersMap,
   };
 

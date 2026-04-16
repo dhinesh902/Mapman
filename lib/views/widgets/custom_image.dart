@@ -23,7 +23,9 @@ class CustomNetworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: ApiRoutes.baseUrl + imageUrl,
+      imageUrl: imageUrl.startsWith('https')
+          ? imageUrl
+          : ApiRoutes.baseUrl + imageUrl,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,

@@ -559,12 +559,12 @@ class AllVideosCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
       child: SingleChildScrollView(
         child: StaggeredGrid.count(
           crossAxisCount: 4,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
           children: _buildGridItems(context),
         ),
       ),
@@ -639,11 +639,13 @@ class AllVideosCard extends StatelessWidget {
       },
       child: Container(
         clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(5)),
         child: Stack(
           children: [
             Positioned.fill(
-              child: CustomNetworkImage(imageUrl: data.categoryVideo ?? ''),
+              child: CustomNetworkImage(
+                imageUrl: data.categoryVideo ?? '',
+              ),
             ),
 
             /// GLASS TEXT

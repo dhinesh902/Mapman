@@ -552,10 +552,16 @@ class HomeTopListTile extends StatelessWidget {
 }
 
 class CircleContainer extends StatelessWidget {
-  const CircleContainer({super.key, required this.child, required this.onTap});
+  const CircleContainer({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.color = AppColors.scaffoldBackground,
+  });
 
   final Widget child;
   final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -564,10 +570,7 @@ class CircleContainer extends StatelessWidget {
       child: Container(
         height: 42,
         width: 42,
-        decoration: BoxDecoration(
-          color: AppColors.scaffoldBackground,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Center(child: child),
       ),
     );

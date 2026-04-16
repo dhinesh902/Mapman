@@ -124,7 +124,7 @@ class ProfileController extends ChangeNotifier {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final token = SessionManager.getToken()!;
+      final token = SessionManager.getToken() ?? '';
       final response = await profileService.updateProfile(
         token: token,
         image: image,
@@ -254,7 +254,7 @@ class ProfileController extends ChangeNotifier {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final token = SessionManager.getToken()!;
+      final token = SessionManager.getToken() ?? '';
       final response = await profileService.saveShop(
         token: token,
         shopId: shopId,

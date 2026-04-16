@@ -45,25 +45,40 @@ class _UploadVideoState extends State<UploadVideo> {
   String _initialVideoTitle = '';
   String _initialDescription = '';
 
+  final List<String> _iconMap = [
+    'theater',
+    'restaurant',
+    'hospital',
+    'bars',
+    'grocery',
+    'textile',
+    'resort',
+    'bunk',
+    'spa',
+    'hotel',
+  ];
+
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
+
     videoController = context.read<VideoController>();
     videoTitleController = TextEditingController();
     videoDescriptionController = TextEditingController();
+
+    final shopCategory = SessionManager.getShopCategory()?.toLowerCase() ?? '';
+    final shopName = SessionManager.getShopName()?.capitalize() ?? '';
+
     categoryController = TextEditingController(
-      text: SessionManager.getShopCategory()?.capitalize() ?? '',
+      text: _iconMap.contains(shopCategory) ? shopCategory : "others",
     );
-    shopNameController = TextEditingController(
-      text: SessionManager.getShopName()?.capitalize() ?? '',
-    );
+
+    shopNameController = TextEditingController(text: shopName);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       videoController.setVideoFileSize = false;
       getVideoDetails();
     });
-
-    super.initState();
   }
 
   @override

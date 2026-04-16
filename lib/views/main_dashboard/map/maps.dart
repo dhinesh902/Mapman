@@ -14,7 +14,6 @@ import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
-import 'package:mapman/utils/constants/themes.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
@@ -211,7 +210,7 @@ class _MapsState extends State<Maps> {
     'resort',
     'bunk',
     'spa',
-    'hotels',
+    'hotel',
     'others',
   ];
 
@@ -245,7 +244,6 @@ class _MapsState extends State<Maps> {
               position: LatLng(lat, long),
               icon: icon,
               onTap: () {
-
                 tapNotifier.value = shop;
               },
             ),
@@ -610,7 +608,7 @@ class _MapsState extends State<Maps> {
 }
 
 class LocationShopContainer extends StatelessWidget {
-  const LocationShopContainer({
+  LocationShopContainer({
     super.key,
     required this.searchData,
     required this.distance,
@@ -627,19 +625,36 @@ class LocationShopContainer extends StatelessWidget {
           context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
         },
         child: Container(
-          decoration: Themes.searchFieldDecoration(borderRadius: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: AppColors.scaffoldBackground,
+            border: Border.all(color: AppColors.primaryBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 5,
+                spreadRadius: 0,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
           padding: EdgeInsets.all(5),
           margin: EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             children: [
-              Container(
-                height: 80,
-                width: 112,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadiusGeometry.circular(10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  height: 80,
+                  width: 110,
+                  child: CustomNetworkImage(
+                    imageUrl:
+                        searchData.shopImage ??
+                        getUnKnownShopImages(
+                          '${searchData.category?.toLowerCase()}',
+                        ),
+                  ),
                 ),
-                clipBehavior: Clip.hardEdge,
-                child: CustomNetworkImage(imageUrl: searchData.shopImage ?? ''),
               ),
               SizedBox(width: 10),
               Expanded(
@@ -675,5 +690,33 @@ class LocationShopContainer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  final Map<String, String> iconImageMap = {
+    "theater":
+        "https://img.freepik.com/free-photo/3d-rendering-cinema-teather_23-2151169422.jpg?semt=ais_hybrid&w=740&q=80",
+    "restaurant":
+        "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
+    "hospital":
+        "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
+    "bars":
+        "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
+    "grocery":
+        "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",
+    "textile":
+        "https://thumbs.dreamstime.com/b/fashion-store-interior-counter-mannequins-fashion-store-interior-counter-mannequins-hangers-showcase-191363271.jpg",
+    "resort":
+        "https://img.freepik.com/free-vector/outdoor-swimming-pool-colored-background-with-chaise-lounges-umbrella-palm-trees-cartoon-vector-illustration_1284-79719.jpg?semt=ais_hybrid&w=740&q=80",
+    "bunk":
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnf86j1Yv60Wd43cezQvFKwKABzdSvMctmig&s",
+    "spa":
+        "https://img.freepik.com/premium-vector/cosmetology-salon-flat-color-illustration-spa-massage-hair-removal-sugaring-services-skincare-procedures-equipment-2d-cartoon-interior-with-furniture-background_151150-2759.jpg",
+    "hotel":
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4DhNVE0f2RF1DAYAbz5GWoluf-fuMQ5SQUw&s",
+  };
+
+  String getUnKnownShopImages(String category) {
+    return iconImageMap[category] ??
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
   }
 }

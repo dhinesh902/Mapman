@@ -1,4 +1,3 @@
-import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +21,7 @@ import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class ViewedVideos extends StatefulWidget {
   const ViewedVideos({super.key});
@@ -313,82 +313,166 @@ class ViewedVideoCard extends StatefulWidget {
 }
 
 class _ViewedVideoCardState extends State<ViewedVideoCard> {
-  late final CachedVideoPlayerPlus _player;
+  VideoPlayerController? _player;
+  bool _initialized = false;
+  bool _error = false;
+  bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _player =
-        CachedVideoPlayerPlus.networkUrl(
-            Uri.parse(widget.videoUrl),
-            invalidateCacheIfOlderThan: const Duration(minutes: 69),
-          )
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {});
-            }
-          });
+    // Lazy init via VisibilityDetector
+  }
+
+  Future<void> _initController() async {
+    if (_player != null || _error || !mounted) return;
+    try {
+      _player = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+        httpHeaders: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: true,
+          allowBackgroundPlayback: false,
+        ),
+      );
+      
+      await _player!.initialize();
+      
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+
+      }
+    } catch (e) {
+      debugPrint('Viewed video init error: $e');
+      if (mounted) {
+        setState(() {
+          _error = true;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _player?.dispose();
+    _player = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: SizedBox(
-        height: 174,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadiusGeometry.circular(6),
-                child: _player.isInitialized
-                    ? VideoPlayer(_player.controller)
-                    : Container(color: AppColors.bgGrey),
-              ),
-            ),
-            Positioned(
-              top: 45,
-              left: 0,
-              right: 0,
-              child: Center(child: VideoPausePlayGradientCircleContainer()),
-            ),
-            if (widget.isViews) ...[
-              Positioned(
-                top: 10,
-                right: 10,
-                child: GestureDetector(
-                  onTap: widget.bookMarkOnTap,
-                  child: Container(
-                    height: 30,
-                    width: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.scaffoldBackground,
-                    ),
-                    child: Center(
-                      child: widget.isBookMark
-                          ? Image.asset(
-                              AppIcons.bookmarkP,
-                              height: 20,
-                              width: 20,
+    return VisibilityDetector(
+      key: Key('viewed_video_${widget.videoUrl}'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (!mounted) return;
+        
+        final bool isVisible = visibilityInfo.visibleFraction > 0.1;
+        _isVisible = isVisible;
+
+        if (isVisible) {
+          if (!_initialized && !_error) {
+            _initController();
+          }
+        } else {
+          // Check if the current route is still active (not covered by another screen)
+          final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+
+          if (isCurrentRoute) {
+            // We are on top but scrolled off screen - dispose to save memory
+            if (_initialized) {
+              _player?.pause();
+              _player?.dispose();
+              _player = null;
+              _initialized = false;
+            }
+          } else {
+            // We are covered by another screen (like SingleVideoScreen)
+            // Just pause the video but keep it initialized for quick return
+            _player?.pause();
+          }
+        }
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: SizedBox(
+          height: 174,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: _initialized && _player != null
+                      ? VideoPlayer(_player!)
+                      : _error
+                          ? Container(
+                              color: AppColors.bgGrey,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.error_outline,
+                                  color: Colors.white24,
+                                  size: 30,
+                                ),
+                              ),
                             )
-                          : Icon(
-                              CupertinoIcons.bookmark,
-                              size: 20,
-                              color: AppColors.darkGrey,
+                          : Container(
+                              color: AppColors.bgGrey,
+                              child: const Center(
+                                child: SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white24,
+                                  ),
+                                ),
+                              ),
                             ),
+                ),
+              ),
+              Positioned(
+                top: 45,
+                left: 0,
+                right: 0,
+                child: Center(child: VideoPausePlayGradientCircleContainer()),
+              ),
+              if (widget.isViews) ...[
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: widget.bookMarkOnTap,
+                    child: Container(
+                      height: 30,
+                      width: 30,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.scaffoldBackground,
+                      ),
+                      child: Center(
+                        child: widget.isBookMark
+                            ? Image.asset(
+                                AppIcons.bookmarkP,
+                                height: 20,
+                                width: 20,
+                              )
+                            : const Icon(
+                                CupertinoIcons.bookmark,
+                                size: 20,
+                                color: AppColors.darkGrey,
+                              ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

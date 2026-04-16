@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +17,7 @@ import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class MyVideos extends StatelessWidget {
   const MyVideos({super.key, required this.myVideos});
@@ -455,88 +455,181 @@ class MyVideoContainer extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.isViews = true,
+    this.isAllVideos = false,
     this.views,
+    this.isShowPlayButton = true,
   });
 
   final String videoUrl;
-  final bool isViews;
+  final bool isViews, isAllVideos;
   final String? views;
+  final bool isShowPlayButton;
 
   @override
   State<MyVideoContainer> createState() => _MyVideoContainerState();
 }
 
 class _MyVideoContainerState extends State<MyVideoContainer> {
-  late final CachedVideoPlayerPlus _player;
+  VideoPlayerController? _player;
+  bool _initialized = false;
+  bool _error = false;
+  bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
+    // Do not initialize here -- wait for VisibilityDetector
+  }
 
-    _player = CachedVideoPlayerPlus.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+
+
+  Future<void> _initController() async {
+    if (_player != null || _error || !mounted) return;
+    try {
+      _player = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+        httpHeaders: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: true,
+          allowBackgroundPlayback: false,
+        ),
+      );
+
+      await _player!.initialize();
+
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Video grid init error: $e');
+      if (mounted) {
+        setState(() {
+          _error = true;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _player?.pause();
+    _player?.dispose();
+    _player = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadiusGeometry.circular(6),
-              child: _player.isInitialized
-                  ? VideoPlayer(_player.controller)
-                  : Container(color: AppColors.bgGrey),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Center(child: VideoPausePlayGradientCircleContainer()),
-          ),
-          if (widget.isViews) ...[
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                height: 21,
-                decoration: BoxDecoration(
-                  color: AppColors.darkText,
-                  borderRadius: BorderRadiusGeometry.circular(20),
-                ),
-                padding: EdgeInsetsGeometry.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
-                child: Row(
-                  children: [
-                    SvgPicture.asset(AppIcons.eye),
-                    SizedBox(width: 5),
-                    BodyTextColors(
-                      title: '${widget.views} views',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w300,
-                      color: AppColors.whiteText,
-                    ),
-                  ],
-                ),
+    return VisibilityDetector(
+      key: Key('video_${widget.videoUrl}'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (!mounted) return;
+
+        final bool isVisible = visibilityInfo.visibleFraction > 0.05;
+        _isVisible = isVisible;
+
+        if (isVisible) {
+          if (!_initialized && !_error) {
+            _initController();
+          }
+        } else {
+          // Check if the current route is still active (not covered by another screen)
+          final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+
+          if (isCurrentRoute) {
+            // We are on top but scrolled off screen - dispose to save memory
+            if (_initialized) {
+              _player?.pause();
+              _player?.dispose();
+              _player = null;
+              _initialized = false;
+            }
+          } else {
+            // We are covered by another screen (like SingleVideoScreen)
+            // Just pause the video but keep it initialized for quick return
+            _player?.pause();
+          }
+        }
+      },
+      child: SizedBox(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(widget.isAllVideos ? 0 : 6),
+                child: _initialized && _player != null
+                    ? VideoPlayer(_player!)
+                    : _error
+                    ? Container(
+                        color: AppColors.bgGrey,
+                        child: const Center(
+                          child: Icon(
+                            Icons.error_outline,
+                            color: Colors.white24,
+                            size: 30,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.bgGrey,
+                        child: const Center(
+                          child: SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white24,
+                            ),
+                          ),
+                        ),
+                      ),
               ),
             ),
+            if (widget.isShowPlayButton)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Center(child: VideoPausePlayGradientCircleContainer()),
+              ),
+            if (widget.isViews) ...[
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  height: 21,
+                  decoration: BoxDecoration(
+                    color: AppColors.darkText,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(AppIcons.eye),
+                      const SizedBox(width: 5),
+                      BodyTextColors(
+                        title: '${widget.views} views',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.whiteText,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

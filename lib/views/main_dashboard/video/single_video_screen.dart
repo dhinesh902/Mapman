@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -40,7 +39,7 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-  final Map<int, CachedVideoPlayerPlus> _controllers = {};
+  final Map<int, VideoPlayerController> _controllers = {};
 
   // State variables
   int _currentIndex = 0;
@@ -107,15 +106,15 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_isDisposed || !mounted) return;
 
     final controller = _controllers[_currentIndex];
-    if (controller == null || !controller.controller.value.isInitialized)
+    if (controller == null || !controller.value.isInitialized)
       return;
 
     try {
-      if (state == AppLifecycleState.paused ||
-          state == AppLifecycleState.inactive) {
-        controller.controller.pause();
-      } else if (state == AppLifecycleState.resumed) {
-        controller.controller.play();
+      // Removed auto-pause logic to allow videos to continue playing during phone calls or when the app is in the background
+      if (state == AppLifecycleState.resumed) {
+        if (!controller.value.isPlaying) {
+          controller.play();
+        }
       }
     } catch (e) {
       debugPrint('Error in didChangeAppLifecycleState: $e');
@@ -138,11 +137,16 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     try {
       debugPrint('🎬 Initializing video at index $index');
-      final player = CachedVideoPlayerPlus.networkUrl(
+      final player = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
+        httpHeaders: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
         videoPlayerOptions: VideoPlayerOptions(
-          allowBackgroundPlayback: false,
-          mixWithOthers: false,
+          allowBackgroundPlayback: true,
+          mixWithOthers: true,
         ),
       );
 
@@ -165,7 +169,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       if (index == _currentIndex) {
         _playVideo(index);
       } else {
-        player.controller
+        player
           ..setLooping(false)
           ..setVolume(0.0)
           ..pause();
@@ -182,9 +186,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (controller == null) return;
 
     // Ensure we don't have duplicate listeners
-    controller.controller.removeListener(_videoListener);
+    controller.removeListener(_videoListener);
 
-    controller.controller
+    controller
       ..setLooping(false)
       ..setVolume(1.0)
       ..addListener(_videoListener)
@@ -202,7 +206,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       debugPrint('🗑️ Disposing video at index $index');
       final player = _controllers.remove(index);
       if (player != null) {
-        player.controller.removeListener(_videoListener);
+        player.removeListener(_videoListener);
         await player.dispose();
       }
     }
@@ -227,10 +231,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_isDisposed || !mounted) return;
 
     final player = _controllers[_currentIndex];
-    if (player == null || !player.controller.value.isInitialized) return;
+    if (player == null || !player.value.isInitialized) return;
 
     try {
-      final value = player.controller.value;
+      final value = player.value;
       final position = value.position;
       final duration = value.duration;
 
@@ -244,7 +248,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
       final videoId = widget.videosData[_currentIndex].id ?? 0;
 
-      if (!_completedVideos[videoId]! &&
+      if ((_completedVideos[videoId] == false) &&
           position.inMilliseconds >= duration.inMilliseconds) {
         _completedVideos[videoId] = true;
         _handleVideoCompletion();
@@ -270,7 +274,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     if (_watchedMap[videoId] == true ||
         _apiCallInProgress[videoId] == true ||
-        !_completedVideos[videoId]! ||
+        _completedVideos[videoId] != true ||
         widget.isMyVideos ||
         videoController.isViewedVideo != 1) {
       return;
@@ -352,9 +356,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_controllers.containsKey(_currentIndex)) {
       final oldController = _controllers[_currentIndex];
       if (oldController != null) {
-        oldController.controller.pause();
-        oldController.controller.setVolume(0.0);
-        oldController.controller.removeListener(_videoListener);
+        oldController.pause();
+        oldController.setVolume(0.0);
+        oldController.removeListener(_videoListener);
       }
     }
 
@@ -408,8 +412,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
           final shouldShowVideo =
               _controllers[index] != null &&
-              _controllers[index]!.controller.value.isInitialized &&
-              _isInitialized;
+                  _controllers[index]! .value.isInitialized &&
+                  _isInitialized;
 
           return Stack(
             fit: StackFit.expand,
@@ -419,38 +423,38 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 onTap: () {
                   final controller = _controllers[index];
                   if (controller == null ||
-                      !controller.controller.value.isInitialized) {
+                      !controller.value.isInitialized) {
                     return;
                   }
 
-                  controller.controller.value.isPlaying
-                      ? controller.controller.pause()
-                      : controller.controller.play();
+                  controller.value.isPlaying
+                      ? controller.pause()
+                      : controller.play();
                   setState(() {});
                 },
                 child: shouldShowVideo
                     ? FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width:
-                              _controllers[index]!.controller.value.size.width,
-                          height:
-                              _controllers[index]!.controller.value.size.height,
-                          child: RepaintBoundary(
-                            child: VideoPlayer(_controllers[index]!.controller),
-                          ),
-                        ),
-                      )
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width:
+                    _controllers[index]!.value.size.width,
+                    height:
+                    _controllers[index]!.value.size.height,
+                    child: RepaintBoundary(
+                      child: VideoPlayer(_controllers[index]!),
+                    ),
+                  ),
+                )
                     : Container(
-                        color: AppColors.scaffoldBackgroundDark,
-                        child: const Center(child: CustomLoadingIndicator()),
-                      ),
+                  color: AppColors.scaffoldBackgroundDark,
+                  child: const Center(child: CustomLoadingIndicator()),
+                ),
               ),
 
               if (shouldShowVideo)
                 Center(
                   child: AnimatedOpacity(
-                    opacity: _controllers[index]!.controller.value.isPlaying
+                    opacity: _controllers[index]!.value.isPlaying
                         ? 0.0
                         : 1.0,
                     duration: const Duration(milliseconds: 200),
@@ -466,7 +470,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                         ),
                       ),
                       child: Icon(
-                        _controllers[index]!.controller.value.isPlaying
+                        _controllers[index]!.value.isPlaying
                             ? Icons.pause
                             : Icons.play_arrow,
                         size: 30,
@@ -489,8 +493,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           try {
                             final controller = _controllers[index];
                             if (controller != null &&
-                                controller.controller.value.isInitialized) {
-                              controller.controller.pause();
+                                controller.value.isInitialized) {
+                              controller.pause();
                             }
                           } catch (e) {
                             debugPrint('Error pausing player: $e');
@@ -552,20 +556,19 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                 children: [
                                   Row(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
                                         child: InkWell(
                                           onTap: () {
                                             try {
                                               final controller =
-                                                  _controllers[index];
+                                              _controllers[index];
                                               if (controller != null &&
                                                   controller
-                                                      .controller
                                                       .value
                                                       .isInitialized) {
-                                                controller.controller.pause();
+                                                controller.pause();
                                               }
                                             } catch (e) {
                                               debugPrint(
@@ -579,12 +582,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                           },
                                           child: HeaderTextBlack(
                                             title:
-                                                video.shopName?.capitalize() ??
+                                            video.shopName?.capitalize() ??
                                                 '',
                                             fontSize: 16,
                                             fontWeight: FontWeight.w400,
                                             textDecoration:
-                                                TextDecoration.underline,
+                                            TextDecoration.underline,
                                             decorationColor: AppColors.darkText,
                                             maxLines: 2,
                                             overflow: TextOverflow.visible,
@@ -620,7 +623,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                   SizedBox(height: 8),
                                   BodyTextHint(
                                     title:
-                                        video.description?.capitalize() ?? '',
+                                    video.description?.capitalize() ?? '',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
                                     maxLines: 2,
@@ -660,40 +663,40 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                         onTap: () async {
                                           VideoShopDialogue()
                                               .showSaveOrRemoveVideoDialogue(
-                                                context,
-                                                isRemoveShop: isActive,
-                                                onTap: () async {
-                                                  final newVal = !isActive;
-                                                  bookmarkNotifier.value =
-                                                      newVal;
-                                                  await videoController
-                                                      .addSavedVideos(
-                                                        videoId: video.id ?? 0,
-                                                        status: newVal
-                                                            ? 'active'
-                                                            : 'inactive',
-                                                      );
-                                                  await context
-                                                      .read<ProfileController>()
-                                                      .saveShop(
-                                                        shopId:
-                                                            video.shopId ?? 0,
-                                                        status: newVal
-                                                            ? 'active'
-                                                            : 'inactive',
-                                                      );
-                                                },
+                                            context,
+                                            isRemoveShop: isActive,
+                                            onTap: () async {
+                                              final newVal = !isActive;
+                                              bookmarkNotifier.value =
+                                                  newVal;
+                                              await videoController
+                                                  .addSavedVideos(
+                                                videoId: video.id ?? 0,
+                                                status: newVal
+                                                    ? 'active'
+                                                    : 'inactive',
                                               );
+                                              await context
+                                                  .read<ProfileController>()
+                                                  .saveShop(
+                                                shopId:
+                                                video.shopId ?? 0,
+                                                status: newVal
+                                                    ? 'active'
+                                                    : 'inactive',
+                                              );
+                                            },
+                                          );
                                         },
                                         child: isActive
                                             ? Image.asset(
-                                                AppIcons.bookmarkP,
-                                                height: 30,
-                                              )
+                                          AppIcons.bookmarkP,
+                                          height: 30,
+                                        )
                                             : const Icon(
-                                                Icons.bookmark_border,
-                                                size: 30,
-                                              ),
+                                          Icons.bookmark_border,
+                                          size: 30,
+                                        ),
                                       );
                                     },
                                   ),
@@ -824,12 +827,12 @@ class _ShopDetailsButtonState extends State<ShopDetailsButton>
 
 class ShopShopButton extends StatefulWidget {
   final VoidCallback onTap;
-  final bool isSelected;
+  final Widget child;
 
   const ShopShopButton({
     super.key,
     required this.onTap,
-    required this.isSelected,
+     required this.child,
   });
 
   @override
@@ -865,7 +868,7 @@ class _ShopShopButtonState extends State<ShopShopButton>
         builder: (context, child) {
           return Container(
             height: 41,
-            width: 108,
+            width: 41,
             margin: EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30),
@@ -873,7 +876,7 @@ class _ShopShopButtonState extends State<ShopShopButton>
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 transform: GradientRotation(_controller.value * 2 * 3.14159),
-                colors: [GenericColors.darkYellow, Color(0XFF987113)],
+                colors: [Colors.green, Colors.amber],
               ),
             ),
             child: Container(
@@ -882,26 +885,7 @@ class _ShopShopButtonState extends State<ShopShopButton>
                 color: AppColors.scaffoldBackground,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.isSelected)
-                    Image.asset(AppIcons.bookmarkP, height: 24, width: 24)
-                  else
-                    Icon(
-                      Icons.bookmark_border_outlined,
-                      size: 20,
-                      color: AppColors.darkGrey,
-                    ),
-                  const SizedBox(width: 5),
-                  BodyTextColors(
-                    title: "Shop",
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                    color: AppColors.darkText,
-                  ),
-                ],
-              ),
+              child: widget.child
             ),
           );
         },
@@ -1022,9 +1006,9 @@ class RewardContainer extends StatelessWidget {
                   builder: (context, videoController, child) {
                     return HeaderTextBlack(
                       title:
-                          (videoController.coinResponse.data ??
-                                  videoController.coinsCount)
-                              .toString(),
+                      (videoController.coinResponse.data ??
+                          videoController.coinsCount)
+                          .toString(),
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                     );

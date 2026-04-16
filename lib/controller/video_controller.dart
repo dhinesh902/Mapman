@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
@@ -99,6 +99,15 @@ class VideoController extends ChangeNotifier {
   }
 
   int coinsCount = 0;
+
+  Future<void> clearVideoCache() async {
+    try {
+      await DefaultCacheManager().emptyCache();
+      debugPrint('✅ Cache cleared successfully');
+    } catch (e) {
+      debugPrint('❌ Failed to clear cache: $e');
+    }
+  }
 
   /// -------------------------- API FUNCTIONS --------------------------
   static const int _batchSize = 30;

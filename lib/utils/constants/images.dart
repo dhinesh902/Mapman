@@ -50,6 +50,8 @@ class AppIcons {
   static const String shopP = 'assets/images/png/shop.png';
   static const String chatP = 'assets/images/png/chat.png';
   static const String helpP = 'assets/images/png/help.png';
+  static const String alertP = 'assets/images/png/alert.png';
+  static const String alertShopP = 'assets/images/png/alert_box.png';
   static const String logoutP = 'assets/images/png/logout.png';
   static const String shopLocationP = 'assets/images/png/shop_location.png';
   static const String smsP = 'assets/images/png/sms.png';

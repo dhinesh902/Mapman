@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:cached_video_player_plus/cached_video_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -43,7 +42,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
 
-  CachedVideoPlayerPlus? _player;
+  VideoPlayerController? _player;
   late final ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
@@ -76,7 +75,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_isInitialized || _player == null) return;
 
-    final controller = _player!.controller;
+    final controller = _player!;
 
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
@@ -91,7 +90,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     WidgetsBinding.instance.removeObserver(this);
 
     if (_player != null) {
-      _player!.controller.removeListener(_videoListener);
+      _player!.removeListener(_videoListener);
       _player!.dispose();
     }
 
@@ -121,7 +120,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
   Future<void> _initializeVideo() async {
     if (_player != null) {
-      _player!.controller.removeListener(_videoListener);
+      _player!.removeListener(_videoListener);
       await _player!.dispose();
     }
 
@@ -133,8 +132,13 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     final videoUrl = videosData.video;
     if (videoUrl == null || videoUrl.isEmpty) return;
 
-    _player = CachedVideoPlayerPlus.networkUrl(
+    _player = VideoPlayerController.networkUrl(
       Uri.parse(ApiRoutes.baseUrl + videoUrl),
+      httpHeaders: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
       videoPlayerOptions: VideoPlayerOptions(
         allowBackgroundPlayback: false,
         mixWithOthers: false,
@@ -145,7 +149,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
       await _player!.initialize();
       if (!mounted) return;
 
-      _player!.controller
+      _player!
         ..addListener(_videoListener)
         ..setVolume(1.0)
         ..play();
@@ -161,7 +165,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   void _videoListener() {
     if (!mounted || !_isInitialized || _player == null) return;
 
-    final value = _player!.controller.value;
+    final value = _player!.value;
     if (!value.isInitialized) return;
 
     final duration = value.duration;
@@ -247,7 +251,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
                       if (_player == null || !_isInitialized) return;
-                      final controller = _player!.controller;
+                      final controller = _player!;
                       controller.value.isPlaying
                           ? controller.pause()
                           : controller.play();
@@ -255,14 +259,14 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     },
                     child:
                         _player != null &&
-                            _player!.controller.value.isInitialized
+                            _player!.value.isInitialized
                         ? FittedBox(
                             fit: BoxFit.cover,
                             child: SizedBox(
-                              width: _player!.controller.value.size.width,
-                              height: _player!.controller.value.size.height,
+                              width: _player!.value.size.width,
+                              height: _player!.value.size.height,
                               child: RepaintBoundary(
-                                child: VideoPlayer(_player!.controller),
+                                child: VideoPlayer(_player!),
                               ),
                             ),
                           )
@@ -276,7 +280,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                   if (_player != null && _isInitialized) ...[
                     Center(
                       child: AnimatedOpacity(
-                        opacity: _player!.controller.value.isPlaying
+                        opacity: _player!.value.isPlaying
                             ? 0.0
                             : 1.0,
                         duration: const Duration(milliseconds: 200),
@@ -292,7 +296,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                             ),
                           ),
                           child: Icon(
-                            _player!.controller.value.isPlaying
+                            _player!.value.isPlaying
                                 ? Icons.pause
                                 : Icons.play_arrow,
                             size: 30,
@@ -318,7 +322,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                           ShopDetailsButton(
                             onTap: () {
                               if (_player != null && _isInitialized) {
-                                _player!.controller.pause();
+                                _player!.pause();
                               }
                               context.pushNamed(
                                 AppRoutes.shopDetail,
@@ -387,7 +391,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                                               onTap: () {
                                                 if (_player != null &&
                                                     _isInitialized) {
-                                                  _player!.controller.pause();
+                                                  _player!.pause();
                                                 }
                                                 context.pushNamed(
                                                   AppRoutes.shopDetail,
