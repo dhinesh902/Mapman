@@ -56,8 +56,8 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'  # Force 13.0 for cloud_firestore
       
-      # Exclude Intel for Apple Silicon simulators
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 x86_64'
+      # Exclude Intel only if necessary, or let Flutter handle it
+      # config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 x86_64'
     end
   end
 end
