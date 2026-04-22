@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -35,13 +36,28 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 4));
     final isFirstTime = !(SessionManager.containsKey(key: Keys.isFirstTime));
     final hasToken = SessionManager.containsKey(key: Keys.token);
+    final token = SessionManager.getToken();
+    if (token != null) {
+      await context.read<ProfileController>().getProfile();
+    }
     if (!mounted) return;
     if (isFirstTime) {
       context.go('/onboard_screen');
     } else if (!hasToken) {
       context.go('/login');
     } else {
-      context.go('/main_dashboard', extra: false);
+      final profile = context.read<ProfileController>().profileData.data;
+      if (profile != null &&
+          (profile.userName == null ||
+              profile.userName!.isEmpty ||
+              profile.district == null ||
+              profile.district!.isEmpty ||
+              profile.state == null ||
+              profile.state!.isEmpty)) {
+        context.go('/login');
+      } else {
+        context.go('/main_dashboard', extra: false);
+      }
     }
   }
 

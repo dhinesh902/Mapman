@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/profile_controller.dart';
+import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -18,9 +22,10 @@ import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:phone_number_hint/phone_number_hint.dart';
 import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
-// import 'package:phone_number_hint/phone_number_hint.dart';
+import 'package:smart_auth/smart_auth.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -38,6 +43,7 @@ class _LoginState extends State<Login> {
     MobileOrGoogleSignIn(),
     MobileNumberScreen(),
     OTPScreen(),
+    ProfileUpdation(),
   ];
 
   @override
@@ -45,6 +51,16 @@ class _LoginState extends State<Login> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoScroll();
+      final profile = context.read<ProfileController>().profileData.data;
+      if (profile != null &&
+          (profile.userName == null ||
+              profile.userName!.isEmpty ||
+              profile.district == null ||
+              profile.district!.isEmpty ||
+              profile.state == null ||
+              profile.state!.isEmpty)) {
+        context.read<AuthController>().jumpTo(3);
+      }
     });
   }
 
@@ -185,9 +201,9 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             ),
             SizedBox(height: 15),
             CustomOutlineButtonWithImage(
-              title: 'Continue with Gmail',
+              title: 'Continue with Mobile',
               isGoogle: false,
-              icon: AppIcons.emailP,
+              icon: AppIcons.phoneP,
               onTap: () {
                 context.read<AuthController>().animateTo(1);
               },
@@ -259,56 +275,59 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   late AuthController authController;
 
   final FocusNode _focusNode = FocusNode();
-  // final _phoneNumberHintPlugin = PhoneNumberHint();
+  final _phoneNumberHintPlugin = PhoneNumberHint();
 
-  // late TextEditingController mobileNumberController;
-  late TextEditingController emailController;
+  late TextEditingController mobileNumberController;
   final formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     // TODO: implement initState
     authController = context.read<AuthController>();
-    // mobileNumberController = TextEditingController();
-    emailController = TextEditingController();
-    // getPhoneNumber();
+    mobileNumberController = TextEditingController();
+    getPhoneNumber();
     super.initState();
   }
 
   @override
   void dispose() {
-    // mobileNumberController.dispose();
-    emailController.dispose();
+    mobileNumberController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  // Future<void> getPhoneNumber() async {
-  //   String? result;
-  //   // Platform messages may fail, so we use a try/catch PlatformException.
-  //   // We also handle the message potentially returning null.
-  //   try {
-  //     result = await _phoneNumberHintPlugin.requestHint() ?? '';
-  //     if (result.isNotEmpty) {
-  //       mobileNumberController.text = formatPhoneNumberWithoutCountryCode(
-  //         result,
-  //       );
-  //     }
-  //   } on PlatformException {
-  //     result = 'Failed to get hint.';
-  //   }
-  //   // If the widget was removed from the tree while the asynchronous platform
-  //   // message was in flight, we want to discard the reply rather than calling
-  //   // setState to update our non-existent appearance.
-  //   if (!mounted) return;
-  //   setState(() {
-  //     if (result != null && result.isEmpty) {
-  //       Future.delayed(Duration(milliseconds: 500), () {
-  //         _focusNode.requestFocus();
-  //       });
-  //     }
-  //   });
-  // }
+  Future<void> getPhoneNumber() async {
+    if (!Platform.isAndroid) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _focusNode.requestFocus();
+      });
+      return;
+    }
+    String? result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    // We also handle the message potentially returning null.
+    try {
+      result = await _phoneNumberHintPlugin.requestHint() ?? '';
+      if (result.isNotEmpty) {
+        mobileNumberController.text = formatPhoneNumberWithoutCountryCode(
+          result,
+        );
+      }
+    } on PlatformException {
+      result = 'Failed to get hint.';
+    }
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+    setState(() {
+      if (result != null && result.isEmpty) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          _focusNode.requestFocus();
+        });
+      }
+    });
+  }
 
   String formatPhoneNumberWithoutCountryCode(String phone) {
     String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
@@ -318,32 +337,14 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     return digits;
   }
 
-  // Future<void> sendOTP() async {
-  //   final response = await authController.sendOTP(
-  //     phoneNumber: '+91-${mobileNumberController.text.trim()}',
-  //   );
-  //   if (!mounted) return;
-  //   if (response.status == Status.COMPLETED) {
-  //     if (!mounted) return;
-  //     SessionManager.setMobile(phone: mobileNumberController.text.trim());
-  //     CustomToast.show(context, title: '${response.data}');
-  //     context.read<AuthController>().animateTo(2);
-  //   } else {
-  //     ExceptionHandler.handleUiException(
-  //       context: context,
-  //       status: response.status,
-  //       message: response.message,
-  //     );
-  //   }
-  // }
   Future<void> sendOTP() async {
-    final response = await authController.sendMailOTP(
-      email: emailController.text.trim(),
+    final response = await authController.sendOTP(
+      phoneNumber: '91${mobileNumberController.text.trim()}',
     );
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
       if (!mounted) return;
-      SessionManager.setEmail(email: emailController.text.trim());
+      SessionManager.setMobile(phone: mobileNumberController.text.trim());
       CustomToast.show(context, title: '${response.data}');
       context.read<AuthController>().animateTo(2);
     } else {
@@ -355,6 +356,25 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     }
   }
 
+  // Future<void> sendOTP() async {
+  //   final response = await authController.sendMailOTP(
+  //     email: emailController.text.trim(),
+  //   );
+  //   if (!mounted) return;
+  //   if (response.status == Status.COMPLETED) {
+  //     if (!mounted) return;
+  //     SessionManager.setEmail(email: emailController.text.trim());
+  //     CustomToast.show(context, title: '${response.data}');
+  //     context.read<AuthController>().animateTo(2);
+  //   } else {
+  //     ExceptionHandler.handleUiException(
+  //       context: context,
+  //       status: response.status,
+  //       message: response.message,
+  //     );
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
     authController = context.watch<AuthController>();
@@ -363,63 +383,58 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
       color: AppColors.scaffoldBackgroundDark,
       child: Form(
         key: formKey,
-        child: Column(
-          children: [
-            SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                AuthBackButton(),
-                SizedBox(width: 30),
-                HeaderTextBlack(
-                  title: 'Back',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ],
-            ),
-            SizedBox(height: 30),
-            // CustomMobileNumberTextField(
-            //   controller: mobileNumberController,
-            //   focusNode: _focusNode,
-            //   validator: (value) {
-            //     if (value!.isEmpty) {
-            //       return "Please enter mobile number";
-            //     }
-            //     if (value.length != 10) {
-            //       return "Please enter 10 digit mobile number";
-            //     }
-            //     return null;
-            //   },
-            // ),
-            CustomMobileNumberTextField(
-              controller: emailController,
-              focusNode: _focusNode,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "Please enter email id";
-                }
-                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                if (!emailRegex.hasMatch(value)) {
-                  return "Please enter valid email id";
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 70),
-            Center(
-              child: authController.apiResponse.status == Status.LOADING
-                  ? ButtonProgressBar(isLogin: true)
-                  : AuthButton(
-                      title: 'Get OTP',
-                      onTap: () async {
-                        if (formKey.currentState!.validate()) {
-                          await sendOTP();
-                        }
-                      },
-                    ),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  AuthBackButton(),
+                  SizedBox(width: 30),
+                  HeaderTextBlack(
+                    title: 'Back',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+
+              CustomMobileNumberTextField(
+                controller: mobileNumberController,
+                textInputType: TextInputType.phone,
+                maxLength: 10,
+                focusNode: _focusNode,
+                autofillHints: const [AutofillHints.telephoneNumber],
+                prefixWidget: SvgPicture.asset(AppIcons.mobile),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter mobile number";
+                  }
+                  if (value.length != 10) {
+                    return "Please enter 10 digit mobile number";
+                  }
+                  return null;
+                },
+              ),
+
+              SizedBox(height: 50),
+              Center(
+                child: authController.apiResponse.status == Status.LOADING
+                    ? ButtonProgressBar(isLogin: true)
+                    : AuthButton(
+                        title: 'Get OTP',
+                        onTap: () async {
+                          if (formKey.currentState!.validate()) {
+                            await sendOTP();
+                          }
+                        },
+                      ),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -436,6 +451,8 @@ class OTPScreen extends StatefulWidget {
 }
 
 class _OTPScreenState extends State<OTPScreen> {
+  late final SmsRetriever smsRetriever;
+
   late AuthController authController;
   final formKey = GlobalKey<FormState>();
   late TextEditingController otpController;
@@ -449,6 +466,8 @@ class _OTPScreenState extends State<OTPScreen> {
     authController = context.read<AuthController>();
     otpController = TextEditingController();
     startTimer();
+
+    smsRetriever = SmsRetrieverImpl(SmartAuth.instance);
     super.initState();
   }
 
@@ -490,10 +509,65 @@ class _OTPScreenState extends State<OTPScreen> {
     ),
   );
 
-  // Future<void> verifyOTP() async {
-  //   final mobile = SessionManager.getMobile();
-  //   final response = await authController.verifyOTP(
-  //     phoneNumber: '+91-$mobile',
+  Future<void> verifyOTP() async {
+    final mobile = SessionManager.getMobile();
+    final otpText = otpController.text.trim();
+
+    if (otpText.isEmpty || int.tryParse(otpText) == null) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: Status.ERROR,
+        message: "Invalid OTP",
+      );
+      return;
+    }
+
+    final response = await authController.verifyOTP(
+      phoneNumber: '91$mobile',
+      otp: int.parse(otpText),
+    );
+
+    if (!mounted) return;
+
+    if (response.status != Status.COMPLETED) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+      return;
+    }
+
+    final profileResponse = await context
+        .read<ProfileController>()
+        .getProfile();
+
+    if (!mounted) return;
+
+    if (profileResponse.status != Status.COMPLETED) {
+      authController.animateTo(3);
+      return;
+    }
+
+    final profile = profileResponse.data;
+
+    final isProfileIncomplete =
+        (profile?.userName?.isEmpty ?? true) ||
+        (profile?.district?.isEmpty ?? true) ||
+        (profile?.state?.isEmpty ?? true);
+
+    if (isProfileIncomplete) {
+      authController.animateTo(3);
+    } else {
+      context.read<HomeController>().setCurrentPage = 0;
+      context.goNamed(AppRoutes.mainDashboard, extra: true);
+    }
+  }
+
+  // Future<void> verifyEmailOtp() async {
+  //   final email = SessionManager.getEmail() ?? '';
+  //   final response = await authController.verifyEmailOtp(
+  //     email: email,
   //     otp: int.parse(otpController.text.trim()),
   //   );
   //   if (!mounted) return;
@@ -508,25 +582,6 @@ class _OTPScreenState extends State<OTPScreen> {
   //     );
   //   }
   // }
-
-  Future<void> verifyEmailOtp() async {
-    final email = SessionManager.getEmail() ?? '';
-    final response = await authController.verifyEmailOtp(
-      email: email,
-      otp: int.parse(otpController.text.trim()),
-    );
-    if (!mounted) return;
-    if (response.status == Status.COMPLETED) {
-      context.read<HomeController>().setCurrentPage = 0;
-      context.goNamed(AppRoutes.mainDashboard, extra: true);
-    } else {
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -553,14 +608,18 @@ class _OTPScreenState extends State<OTPScreen> {
             ),
             SizedBox(height: 30),
             Pinput(
-              length: 4,
+              length: 6,
               controller: otpController,
+              autofocus: true,
+              smsRetriever: smsRetriever,
+              autofillHints: const [AutofillHints.oneTimeCode],
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               defaultPinTheme: defaultPinTheme.copyWith(
                 decoration: defaultPinTheme.decoration!.copyWith(
                   border: Border.all(color: GenericColors.borderGrey),
                 ),
               ),
+              hapticFeedbackType: HapticFeedbackType.lightImpact,
               focusedPinTheme: defaultPinTheme.copyWith(
                 decoration: defaultPinTheme.decoration!.copyWith(
                   border: Border.all(color: AppColors.primary, width: 1),
@@ -572,13 +631,18 @@ class _OTPScreenState extends State<OTPScreen> {
                 fontWeight: FontWeight.w300,
                 color: Colors.red.shade700,
               ).textStyle,
+              onCompleted: (pin) {
+                if (formKey.currentState!.validate()) {
+                  verifyOTP();
+                }
+              },
               onChanged: (value) {},
               onSubmitted: (value) {},
               validator: (value) {
                 if (value!.isEmpty) {
                   return 'Please enter OTP';
-                } else if (value.length != 4) {
-                  return 'Please enter 4 digit OTP';
+                } else if (value.length != 6) {
+                  return 'Please enter 6 digit OTP';
                 }
                 return null;
               },
@@ -597,9 +661,9 @@ class _OTPScreenState extends State<OTPScreen> {
                 InkWell(
                   onTap: _remainingTime == 0
                       ? () async {
-                          final email = SessionManager.getEmail() ?? '';
-                          final response = await authController.sendMailOTP(
-                            email: email,
+                          final phone = SessionManager.getMobile() ?? '';
+                          final response = await authController.sendOTP(
+                            phoneNumber: '91$phone',
                           );
                           if (!context.mounted) return;
                           if (response.status == Status.COMPLETED) {
@@ -634,18 +698,303 @@ class _OTPScreenState extends State<OTPScreen> {
             ),
             SizedBox(height: 40),
             Center(
-              child: authController.verifyOTPResponse.status == Status.LOADING
+              child:
+                  authController.verifyOTPResponse.status == Status.LOADING ||
+                      context.watch<ProfileController>().profileData.status ==
+                          Status.LOADING
                   ? ButtonProgressBar(isLogin: true)
                   : AuthButton(
                       title: 'Proceed',
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
-                          await verifyEmailOtp();
+                          await verifyOTP();
                         }
                       },
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProfileUpdation extends StatefulWidget {
+  const ProfileUpdation({super.key});
+
+  @override
+  State<ProfileUpdation> createState() => _ProfileUpdationState();
+}
+
+class _ProfileUpdationState extends State<ProfileUpdation> {
+  Map<String, dynamic> stateData = {};
+
+  List<String> districts = [];
+
+  String? selectedState;
+  String? selectedDistrict;
+
+  late TextEditingController nameController;
+  late TextEditingController districtController;
+  late TextEditingController stateController;
+  final formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    nameController = TextEditingController();
+    districtController = TextEditingController();
+    stateController = TextEditingController();
+    loadJson();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    stateController.dispose();
+    districtController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadJson() async {
+    final String response = await rootBundle.loadString(
+      'assets/india_states_districts.json',
+    );
+    final data = json.decode(response);
+    if (mounted) setState(() => stateData = data);
+  }
+
+  Future<void> updateProfile() async {
+    final profileController = context.read<ProfileController>();
+    final ProfileData profile = ProfileData(
+      userName: nameController.text.trim(),
+      district: districtController.text.trim(),
+      state: stateController.text.trim(),
+      phone: SessionManager.getMobile(),
+      country: "India",
+    );
+    final response = await profileController.updateProfile(
+      profileData: profile,
+      image: profileController.profileData.data?.profilePic ?? '/images',
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      context.read<HomeController>().setCurrentPage = 0;
+      context.goNamed(AppRoutes.mainDashboard, extra: true);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Form(
+        key: formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AuthBackButton(),
+                  HeaderTextPrimary(
+                    title: 'Profile Detail',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  SizedBox(width: 50),
+                ],
+              ),
+              SizedBox(height: 20),
+              CustomMobileNumberTextField(
+                controller: nameController,
+                hintText: "Enter Name",
+                textInputType: TextInputType.text,
+                inputAction:TextInputAction.next,
+                prefixWidget: Image.asset(
+                  AppIcons.personP,
+                  height: 16,
+                  color: AppColors.darkGrey,
+                ),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter name";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 10),
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return stateData.keys.where((String option) {
+                    return option.toLowerCase().contains(
+                      textEditingValue.text.toLowerCase(),
+                    );
+                  });
+                },
+                onSelected: (String selection) {
+                  setState(() {
+                    selectedState = selection;
+                    stateController.text = selection;
+                    selectedDistrict = null;
+                    districtController.clear();
+                    districts = List<String>.from(stateData[selection] ?? []);
+                  });
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                      return CustomMobileNumberTextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onChanged: (val) => stateController.text = val,
+                        hintText: "Select State",
+                        prefixWidget: SvgPicture.asset(
+                          AppIcons.locationArrow,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.darkGrey,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        textInputType: TextInputType.text,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return "Please select state";
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final String option = options.elementAt(index);
+                            return ListTile(
+                              title: BodyTextColors(
+                                title: option,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.darkText,
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 10),
+              Autocomplete<String>(
+                key: ValueKey(selectedState),
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return districts.where((String option) {
+                    return option.toLowerCase().contains(
+                      textEditingValue.text.toLowerCase(),
+                    );
+                  });
+                },
+                onSelected: (String selection) {
+                  setState(() {
+                    selectedDistrict = selection;
+                    districtController.text = selection;
+                  });
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                      return CustomMobileNumberTextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onChanged: (val) => districtController.text = val,
+                        hintText: "Select District",
+                        prefixWidget: SvgPicture.asset(
+                          AppIcons.locationArrow,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.darkGrey,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        textInputType: TextInputType.text,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return "Please select district";
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final String option = options.elementAt(index);
+                            return ListTile(
+                              title: BodyTextColors(
+                                title: option,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.darkText,
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 50),
+              if (context.watch<ProfileController>().apiResponse.status ==
+                  Status.LOADING)
+                ButtonProgressBar(isLogin: true)
+              else
+                AuthButton(
+                  title: 'Submit',
+                  onTap: () async {
+                    if (formKey.currentState!.validate()) {
+                      await updateProfile();
+                    }
+                  },
+                ),
+              SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
@@ -664,6 +1013,12 @@ class AuthBackButton extends StatelessWidget {
           authController.animateTo(0);
         }
         if (authController.currentPage == 2) {
+          authController.animateTo(1);
+        }
+        if (authController.currentPage == 3) {
+          authController.animateTo(2);
+        }
+        if (authController.currentPage == 4) {
           authController.animateTo(1);
         }
       },
@@ -687,31 +1042,57 @@ class CustomMobileNumberTextField extends StatelessWidget {
     super.key,
     required this.controller,
     this.validator,
-    required this.focusNode,
+    required this.prefixWidget,
+    required this.textInputType,
+    this.hintText,
+    this.onTap,
+    this.readOnly = false,
+    this.suffixIcon,
+    this.onChanged,
+    this.focusNode,
+    this.maxLength,
+    this.inputAction = TextInputAction.done,
+    this.autofillHints,
   });
 
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
-  final FocusNode focusNode;
+  final Widget prefixWidget;
+  final TextInputType textInputType;
+  final String? hintText;
+  final VoidCallback? onTap;
+  final bool readOnly;
+  final Widget? suffixIcon;
+  final Function(String)? onChanged;
+  final FocusNode? focusNode;
+  final int? maxLength;
+  final TextInputAction inputAction;
+  final Iterable<String>? autofillHints;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
+      onTap: onTap,
+      readOnly: readOnly,
+      onChanged: onChanged,
       style: GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.darkText,
       ),
-      keyboardType: TextInputType.emailAddress,
-      autofillHints: const [AutofillHints.email],
+      maxLength: maxLength,
+      keyboardType: textInputType,
+      textInputAction: inputAction,
+      autofillHints: autofillHints,
       cursorColor: AppColors.primary,
       decoration: InputDecoration(
         border: InputBorder.none,
         isDense: true,
-        hintText: "Enter Email Id",
+        hintText: hintText ?? "Enter Mobile Number",
         counterText: '',
+        suffixIcon: suffixIcon,
         hintStyle: GoogleFonts.outfit(
           fontSize: 14,
           fontWeight: FontWeight.w400,
@@ -722,7 +1103,7 @@ class CustomMobileNumberTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
         ),
         errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
         enabledBorder: OutlineInputBorder(
@@ -739,16 +1120,32 @@ class CustomMobileNumberTextField extends StatelessWidget {
         ),
         prefixIcon: Padding(
           padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
-          // child: SvgPicture.asset(AppIcons.mobile),
-          child: Image.network(
-            'https://cdn-icons-png.flaticon.com/128/2099/2099199.png',
-            height: 16,
-            width: 16,
-            color: AppColors.darkGrey,
-          ),
+          child: prefixWidget,
         ),
       ),
       validator: validator,
     );
   }
+}
+
+class SmsRetrieverImpl implements SmsRetriever {
+  const SmsRetrieverImpl(this.smartAuth);
+
+  final SmartAuth smartAuth;
+
+  @override
+  Future<void> dispose() {
+    return smartAuth.removeUserConsentApiListener();
+  }
+
+  @override
+  Future<String?> getSmsCode() async {
+    final signature = await smartAuth.getAppSignature();
+    debugPrint('App Signature: $signature');
+    final res = await smartAuth.getSmsWithUserConsentApi();
+    return res.data?.code;
+  }
+
+  @override
+  bool get listenForMultipleSms => false;
 }

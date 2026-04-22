@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -33,13 +35,22 @@ class _EditProfileState extends State<EditProfile> {
   late ProfileController profileController;
   late TextEditingController userNameController,
       phoneNumberController,
-      emailAddressController;
+      emailAddressController,
+      stateController,
+      districtController;
+
+  Map<String, dynamic> stateData = {};
+  String? selectedState;
+  String? selectedDistrict;
+  List<String> districts = [];
 
   final ValueNotifier<File?> profileImageNotifier = ValueNotifier(null);
 
   String? initialName;
   String? mobileNumber;
   String? initialEmail;
+  String? initialState;
+  String? initialDistrict;
 
   @override
   void initState() {
@@ -48,8 +59,26 @@ class _EditProfileState extends State<EditProfile> {
     userNameController = TextEditingController();
     phoneNumberController = TextEditingController();
     emailAddressController = TextEditingController();
+    stateController = TextEditingController();
+    districtController = TextEditingController();
     getProfileData();
+    loadJson();
     super.initState();
+  }
+
+  Future<void> loadJson() async {
+    final String response = await rootBundle.loadString(
+      'assets/india_states_districts.json',
+    );
+    final data = json.decode(response);
+    if (mounted) {
+      setState(() {
+        stateData = data;
+        if (selectedState != null && stateData.containsKey(selectedState)) {
+          districts = List<String>.from(stateData[selectedState] ?? []);
+        }
+      });
+    }
   }
 
   @override
@@ -57,6 +86,8 @@ class _EditProfileState extends State<EditProfile> {
     userNameController.dispose();
     phoneNumberController.dispose();
     emailAddressController.dispose();
+    stateController.dispose();
+    districtController.dispose();
     profileImageNotifier.dispose();
     super.dispose();
   }
@@ -64,13 +95,23 @@ class _EditProfileState extends State<EditProfile> {
   void getProfileData() {
     final profileData = widget.profileData;
     userNameController.text = profileData.userName ?? '';
-    phoneNumberController.text = profileData.phone?.split('-').last ?? '';
+    phoneNumberController.text = profileData.phone?.split('91').last ?? '';
     emailAddressController.text = profileData.email ?? '';
+    stateController.text = profileData.state ?? '';
+    selectedState = profileData.state;
+    selectedDistrict = profileData.district;
+    districtController.text = profileData.district ?? '';
+
+    if (selectedState != null && stateData.containsKey(selectedState)) {
+      districts = List<String>.from(stateData[selectedState] ?? []);
+    }
 
     ///initial data
     initialName = profileData.userName;
-    mobileNumber = profileData.phone?.split('-').last ?? '';
+    mobileNumber = phoneNumberController.text;
     initialEmail = profileData.email;
+    initialState = profileData.state;
+    initialDistrict = profileData.district;
   }
 
   Future<void> updateProfile() async {
@@ -78,6 +119,9 @@ class _EditProfileState extends State<EditProfile> {
       userName: userNameController.text.trim(),
       email: emailAddressController.text.trim(),
       phone: phoneNumberController.text.trim(),
+      state: stateController.text.trim(),
+      district: districtController.text.trim(),
+      country: "India",
     );
     final response = await profileController.updateProfile(
       profileData: profile,
@@ -118,7 +162,8 @@ class _EditProfileState extends State<EditProfile> {
   bool hasChanges() {
     if (userNameController.text.trim() != initialName) return true;
     if (emailAddressController.text.trim() != initialEmail) return true;
-    // if (phoneNumberController.text.trim() != mobileNumber) return true;
+    if (stateController.text.trim() != initialState) return true;
+    if (districtController.text.trim() != initialDistrict) return true;
     if (profileImageNotifier.value != null) return true;
 
     return false;
@@ -239,31 +284,197 @@ class _EditProfileState extends State<EditProfile> {
                     return null;
                   },
                 ),
-                // SizedBox(height: 15),
-                // CustomTextField(
-                //   controller: phoneNumberController,
-                //   inputType: TextInputType.number,
-                //   maxLength: 10,
-                //   title: 'Register Number',
-                //   hintText: 'Enter register number',
-                //   inputAction: TextInputAction.next,
-                //   validator: (value) {
-                //     if (value!.isEmpty) {
-                //       return "Please enter register phone number";
-                //     }
-                //     if (value.length != 10) {
-                //       return "Please enter 10 digit register phone number";
-                //     }
-                //     return null;
-                //   },
-                // ),
+                SizedBox(height: 15),
+                CustomTextField(
+                  controller: phoneNumberController,
+                  inputType: TextInputType.number,
+                  maxLength: 10,
+                  isReadOnly: true,
+                  title: 'Register Number',
+                  hintText: 'Enter register number',
+                  inputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter register phone number";
+                    }
+                    if (value.length != 10) {
+                      return "Please enter 10 digit register phone number";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Autocomplete<String>(
+                        initialValue:
+                            TextEditingValue(text: stateController.text),
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text.isEmpty) {
+                            return const Iterable<String>.empty();
+                          }
+                          return stateData.keys.where((String option) {
+                            return option.toLowerCase().contains(
+                              textEditingValue.text.toLowerCase(),
+                            );
+                          });
+                        },
+                        onSelected: (String selection) {
+                          setState(() {
+                            selectedState = selection;
+                            stateController.text = selection;
+                            selectedDistrict = null;
+                            districtController.clear();
+                            districts = List<String>.from(
+                              stateData[selection] ?? [],
+                            );
+                          });
+                        },
+                        fieldViewBuilder:
+                            (context, controller, focusNode, onFieldSubmitted) {
+                              return CustomTextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                onChanged: (val) =>
+                                    stateController.text = val as String,
+                                title: 'State',
+                                hintText: "Select State",
+                                inputAction: TextInputAction.next,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Please select state";
+                                  }
+                                  return null;
+                                },
+                              );
+                            },
+                        optionsViewBuilder: (context, onSelected, options) {
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 4,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.5,
+                                color: AppColors.whiteText,
+                                constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                ),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: options.length,
+                                  itemBuilder: (context, index) {
+                                    final String option = options.elementAt(
+                                      index,
+                                    );
+                                    return ListTile(
+                                      title: Text(
+                                        option,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: AppColors.darkText,
+                                        ),
+                                      ),
+                                      onTap: () => onSelected(option),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Autocomplete<String>(
+                        initialValue:
+                            TextEditingValue(text: districtController.text),
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text.isEmpty) {
+                            return const Iterable<String>.empty();
+                          }
+                          return districts.where((String option) {
+                            return option.toLowerCase().contains(
+                              textEditingValue.text.toLowerCase(),
+                            );
+                          });
+                        },
+                        onSelected: (String selection) {
+                          setState(() {
+                            selectedDistrict = selection;
+                            districtController.text = selection;
+                          });
+                        },
+                        fieldViewBuilder:
+                            (context, controller, focusNode, onFieldSubmitted) {
+                              return CustomTextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                onChanged: (val) =>
+                                    districtController.text = val as String,
+                                title: 'District',
+                                hintText: "Select District",
+                                inputAction: TextInputAction.next,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Please select district";
+                                  }
+                                  return null;
+                                },
+                              );
+                            },
+                        optionsViewBuilder: (context, onSelected, options) {
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 4,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                color: AppColors.whiteText,
+                                width: MediaQuery.of(context).size.width * 0.5,
+                                constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                ),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: options.length,
+                                  itemBuilder: (context, index) {
+                                    final String option = options.elementAt(
+                                      index,
+                                    );
+                                    return ListTile(
+                                      title: Text(
+                                        option,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: AppColors.darkText,
+                                        ),
+                                      ),
+                                      onTap: () => onSelected(option),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: emailAddressController,
                   title: 'Email Address',
                   hintText: 'Enter email address',
                   inputType: TextInputType.emailAddress,
-                  isReadOnly: true,
+
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.done,
                   validator: (value) {

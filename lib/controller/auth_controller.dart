@@ -86,11 +86,11 @@ class AuthController extends ChangeNotifier {
 
   ApiResponse get verifyOTPResponse => _verifyOTPResponse;
 
-  Future<ApiResponse> sendMailOTP({required String email}) async {
+  Future<ApiResponse> sendOTP({required String phoneNumber}) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final response = await authService.sendMailOTP(email: email);
+      final response = await authService.sendOTP(phoneNumber: phoneNumber);
       _apiResponse = ApiResponse.completed(response[Keys.data]);
     } catch (e) {
       _apiResponse = ApiResponse.error(e.toString());
@@ -99,53 +99,19 @@ class AuthController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  // Future<ApiResponse> sendOTP({required String phoneNumber}) async {
-  //   _apiResponse = ApiResponse.loading(Strings.loading);
-  //   notifyListeners();
-  //   try {
-  //     final response = await authService.sendOTP(phoneNumber: phoneNumber);
-  //     _apiResponse = ApiResponse.completed(response[Keys.data]);
-  //   } catch (e) {
-  //     _apiResponse = ApiResponse.error(e.toString());
-  //   }
-  //   notifyListeners();
-  //   return _apiResponse;
-  // }
-
-  // Future<ApiResponse> verifyOTP({
-  //   required String phoneNumber,
-  //   required int otp,
-  // }) async {
-  //   _apiResponse = ApiResponse.loading(Strings.loading);
-  //   notifyListeners();
-  //   try {
-  //     final response = await authService.verifyOTP(
-  //       phoneNumber: phoneNumber,
-  //       otp: otp,
-  //     );
-  //     final String token = response[Keys.data][Keys.token] ?? '';
-  //     final int userId = response[Keys.data][Keys.userId] ?? '';
-  //     await SessionManager.setToken(token: token);
-  //     await SessionManager.setUserId(userId: userId);
-  //     _apiResponse = ApiResponse.completed(response[Keys.data]);
-  //     await addFcmToken();
-  //   } catch (e) {
-  //     _apiResponse = ApiResponse.error(e.toString());
-  //   }
-  //   notifyListeners();
-  //   return _apiResponse;
-  // }
-
-  Future<ApiResponse> verifyEmailOtp({
-    required String email,
+  Future<ApiResponse> verifyOTP({
+    required String phoneNumber,
     required int otp,
   }) async {
     _verifyOTPResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
-      final response = await authService.verifyEmailOtp(email: email, otp: otp);
-      final String token = response[Keys.data]?[Keys.token] ?? '';
-      final int userId = response[Keys.data]?[Keys.userId] ?? 0;
+      final response = await authService.verifyOTP(
+        phoneNumber: phoneNumber,
+        otp: otp,
+      );
+      final String token = response[Keys.data][Keys.token] ?? '';
+      final int userId = response[Keys.data][Keys.userId] ?? 0;
       await SessionManager.setToken(token: token);
       await SessionManager.setUserId(userId: userId);
       _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);
@@ -156,6 +122,39 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     return _verifyOTPResponse;
   }
+
+  // Future<ApiResponse> verifyEmailOtp({
+  //   required String email,
+  //   required int otp,
+  // }) async {
+  //   _verifyOTPResponse = ApiResponse.loading(Strings.loading);
+  //   notifyListeners();
+  //   try {
+  //     final response = await authService.verifyEmailOtp(email: email, otp: otp);
+  //     final String token = response[Keys.data]?[Keys.token] ?? '';
+  //     final int userId = response[Keys.data]?[Keys.userId] ?? 0;
+  //     await SessionManager.setToken(token: token);
+  //     await SessionManager.setUserId(userId: userId);
+  //     _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);
+  //     await addFcmToken();
+  //   } catch (e) {
+  //     _verifyOTPResponse = ApiResponse.error(e.toString());
+  //   }
+  //   notifyListeners();
+  //   return _verifyOTPResponse;
+  // }
+  // Future<ApiResponse> sendMailOTP({required String email}) async {
+  //     _apiResponse = ApiResponse.loading(Strings.loading);
+  //     notifyListeners();
+  //     try {
+  //       final response = await authService.sendMailOTP(email: email);
+  //       _apiResponse = ApiResponse.completed(response[Keys.data]);
+  //     } catch (e) {
+  //       _apiResponse = ApiResponse.error(e.toString());
+  //     }
+  //     notifyListeners();
+  //     return _apiResponse;
+  //   }
 
   Future<ApiResponse> logout() async {
     _apiResponse = ApiResponse.loading(Strings.loading);
@@ -219,4 +218,49 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     return _apiResponse;
   }
+
+  /*------------------------ Default Data ------------------------ */
+
+  final Map<String, List<String>> stateDistrict = {
+    "Tamil Nadu": [
+      "Ariyalur",
+      "Chengalpattu",
+      "Chennai",
+      "Coimbatore",
+      "Cuddalore",
+      "Dharmapuri",
+      "Dindigul",
+      "Erode",
+      "Kallakurichi",
+      "Kancheepuram",
+      "Karur",
+      "Krishnagiri",
+      "Madurai",
+      "Mayiladuthurai",
+      "Nagapattinam",
+      "Kanniyakumari",
+      "Namakkal",
+      "Perambalur",
+      "Pudukkottai",
+      "Ramanathapuram",
+      "Ranipet",
+      "Salem",
+      "Sivaganga",
+      "Tenkasi",
+      "Thanjavur",
+      "Theni",
+      "Thoothukudi",
+      "Tiruchirappalli",
+      "Tirunelveli",
+      "Tirupathur",
+      "Tiruppur",
+      "Tiruvallur",
+      "Tiruvannamalai",
+      "Tiruvarur",
+      "Vellore",
+      "Viluppuram",
+      "Virudhunagar",
+      "Nilgiris"
+    ]
+  };
 }

@@ -4,6 +4,9 @@ class ProfileData {
   String? profilePic;
   String? phone;
   String? email;
+  String? state;
+  String? district;
+  String? country;
 
   ProfileData({
     this.id,
@@ -11,6 +14,9 @@ class ProfileData {
     this.profilePic,
     this.phone,
     this.email,
+    this.state,
+    this.district,
+    this.country,
   });
 
   ProfileData.fromJson(Map<String, dynamic> json) {
@@ -19,15 +25,8 @@ class ProfileData {
     profilePic = json['profilePic'];
     phone = json['phone'];
     email = json['email'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['userName'] = userName;
-    data['profilePic'] = profilePic;
-    data['phone'] = phone;
-    data['email'] = email;
-    return data;
+    state = json['state'];
+    district = json['district'];
+    country = json['country'];
   }
 }

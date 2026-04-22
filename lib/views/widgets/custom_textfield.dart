@@ -17,12 +17,15 @@ class CustomTextField extends StatelessWidget {
     this.isActive = false,
     this.onChanged,
     this.suffixIcon,
+    this.maxLines,
     this.onTap,
     this.textCapitalization = TextCapitalization.sentences,
     this.maxLength,
     required this.inputAction,
     this.isReadOnly = false,
     this.suffixWidget,
+    this.focusNode,
+    this.onFieldChanged,
   });
 
   final TextEditingController controller;
@@ -36,9 +39,12 @@ class CustomTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final TextCapitalization textCapitalization;
   final int? maxLength;
+  final int? maxLines;
   final TextInputAction inputAction;
   final bool isReadOnly;
   final Widget? suffixWidget;
+  final FocusNode? focusNode;
+  final Function(String)? onFieldChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +98,11 @@ class CustomTextField extends StatelessWidget {
             textCapitalization: textCapitalization,
             textInputAction: inputAction,
             readOnly: isReadOnly,
+            maxLines: maxLines,
             maxLength: maxLength,
             onTap: onTap,
+            focusNode: focusNode,
+            onChanged: onFieldChanged,
             style: AppTextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,

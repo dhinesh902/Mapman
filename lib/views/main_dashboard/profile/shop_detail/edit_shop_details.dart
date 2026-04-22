@@ -17,6 +17,7 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
@@ -623,41 +624,41 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     return null;
                   },
                 ),
-                // SizedBox(height: 15),
-                // CustomTextField(
-                //   controller: phoneNumberController,
-                //   title: 'Register Email',
-                //   hintText: 'Enter register email',
-                //   inputType: TextInputType.emailAddress,
-                //   // maxLength: 10,
-                //   // isReadOnly: true,
-                //   textCapitalization: TextCapitalization.none,
-                //   inputAction: TextInputAction.next,
-                //   validator: (value) {
-                //     if (value!.isEmpty) {
-                //       return "Please enter register email";
-                //     }
-                //     return null;
-                //   },
-                // ),
+                SizedBox(height: 15),
+                CustomTextField(
+                  controller: phoneNumberController,
+                  title: 'Register Email',
+                  hintText: 'Enter register email',
+                  inputType: TextInputType.emailAddress,
+                  maxLength: 10,
+                  isReadOnly: true,
+                  textCapitalization: TextCapitalization.none,
+                  inputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter register email";
+                    }
+                    return null;
+                  },
+                ),
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: whatsAppNumberController,
                   title: 'WhatsApp Number',
                   hintText: 'Enter whatsapp number',
                   inputType: TextInputType.number,
-                  // isSameRegisterNumber: true,
+                  isSameRegisterNumber: true,
                   maxLength: 10,
-                  // isActive: profileController.isActiveWhatsappNumber,
-                  // onChanged: (value) {
-                  //   profileController.setIsActiveWhatsappNumber = value!;
-                  //   if (value) {
-                  //     whatsAppNumberController.text =
-                  //         SessionManager.getMobile() ?? '';
-                  //   } else {
-                  //     whatsAppNumberController.clear();
-                  //   }
-                  // },
+                  isActive: profileController.isActiveWhatsappNumber,
+                  onChanged: (value) {
+                    profileController.setIsActiveWhatsappNumber = value!;
+                    if (value) {
+                      whatsAppNumberController.text =
+                          SessionManager.getMobile() ?? '';
+                    } else {
+                      whatsAppNumberController.clear();
+                    }
+                  },
                   inputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -672,19 +673,19 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 SizedBox(height: 15),
                 CustomTextField(
                   controller: shopNumberController,
-                  // isSameRegisterNumber: true,
+                  isSameRegisterNumber: true,
                   inputType: TextInputType.number,
                   maxLength: 10,
-                  // isActive: profileController.isActive,
-                  // onChanged: (value) {
-                  //   profileController.setIsActive = value!;
-                  //   if (value) {
-                  //     shopNumberController.text =
-                  //         SessionManager.getMobile() ?? '';
-                  //   } else {
-                  //     shopNumberController.clear();
-                  //   }
-                  // },
+                  isActive: profileController.isActive,
+                  onChanged: (value) {
+                    profileController.setIsActive = value!;
+                    if (value) {
+                      shopNumberController.text =
+                          SessionManager.getMobile() ?? '';
+                    } else {
+                      shopNumberController.clear();
+                    }
+                  },
                   title: 'Public/Shop Contact Number',
                   hintText: 'Enter shop contact number',
                   inputAction: TextInputAction.done,

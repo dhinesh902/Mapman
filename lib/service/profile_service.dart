@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/model/shop_detail_model.dart';
@@ -23,17 +25,19 @@ class ProfileService extends ApiRoutes {
     required ProfileData profileData,
   }) async {
     try {
-      print('----------------------------${profileData.phone}  ${profileData.email}');
       FormData formData = FormData.fromMap({
-        'image': (image is String && image.startsWith('/images'))
-            ? null
-            : await MultipartFile.fromFile(
+        'image': (image is File)
+            ? await MultipartFile.fromFile(
                 image.path,
                 filename: image.path.split('/').last,
-              ),
+              )
+            : null,
         'userName': profileData.userName,
         'phone': profileData.phone,
         'email': profileData.email,
+        'state': profileData.state,
+        'district': profileData.district,
+        'country': profileData.country,
       });
 
       final response = await dio.post(

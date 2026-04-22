@@ -71,8 +71,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
     phoneNumberController = TextEditingController(
-      // text: getLast10Digits(SessionManager.getMobile() ?? ''),
-      text: SessionManager.getEmail(),
+      text: getLast10Digits(SessionManager.getMobile() ?? ''),
     );
     shopNumberController = TextEditingController();
     whatsAppNumberController = TextEditingController();
@@ -376,8 +375,9 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               CustomTextField(
                 controller: descriptionController,
                 title: 'Description',
-                hintText: 'Enter description',
+                hintText: 'Describe the product you\'re selling/available/or the service you\'re providing',
                 inputAction: TextInputAction.next,
+                maxLines: 3,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter description";
@@ -385,26 +385,23 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   return null;
                 },
               ),
-              // SizedBox(height: 15),
-              // CustomTextField(
-              //   controller: phoneNumberController,
-              //   title: 'Register Email',
-              //   hintText: 'Enter register email',
-              //   inputType: TextInputType.emailAddress,
-              //   textCapitalization: TextCapitalization.none,
-              //   // maxLength: 10,
-              //   // isReadOnly: true,
-              //   inputAction: TextInputAction.next,
-              //   validator: (value) {
-              //     if (value!.isEmpty) {
-              //       return "Please enter register email";
-              //     }
-              //     // if (value.length != 10) {
-              //     //   return "Please enter 10 register number";
-              //     // }
-              //     return null;
-              //   },
-              // ),
+              SizedBox(height: 15),
+              CustomTextField(
+                controller: phoneNumberController,
+                title: 'Register Mobile',
+                hintText: 'Enter register mobile',
+                inputType: TextInputType.number,
+                textCapitalization: TextCapitalization.none,
+                maxLength: 10,
+                isReadOnly: true,
+                inputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Please enter register email";
+                  }
+                  return null;
+                },
+              ),
               SizedBox(height: 15),
               CustomTextField(
                 controller: whatsAppNumberController,
@@ -413,18 +410,18 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 inputType: TextInputType.number,
                 maxLength: 10,
                 inputAction: TextInputAction.next,
-                // isSameRegisterNumber: true,
-                // isActive: profileController.isActiveWhatsappNumber,
-                // onChanged: (value) {
-                //   profileController.setIsActiveWhatsappNumber = value!;
-                //   if (value) {
-                //     whatsAppNumberController.text = getLast10Digits(
-                //       SessionManager.getMobile() ?? '',
-                //     );
-                //   } else {
-                //     shopNumberController.clear();
-                //   }
-                // },
+                isSameRegisterNumber: true,
+                isActive: profileController.isActiveWhatsappNumber,
+                onChanged: (value) {
+                  profileController.setIsActiveWhatsappNumber = value!;
+                  if (value) {
+                    whatsAppNumberController.text = getLast10Digits(
+                      SessionManager.getMobile() ?? '',
+                    );
+                  } else {
+                    shopNumberController.clear();
+                  }
+                },
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter whatsapp number";
@@ -438,20 +435,20 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               SizedBox(height: 15),
               CustomTextField(
                 controller: shopNumberController,
-                // isSameRegisterNumber: true,
+                isSameRegisterNumber: true,
                 inputType: TextInputType.number,
                 maxLength: 10,
-                // isActive: profileController.isActive,
-                // onChanged: (value) {
-                //   profileController.setIsActive = value!;
-                //   if (value) {
-                //     shopNumberController.text = getLast10Digits(
-                //       SessionManager.getMobile() ?? '',
-                //     );
-                //   } else {
-                //     shopNumberController.clear();
-                //   }
-                // },
+                isActive: profileController.isActive,
+                onChanged: (value) {
+                  profileController.setIsActive = value!;
+                  if (value) {
+                    shopNumberController.text = getLast10Digits(
+                      SessionManager.getMobile() ?? '',
+                    );
+                  } else {
+                    shopNumberController.clear();
+                  }
+                },
                 title: 'Public/Shop Contact Number',
                 hintText: 'Enter shop contact number',
                 inputAction: TextInputAction.done,
