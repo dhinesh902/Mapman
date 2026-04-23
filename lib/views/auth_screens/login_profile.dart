@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
@@ -22,12 +23,14 @@ class LoginProfile extends StatefulWidget {
 
 class _LoginProfileState extends State<LoginProfile> {
   final formKey = GlobalKey<FormState>();
+
   late ProfileController profileController;
-  late TextEditingController userNameController,
-      phoneNumberController,
-      emailAddressController,
-      stateController,
-      districtController;
+
+  late TextEditingController userNameController;
+  late TextEditingController phoneNumberController;
+  late TextEditingController emailAddressController;
+  late TextEditingController stateController;
+  late TextEditingController districtController;
 
   Map<String, dynamic> stateData = {};
   String? selectedState;
@@ -36,37 +39,83 @@ class _LoginProfileState extends State<LoginProfile> {
 
   @override
   void initState() {
-    // TODO: implement initState
-    profileController = context.read<ProfileController>();
-    userNameController = TextEditingController();
-    phoneNumberController = TextEditingController(
-      text: profileController.profileData.data?.phone?.split('91').last ?? '',
-    );
-    emailAddressController = TextEditingController();
-    stateController = TextEditingController();
-    districtController = TextEditingController();
-    loadJson();
     super.initState();
+
+    profileController = context.read<ProfileController>();
+
+    userNameController = TextEditingController(
+      text: profileController.profileData.data?.userName ?? '',
+    );
+
+    phoneNumberController = TextEditingController(
+      text: removeCountryCode(
+        profileController.profileData.data?.phone,
+      ),
+    );
+
+
+    emailAddressController = TextEditingController(
+      text: profileController.profileData.data?.email ?? '',
+    );
+
+    stateController = TextEditingController(
+      text: profileController.profileData.data?.state ?? '',
+    );
+
+    districtController = TextEditingController(
+      text: profileController.profileData.data?.district ?? '',
+    );
+
+    selectedState = stateController.text.isNotEmpty
+        ? stateController.text
+        : null;
+
+    selectedDistrict = districtController.text.isNotEmpty
+        ? districtController.text
+        : null;
+
+    loadJson();
   }
 
+  String removeCountryCode(String? phone) {
+    if (phone == null || phone.isEmpty) return '';
+
+    phone = phone.trim();
+
+    if (phone.startsWith('+91')) {
+      return phone.substring(3);
+    }
+
+    if (phone.startsWith('91') && phone.length > 10) {
+      return phone.substring(2);
+    }
+
+    return phone;
+  }
+
+
   Future<void> loadJson() async {
-    final String response = await rootBundle.loadString(
+    final response = await rootBundle.loadString(
       'assets/india_states_districts.json',
     );
+
     final data = json.decode(response);
-    if (mounted) {
-      setState(() {
-        stateData = data;
-        if (selectedState != null && stateData.containsKey(selectedState)) {
-          districts = List<String>.from(stateData[selectedState] ?? []);
-        }
-      });
-    }
+
+    if (!mounted) return;
+
+    setState(() {
+      stateData = data;
+
+      if (selectedState != null && stateData.containsKey(selectedState)) {
+        districts = List<String>.from(stateData[selectedState]);
+      }
+    });
   }
 
   @override
   void dispose() {
     userNameController.dispose();
+    phoneNumberController.dispose();
     emailAddressController.dispose();
     stateController.dispose();
     districtController.dispose();
@@ -74,7 +123,7 @@ class _LoginProfileState extends State<LoginProfile> {
   }
 
   Future<void> updateProfile() async {
-    final ProfileData profile = ProfileData(
+    final profile = ProfileData(
       userName: userNameController.text.trim(),
       email: emailAddressController.text.trim(),
       phone: profileController.profileData.data?.phone,
@@ -82,12 +131,14 @@ class _LoginProfileState extends State<LoginProfile> {
       district: districtController.text.trim(),
       country: "India",
     );
+
     final response = await profileController.updateProfile(
       profileData: profile,
       image: profileController.profileData.data?.profilePic ?? '/images',
     );
     if (!mounted) return;
     if (response.status == Status.COMPLETED) {
+      context.goNamed(AppRoutes.mainDashboard, extra: true);
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -104,7 +155,8 @@ class _LoginProfileState extends State<LoginProfile> {
 
   @override
   Widget build(BuildContext context) {
-    profileController = context.read<ProfileController>();
+    profileController = context.watch<ProfileController>();
+
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -112,54 +164,48 @@ class _LoginProfileState extends State<LoginProfile> {
         body: Form(
           key: formKey,
           child: ListView(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(16),
             children: [
-              SizedBox(height: 30),
+              const SizedBox(height: 20),
+
               CustomTextField(
                 controller: userNameController,
                 title: 'User Name',
+                inputAction: TextInputAction.done,
                 hintText: 'Enter user name',
-                inputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter user name";
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty ? "Enter user name" : null,
               ),
-              SizedBox(height: 15),
+
+              const SizedBox(height: 15),
+
               CustomTextField(
                 controller: phoneNumberController,
-                inputType: TextInputType.number,
-                maxLength: 10,
                 isReadOnly: true,
+                inputType: TextInputType.number,
+                inputAction: TextInputAction.done,
+                maxLength: 10,
                 title: 'Register Number',
-                hintText: 'Enter register number',
-                inputAction: TextInputAction.next,
+                hintText: 'Phone number',
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter register phone number";
-                  }
-                  if (value.length != 10) {
-                    return "Please enter 10 digit register phone number";
-                  }
+                  if (value!.isEmpty) return "Enter phone number";
+                  if (value.length != 10) return "Enter 10 digit number";
                   return null;
                 },
               ),
-              SizedBox(height: 15),
+
+              const SizedBox(height: 15),
+
               Autocomplete<String>(
                 initialValue: TextEditingValue(text: stateController.text),
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return stateData.keys.where((String option) {
-                    return option.toLowerCase().contains(
-                      textEditingValue.text.toLowerCase(),
-                    );
-                  });
+                optionsBuilder: (value) {
+                  if (value.text.isEmpty) return const Iterable.empty();
+
+                  return stateData.keys.where(
+                        (state) =>
+                        state.toLowerCase().contains(value.text.toLowerCase()),
+                  );
                 },
-                onSelected: (String selection) {
+                onSelected: (selection) {
                   setState(() {
                     selectedState = selection;
                     stateController.text = selection;
@@ -168,161 +214,83 @@ class _LoginProfileState extends State<LoginProfile> {
                     districts = List<String>.from(stateData[selection] ?? []);
                   });
                 },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                      return CustomTextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        onChanged: (val) =>
-                            stateController.text = val as String,
-                        title: 'State',
-                        hintText: "Select State",
-                        inputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please select state";
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        color: AppColors.whiteText,
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final String option = options.elementAt(index);
-                            return ListTile(
-                              title: Text(
-                                option,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.darkText,
-                                ),
-                              ),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                fieldViewBuilder: (context, controller, focusNode, _) {
+                  return CustomTextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    inputAction: TextInputAction.done,
+                    title: 'State',
+                    hintText: 'Select State',
+                    onChanged: (val) => stateController.text = val as String,
+                    validator: (value) =>
+                    value!.isEmpty ? "Select state" : null,
                   );
                 },
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               Autocomplete<String>(
                 initialValue: TextEditingValue(text: districtController.text),
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return districts.where((String option) {
-                    return option.toLowerCase().contains(
-                      textEditingValue.text.toLowerCase(),
-                    );
-                  });
+                optionsBuilder: (value) {
+                  if (value.text.isEmpty) return const Iterable.empty();
+
+                  return districts.where(
+                        (district) =>
+                        district.toLowerCase().contains(
+                          value.text.toLowerCase(),
+                        ),
+                  );
                 },
-                onSelected: (String selection) {
+                onSelected: (selection) {
                   setState(() {
                     selectedDistrict = selection;
                     districtController.text = selection;
                   });
                 },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                      return CustomTextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        onChanged: (val) =>
-                            districtController.text = val as String,
-                        title: 'District',
-                        hintText: "Select District",
-                        inputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please select district";
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        color: AppColors.whiteText,
-                        width: MediaQuery.of(context).size.width,
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final String option = options.elementAt(index);
-                            return ListTile(
-                              title: Text(
-                                option,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.darkText,
-                                ),
-                              ),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                fieldViewBuilder: (context, controller, focusNode, _) {
+                  return CustomTextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    inputAction: TextInputAction.done,
+                    title: 'District',
+                    hintText: 'Select District',
+                    onChanged: (val) => districtController.text = val as String,
+                    validator: (value) =>
+                    value!.isEmpty ? "Select district" : null,
                   );
                 },
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               CustomTextField(
                 controller: emailAddressController,
                 title: 'Email Address',
-                hintText: 'Enter email address',
+                hintText: 'Enter email',
                 inputType: TextInputType.emailAddress,
-
                 textCapitalization: TextCapitalization.none,
-                inputAction: TextInputAction.done,
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter email address";
-                  }
+                  if (value!.isEmpty) return "Enter email";
                   if (!isValidEmail(value.trim())) {
-                    return "Please enter valid email address";
+                    return "Invalid email";
                   }
                   return null;
                 },
+                inputAction: TextInputAction.done,
               ),
-              SizedBox(height: 50),
-              if (profileController.apiResponse.status == Status.LOADING)
-                ButtonProgressBar()
-              else
-                CustomFullButton(
-                  title: 'Update Profile',
-                  isDialogue: true,
-                  onTap: () async {
-                    if (formKey.currentState!.validate()) {
-                      await updateProfile();
-                    }
-                  },
-                ),
+
+              const SizedBox(height: 40),
+
+              profileController.apiResponse.status == Status.LOADING
+                  ? const ButtonProgressBar()
+                  : CustomFullButton(
+                title: 'Update Profile',
+                isDialogue: true,
+                onTap: () async {
+                  if (formKey.currentState!.validate()) {
+                    await updateProfile();
+                  }
+                },
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),

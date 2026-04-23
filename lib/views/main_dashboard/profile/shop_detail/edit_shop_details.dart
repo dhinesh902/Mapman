@@ -61,7 +61,6 @@ class _EditShopDetailState extends State<EditShopDetail> {
 
   late String _initialShopName;
   late String _initialDescription;
-  late String _initialPhoneNumber;
   late String _initialShopNumber;
   late String _initialLocation;
   late String _initialOpenTime;
@@ -155,7 +154,6 @@ class _EditShopDetailState extends State<EditShopDetail> {
     /// initial data
     _initialShopName = shopNameController.text;
     _initialDescription = descriptionController.text;
-    _initialPhoneNumber = phoneNumberController.text;
     _initialShopNumber = shopNumberController.text;
     _initialLocation = locationController.text;
     _initialOpenTime = openTimeController.text;

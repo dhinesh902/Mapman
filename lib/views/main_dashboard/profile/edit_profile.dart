@@ -95,7 +95,10 @@ class _EditProfileState extends State<EditProfile> {
   void getProfileData() {
     final profileData = widget.profileData;
     userNameController.text = profileData.userName ?? '';
-    phoneNumberController.text = profileData.phone?.split('91').last ?? '';
+    phoneNumberController = TextEditingController(
+      text: removeCountryCode(profileController.profileData.data?.phone),
+    );
+
     emailAddressController.text = profileData.email ?? '';
     stateController.text = profileData.state ?? '';
     selectedState = profileData.state;
@@ -148,10 +151,20 @@ class _EditProfileState extends State<EditProfile> {
     }
   }
 
-  String formatTimeOfDay(TimeOfDay tod) {
-    final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
-    return DateFormat.jm().format(dt);
+  String removeCountryCode(String? phone) {
+    if (phone == null || phone.isEmpty) return '';
+
+    phone = phone.trim();
+
+    if (phone.startsWith('+91')) {
+      return phone.substring(3);
+    }
+
+    if (phone.startsWith('91') && phone.length > 10) {
+      return phone.substring(2);
+    }
+
+    return phone;
   }
 
   bool isValidEmail(String email) {
