@@ -6,6 +6,7 @@ import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/views/auth_screens/login.dart';
+import 'package:mapman/views/auth_screens/login_profile.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/auth_screens/splash.dart';
 import 'package:mapman/views/main_dashboard/home/saved_videos.dart';
@@ -69,6 +70,11 @@ class AppRouter {
             builder: (context, state) => TermsAndConditions(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/login_profile',
+        name: AppRoutes.loginProfile,
+        builder: (context, state) => LoginProfile(),
       ),
       GoRoute(
         path: '/main_dashboard',

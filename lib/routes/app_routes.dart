@@ -2,6 +2,7 @@ class AppRoutes {
   static String splashScreen = 'splash_screen';
   static String onboardScreen = 'onboard_screen';
   static String login = 'login';
+  static String loginProfile = 'login_profile';
   static String otpScreen = 'otp_screen';
   static String mainDashboard = 'main_dashboard';
   static String editProfile = 'edit_profile';

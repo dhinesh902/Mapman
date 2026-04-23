@@ -43,7 +43,6 @@ class _LoginState extends State<Login> {
     MobileOrGoogleSignIn(),
     MobileNumberScreen(),
     OTPScreen(),
-    ProfileUpdation(),
   ];
 
   @override
@@ -51,16 +50,6 @@ class _LoginState extends State<Login> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoScroll();
-      final profile = context.read<ProfileController>().profileData.data;
-      if (profile != null &&
-          (profile.userName == null ||
-              profile.userName!.isEmpty ||
-              profile.district == null ||
-              profile.district!.isEmpty ||
-              profile.state == null ||
-              profile.state!.isEmpty)) {
-        context.read<AuthController>().jumpTo(3);
-      }
     });
   }
 
@@ -557,7 +546,7 @@ class _OTPScreenState extends State<OTPScreen> {
         (profile?.state?.isEmpty ?? true);
 
     if (isProfileIncomplete) {
-      authController.animateTo(3);
+      context.goNamed(AppRoutes.loginProfile);
     } else {
       context.read<HomeController>().setCurrentPage = 0;
       context.goNamed(AppRoutes.mainDashboard, extra: true);
@@ -719,288 +708,6 @@ class _OTPScreenState extends State<OTPScreen> {
   }
 }
 
-class ProfileUpdation extends StatefulWidget {
-  const ProfileUpdation({super.key});
-
-  @override
-  State<ProfileUpdation> createState() => _ProfileUpdationState();
-}
-
-class _ProfileUpdationState extends State<ProfileUpdation> {
-  Map<String, dynamic> stateData = {};
-
-  List<String> districts = [];
-
-  String? selectedState;
-  String? selectedDistrict;
-
-  late TextEditingController nameController;
-  late TextEditingController districtController;
-  late TextEditingController stateController;
-  final formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    nameController = TextEditingController();
-    districtController = TextEditingController();
-    stateController = TextEditingController();
-    loadJson();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    stateController.dispose();
-    districtController.dispose();
-    super.dispose();
-  }
-
-  Future<void> loadJson() async {
-    final String response = await rootBundle.loadString(
-      'assets/india_states_districts.json',
-    );
-    final data = json.decode(response);
-    if (mounted) setState(() => stateData = data);
-  }
-
-  Future<void> updateProfile() async {
-    final profileController = context.read<ProfileController>();
-    final ProfileData profile = ProfileData(
-      userName: nameController.text.trim(),
-      district: districtController.text.trim(),
-      state: stateController.text.trim(),
-      phone: SessionManager.getMobile(),
-      country: "India",
-    );
-    final response = await profileController.updateProfile(
-      profileData: profile,
-      image: profileController.profileData.data?.profilePic ?? '/images',
-    );
-    if (!mounted) return;
-    if (response.status == Status.COMPLETED) {
-      context.read<HomeController>().setCurrentPage = 0;
-      context.goNamed(AppRoutes.mainDashboard, extra: true);
-    } else {
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-      color: AppColors.scaffoldBackgroundDark,
-      child: Form(
-        key: formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AuthBackButton(),
-                  HeaderTextPrimary(
-                    title: 'Profile Detail',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  SizedBox(width: 50),
-                ],
-              ),
-              SizedBox(height: 20),
-              CustomMobileNumberTextField(
-                controller: nameController,
-                hintText: "Enter Name",
-                textInputType: TextInputType.text,
-                inputAction:TextInputAction.next,
-                prefixWidget: Image.asset(
-                  AppIcons.personP,
-                  height: 16,
-                  color: AppColors.darkGrey,
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter name";
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return stateData.keys.where((String option) {
-                    return option.toLowerCase().contains(
-                      textEditingValue.text.toLowerCase(),
-                    );
-                  });
-                },
-                onSelected: (String selection) {
-                  setState(() {
-                    selectedState = selection;
-                    stateController.text = selection;
-                    selectedDistrict = null;
-                    districtController.clear();
-                    districts = List<String>.from(stateData[selection] ?? []);
-                  });
-                },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                      return CustomMobileNumberTextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        onChanged: (val) => stateController.text = val,
-                        hintText: "Select State",
-                        prefixWidget: SvgPicture.asset(
-                          AppIcons.locationArrow,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.darkGrey,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        textInputType: TextInputType.text,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please select state";
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final String option = options.elementAt(index);
-                            return ListTile(
-                              title: BodyTextColors(
-                                title: option,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.darkText,
-                              ),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 10),
-              Autocomplete<String>(
-                key: ValueKey(selectedState),
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return districts.where((String option) {
-                    return option.toLowerCase().contains(
-                      textEditingValue.text.toLowerCase(),
-                    );
-                  });
-                },
-                onSelected: (String selection) {
-                  setState(() {
-                    selectedDistrict = selection;
-                    districtController.text = selection;
-                  });
-                },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                      return CustomMobileNumberTextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        onChanged: (val) => districtController.text = val,
-                        hintText: "Select District",
-                        prefixWidget: SvgPicture.asset(
-                          AppIcons.locationArrow,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.darkGrey,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        textInputType: TextInputType.text,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please select district";
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final String option = options.elementAt(index);
-                            return ListTile(
-                              title: BodyTextColors(
-                                title: option,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.darkText,
-                              ),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              SizedBox(height: 50),
-              if (context.watch<ProfileController>().apiResponse.status ==
-                  Status.LOADING)
-                ButtonProgressBar(isLogin: true)
-              else
-                AuthButton(
-                  title: 'Submit',
-                  onTap: () async {
-                    if (formKey.currentState!.validate()) {
-                      await updateProfile();
-                    }
-                  },
-                ),
-              SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class AuthBackButton extends StatelessWidget {
   const AuthBackButton({super.key});
 
@@ -1017,9 +724,6 @@ class AuthBackButton extends StatelessWidget {
         }
         if (authController.currentPage == 3) {
           authController.animateTo(2);
-        }
-        if (authController.currentPage == 4) {
-          authController.animateTo(1);
         }
       },
       child: Container(

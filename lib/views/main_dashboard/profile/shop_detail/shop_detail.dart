@@ -514,7 +514,8 @@ class ShopDetailContainer extends StatelessWidget {
   };
 
   String getUnKnownShopImages(String category) {
-    return iconImageMap[category] ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
+    return iconImageMap[category] ??
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
   }
 }
 
@@ -620,6 +621,80 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
     }
   }
 
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                Center(
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: Hero(
+                      tag: imageUrl,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 130,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.black,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.6),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: InteractiveViewer(
+                            minScale: 0.8,
+                            maxScale: 4,
+                            child: CustomNetworkImage(imageUrl: imageUrl),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                /// Close Button (Glass Style)
+                Positioned(
+                  top: 50,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -640,7 +715,12 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
               setState(() => _currentIndex = index);
             },
             itemBuilder: (_, index) {
-              return CustomNetworkImage(imageUrl: widget.images[index]);
+              return GestureDetector(
+                onTap: () {
+                  _showImageDialog(widget.images[index]);
+                },
+                child: CustomNetworkImage(imageUrl: widget.images[index]),
+              );
             },
           ),
         ),

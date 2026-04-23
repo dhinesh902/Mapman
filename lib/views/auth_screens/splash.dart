@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
               profile.district!.isEmpty ||
               profile.state == null ||
               profile.state!.isEmpty)) {
-        context.go('/login');
+        context.go('/login_profile');
       } else {
         context.go('/main_dashboard', extra: false);
       }

@@ -304,169 +304,149 @@ class _EditProfileState extends State<EditProfile> {
                   },
                 ),
                 SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Autocomplete<String>(
-                        initialValue:
-                            TextEditingValue(text: stateController.text),
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return const Iterable<String>.empty();
-                          }
-                          return stateData.keys.where((String option) {
-                            return option.toLowerCase().contains(
-                              textEditingValue.text.toLowerCase(),
-                            );
-                          });
-                        },
-                        onSelected: (String selection) {
-                          setState(() {
-                            selectedState = selection;
-                            stateController.text = selection;
-                            selectedDistrict = null;
-                            districtController.clear();
-                            districts = List<String>.from(
-                              stateData[selection] ?? [],
-                            );
-                          });
-                        },
-                        fieldViewBuilder:
-                            (context, controller, focusNode, onFieldSubmitted) {
-                              return CustomTextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                onChanged: (val) =>
-                                    stateController.text = val as String,
-                                title: 'State',
-                                hintText: "Select State",
-                                inputAction: TextInputAction.next,
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return "Please select state";
-                                  }
-                                  return null;
-                                },
+                Autocomplete<String>(
+                  initialValue: TextEditingValue(text: stateController.text),
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<String>.empty();
+                    }
+                    return stateData.keys.where((String option) {
+                      return option.toLowerCase().contains(
+                        textEditingValue.text.toLowerCase(),
+                      );
+                    });
+                  },
+                  onSelected: (String selection) {
+                    setState(() {
+                      selectedState = selection;
+                      stateController.text = selection;
+                      selectedDistrict = null;
+                      districtController.clear();
+                      districts = List<String>.from(stateData[selection] ?? []);
+                    });
+                  },
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
+                        return CustomTextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onChanged: (val) =>
+                              stateController.text = val as String,
+                          title: 'State',
+                          hintText: "Select State",
+                          inputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please select state";
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          color: AppColors.whiteText,
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final String option = options.elementAt(index);
+                              return ListTile(
+                                title: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.darkText,
+                                  ),
+                                ),
+                                onTap: () => onSelected(option),
                               );
                             },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 4,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                width: MediaQuery.of(context).size.width * 0.5,
-                                color: AppColors.whiteText,
-                                constraints: const BoxConstraints(
-                                  maxHeight: 200,
-                                ),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  shrinkWrap: true,
-                                  itemCount: options.length,
-                                  itemBuilder: (context, index) {
-                                    final String option = options.elementAt(
-                                      index,
-                                    );
-                                    return ListTile(
-                                      title: Text(
-                                        option,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: AppColors.darkText,
-                                        ),
-                                      ),
-                                      onTap: () => onSelected(option),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Autocomplete<String>(
-                        initialValue:
-                            TextEditingValue(text: districtController.text),
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return const Iterable<String>.empty();
-                          }
-                          return districts.where((String option) {
-                            return option.toLowerCase().contains(
-                              textEditingValue.text.toLowerCase(),
-                            );
-                          });
-                        },
-                        onSelected: (String selection) {
-                          setState(() {
-                            selectedDistrict = selection;
-                            districtController.text = selection;
-                          });
-                        },
-                        fieldViewBuilder:
-                            (context, controller, focusNode, onFieldSubmitted) {
-                              return CustomTextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                onChanged: (val) =>
-                                    districtController.text = val as String,
-                                title: 'District',
-                                hintText: "Select District",
-                                inputAction: TextInputAction.next,
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return "Please select district";
-                                  }
-                                  return null;
-                                },
+                    );
+                  },
+                ),
+                SizedBox(height: 15),
+                Autocomplete<String>(
+                  initialValue: TextEditingValue(text: districtController.text),
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<String>.empty();
+                    }
+                    return districts.where((String option) {
+                      return option.toLowerCase().contains(
+                        textEditingValue.text.toLowerCase(),
+                      );
+                    });
+                  },
+                  onSelected: (String selection) {
+                    setState(() {
+                      selectedDistrict = selection;
+                      districtController.text = selection;
+                    });
+                  },
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
+                        return CustomTextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onChanged: (val) =>
+                              districtController.text = val as String,
+                          title: 'District',
+                          hintText: "Select District",
+                          inputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please select district";
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          color: AppColors.whiteText,
+                          width: MediaQuery.of(context).size.width,
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final String option = options.elementAt(index);
+                              return ListTile(
+                                title: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.darkText,
+                                  ),
+                                ),
+                                onTap: () => onSelected(option),
                               );
                             },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 4,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                color: AppColors.whiteText,
-                                width: MediaQuery.of(context).size.width * 0.5,
-                                constraints: const BoxConstraints(
-                                  maxHeight: 200,
-                                ),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  shrinkWrap: true,
-                                  itemCount: options.length,
-                                  itemBuilder: (context, index) {
-                                    final String option = options.elementAt(
-                                      index,
-                                    );
-                                    return ListTile(
-                                      title: Text(
-                                        option,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: AppColors.darkText,
-                                        ),
-                                      ),
-                                      onTap: () => onSelected(option),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
                 SizedBox(height: 15),
                 CustomTextField(
@@ -488,20 +468,27 @@ class _EditProfileState extends State<EditProfile> {
                   },
                 ),
                 SizedBox(height: 50),
-                if (profileController.apiResponse.status == Status.LOADING)
-                  ButtonProgressBar()
-                else
-                  CustomFullButton(
+              ],
+            ),
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (profileController.apiResponse.status == Status.LOADING)
+                ButtonProgressBar()
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: CustomFullButton(
                     title: 'Update Profile',
-                    isDialogue: true,
                     onTap: () async {
                       if (formKey.currentState!.validate()) {
                         await updateProfile();
                       }
                     },
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
