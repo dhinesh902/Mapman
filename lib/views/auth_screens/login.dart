@@ -186,7 +186,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 ),
               ],
             ),
-            SizedBox(height: 15),
+            SizedBox(height: 20),
             CustomOutlineButtonWithImage(
               title: 'Continue with Mobile',
               isGoogle: false,
@@ -196,34 +196,34 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
               },
             ),
 
-            SizedBox(height: 15),
-            Row(
-              children: [
-                Expanded(child: Divider(color: GenericColors.borderGrey)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: BodyTextHint(
-                    title: 'OR',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                Expanded(child: Divider(color: GenericColors.borderGrey)),
-              ],
-            ),
-            SizedBox(height: 15),
-            CustomOutlineButtonWithImage(
-              title: 'Continue with Google',
-              icon: AppIcons.google,
-              onTap: () {
-                CustomToast.show(
-                  context,
-                  title: 'This feature is currently unavailable',
-                  isError: true,
-                );
-              },
-            ),
-            SizedBox(height: 20),
+            // SizedBox(height: 15),
+            // Row(
+            //   children: [
+            //     Expanded(child: Divider(color: GenericColors.borderGrey)),
+            //     Padding(
+            //       padding: const EdgeInsets.symmetric(horizontal: 10),
+            //       child: BodyTextHint(
+            //         title: 'OR',
+            //         fontSize: 14,
+            //         fontWeight: FontWeight.w400,
+            //       ),
+            //     ),
+            //     Expanded(child: Divider(color: GenericColors.borderGrey)),
+            //   ],
+            // ),
+            // SizedBox(height: 15),
+            // CustomOutlineButtonWithImage(
+            //   title: 'Continue with Google',
+            //   icon: AppIcons.google,
+            //   onTap: () {
+            //     CustomToast.show(
+            //       context,
+            //       title: 'This feature is currently unavailable',
+            //       isError: true,
+            //     );
+            //   },
+            // ),
+            SizedBox(height: 30),
             BodyTextHint(
               title: 'By Continuing you agree to Mapman',
               fontSize: 12,
