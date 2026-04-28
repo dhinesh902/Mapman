@@ -19,10 +19,13 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>This app needs access to location when open.</string>
 
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app uses your location to provide map features and improve navigation experience, even when running in the background.</string>
+
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
     <dict>
-      <key>YourPurposeKey</key>
-      <string>The example App requires temporary access to the device&apos;s precise location.</string>
+     <key>YourPurposeKey</key>
+      <string>The example App requires temporary access to the device's precise location.</string>
     </dict>
 
     <key>NSPhotoLibraryUsageDescription</key>
@@ -33,6 +36,9 @@
 
     <key>NSMicrophoneUsageDescription</key>
     <string>This app requires access to the microphone to record audio when capturing videos.</string>
+
+	<key>NSUserTrackingUsageDescription</key>
+    <string>This app uses your data to provide personalized experience and ads.</string>
 
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

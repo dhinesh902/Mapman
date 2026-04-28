@@ -90,6 +90,21 @@ void _handleNotificationNavigation(String? payload) {
   }
 }
 
+Future<void> requestTrackingPermission() async {
+  final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+
+  if (status == TrackingStatus.notDetermined) {
+    final result =
+        await AppTrackingTransparency.requestTrackingAuthorization();
+
+    if (result == TrackingStatus.authorized) {
+      debugPrint("Tracking Allowed");
+    } else {
+      debugPrint("Tracking Denied");
+    }
+  }
+}
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -121,6 +136,10 @@ Future<void> main() async {
   );
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
+
+    await requestTrackingPermission();
+
+  
     await initializeLocalNotifications();
 
     final firebaseMessaging = FirebaseMessaging.instance;
