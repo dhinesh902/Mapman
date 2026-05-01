@@ -15,6 +15,49 @@ class AuthService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> updateSendOtp({
+    required String email,
+    required String phone,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.updateSendOtp,
+        data: {"email": email, "phone": phone},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateVerifyOtp({
+    required String email,
+    required int otp,
+    required String phone,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.updateVerifyOtp,
+        data: {"email": email, "otp": otp, "phone": phone},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> checkEmailExists({required String email}) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.checkEmailExists,
+        data: {"email": email},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> verifyOTP({
     required String phoneNumber,
     required int otp,
@@ -30,32 +73,32 @@ class AuthService extends ApiRoutes {
     }
   }
 
-  // Future<Map<String, dynamic>> sendMailOTP({required String email}) async {
-  //     try {
-  //       final response = await dio.post(
-  //         ApiRoutes.sendMailOTP,
-  //         data: {"email": email},
-  //       );
-  //       return response.data;
-  //     } on DioException catch (e) {
-  //       throw ExceptionHandler.handleApiException(e);
-  //     }
-  //   }
-  //
-  //   Future<Map<String, dynamic>> verifyEmailOtp({
-  //     required String email,
-  //     required int otp,
-  //   }) async {
-  //     try {
-  //       final response = await dio.post(
-  //         ApiRoutes.verifyEmailOtp,
-  //         data: {"email": email, 'otp': otp},
-  //       );
-  //       return response.data;
-  //     } on DioException catch (e) {
-  //       throw ExceptionHandler.handleApiException(e);
-  //     }
-  //   }
+  Future<Map<String, dynamic>> sendMailOTP({required String email}) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.sendMailOTP,
+        data: {"email": email},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyEmailOtp({
+    required String email,
+    required int otp,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.verifyEmailOtp,
+        data: {"email": email, 'otp': otp},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 
   Future<Map<String, dynamic>> logout({required String token}) async {
     try {

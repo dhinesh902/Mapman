@@ -28,4 +28,5 @@ class GenericColors {
   static const Color darkGreen = Color(0XFF008D0E);
   static const Color lightGreen = Color(0XFF00D715);
   static const Color lightOrange = Color(0XFFF8BD00);
+  static const Color darkAmber = Color(0XFFF8BD00);
 }

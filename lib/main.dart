@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -96,6 +97,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Background message: ${message.messageId}');
 }
 
+Future<void> requestTrackingPermission() async {
+  final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+
+  if (status == TrackingStatus.notDetermined) {
+    final result =
+    await AppTrackingTransparency.requestTrackingAuthorization();
+
+    if (result == TrackingStatus.authorized) {
+      debugPrint("Tracking Allowed");
+    } else {
+      debugPrint("Tracking Denied");
+    }
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -121,6 +137,9 @@ Future<void> main() async {
   );
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
+
+    await requestTrackingPermission();
+
     await initializeLocalNotifications();
 
     final firebaseMessaging = FirebaseMessaging.instance;

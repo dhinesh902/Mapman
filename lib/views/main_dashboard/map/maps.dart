@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -200,6 +201,53 @@ class _MapsState extends State<Maps> {
     await homeController.filterNearbyShops();
   }
 
+  Future<BitmapDescriptor> createMarkerWithLabel({
+    required String text,
+    required BitmapDescriptor baseIcon,
+  }) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+
+    const double width = 300;
+    const double height = 120;
+
+    final paint = Paint()..color = Colors.white;
+    final radius = 20.0;
+
+    final rect = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(0, 0, width, height),
+      Radius.circular(radius),
+    );
+
+    canvas.drawRRect(rect, paint);
+
+    // Draw text
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          fontSize: 28,
+          color: Colors.black,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 2,
+      ellipsis: '...',
+    );
+
+    textPainter.layout(maxWidth: width - 20);
+
+    textPainter.paint(canvas, const Offset(10, 20));
+
+    // Convert to image
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(width.toInt(), height.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
+
   final List<String> _iconMap = [
     'theater',
     'restaurant',
@@ -213,6 +261,48 @@ class _MapsState extends State<Maps> {
     'hotel',
     'others',
   ];
+
+  // Set<Marker> getMarkers() {
+  //   final response = homeController.shopSearchData;
+  //   if (response.status != Status.COMPLETED || response.data == null) {
+  //     return {};
+  //   }
+  //
+  //   final Set<Marker> markerSet = {};
+  //
+  //   for (int i = 0; i < response.data!.length; i++) {
+  //     final shop = response.data![i];
+  //
+  //     final String rawCategory =
+  //         shop.category?.toLowerCase().trim() ?? 'others';
+  //     final String category = _iconMap.contains(rawCategory)
+  //         ? rawCategory
+  //         : 'others';
+  //
+  //     final icon = LocationIconService().getMarkerIconSync(category: category);
+  //
+  //     try {
+  //       final double? lat = double.tryParse(shop.lat.toString());
+  //       final double? long = double.tryParse(shop.long.toString());
+  //
+  //       if (lat != null && long != null) {
+  //         markerSet.add(
+  //           Marker(
+  //             markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
+  //             position: LatLng(lat, long),
+  //             icon: icon,
+  //             onTap: () {
+  //               tapNotifier.value = shop;
+  //             },
+  //           ),
+  //         );
+  //       }
+  //     } catch (e) {
+  //       debugPrint('Error parsing lat/long for shop ${shop.id}: $e');
+  //     }
+  //   }
+  //   return markerSet;
+  // }
 
   Set<Marker> getMarkers() {
     final response = homeController.shopSearchData;
@@ -231,7 +321,9 @@ class _MapsState extends State<Maps> {
           ? rawCategory
           : 'others';
 
-      final icon = LocationIconService().getMarkerIconSync(category: category);
+      final baseIcon = LocationIconService().getMarkerIconSync(
+        category: category,
+      );
 
       try {
         final double? lat = double.tryParse(shop.lat.toString());
@@ -242,7 +334,14 @@ class _MapsState extends State<Maps> {
             Marker(
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
-              icon: icon,
+
+              icon: baseIcon,
+
+              infoWindow: InfoWindow(
+                title: shop.shopName?.capitalize() ?? '',
+                snippet: shop.category?.capitalize() ?? '',
+              ),
+
               onTap: () {
                 tapNotifier.value = shop;
               },
@@ -253,6 +352,7 @@ class _MapsState extends State<Maps> {
         debugPrint('Error parsing lat/long for shop ${shop.id}: $e');
       }
     }
+
     return markerSet;
   }
 

@@ -27,6 +27,7 @@ import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:mapman/views/widgets/custom_time_picker.dart';
+import 'package:mapman/views/widgets/category_chip_selection.dart';
 import 'package:provider/provider.dart';
 
 class RegisterShopDetail extends StatefulWidget {
@@ -232,120 +233,15 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               SizedBox(height: 15),
               CustomTextFieldContainer(
                 title: 'Category',
-                child: PopupMenuButton<String>(
-                  position: PopupMenuPosition.under,
-                  padding: EdgeInsets.zero,
-                  menuPadding: EdgeInsets.zero,
-                  color: AppColors.scaffoldBackground,
-                  elevation: 2,
-                  offset: const Offset(0, 25),
-                  borderRadius: BorderRadius.circular(5),
-                  constraints: const BoxConstraints(
-                    minWidth: double.maxFinite,
-                    maxHeight: 250,
-                  ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      enabled: false,
-                      padding: EdgeInsets.zero,
-                      child: SizedBox(
-                        height: 200,
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: homeController.categories.length,
-                          itemBuilder: (context, index) {
-                            final cat = homeController.categories[index];
-                            return InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                                homeController.setSelectedCategory = cat;
-                              },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 10),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 15),
-                                    child: BodyTextColors(
-                                      title: cat.capitalize(),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: GenericColors.darkGeryHeading,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Divider(
-                                    color: Colors.grey.shade100,
-                                    height: 5,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    PopupMenuItem<String>(
-                      value: 'add_category',
-                      padding: EdgeInsets.zero,
-                      child: InkWell(
-                        onTap: () async {
-                          Navigator.pop(context);
-                          await CategoryDialogue().showAddCategoryDialogue(
-                            context,
-                          );
-                        },
-                        child: Container(
-                          color: const Color(0XFFEAEAEA),
-                          width: double.maxFinite,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 15,
-                          ),
-                          child: Row(
-                            children: const [
-                              BodyTextColors(
-                                title: 'Enter your own Category',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: GenericColors.darkGeryHeading,
-                              ),
-                              Spacer(),
-                              Icon(
-                                CupertinoIcons.add_circled,
-                                size: 20,
-                                color: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  child: SizedBox(
-                    height: 30,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (homeController.category != null)
-                          BodyTextColors(
-                            title: homeController.category!.capitalize(),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.darkText,
-                          )
-                        else
-                          const BodyTextColors(
-                            title: 'Select category',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0XFF1F1F1F),
-                          ),
-                        SvgPicture.asset(AppIcons.arrowDropdown, height: 24),
-                      ],
-                    ),
-                  ),
+                child: CategoryChipSelection(
+                  categories: homeController.categories,
+                  selectedCategory: homeController.category,
+                  onSelected: (cat) {
+                    homeController.setSelectedCategory = cat;
+                  },
+                  onAddCustom: () async {
+                    await CategoryDialogue().showAddCategoryDialogue(context);
+                  },
                 ),
               ),
 

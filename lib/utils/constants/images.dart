@@ -41,6 +41,10 @@ class AppIcons {
   static const String onboardP = 'assets/images/png/onboard.png';
   static const String phoneP = 'assets/images/png/phone.png';
   static const String emailP = 'assets/images/png/email.png';
+  static const String padMailP = 'assets/images/png/padmail.png';
+  static const String padLockP = 'assets/images/png/padlock.png';
+  static const String padCallP = 'assets/images/png/padcall.png';
+  static const String checkedP = 'assets/images/png/checked.png';
   static const String bookmarkP = 'assets/images/png/bookmark.png';
   static const String happyP = 'assets/images/png/happy.png';
   static const String happyBgP = 'assets/images/png/happy_bg.png';

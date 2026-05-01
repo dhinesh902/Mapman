@@ -128,7 +128,7 @@ class _EditProfileState extends State<EditProfile> {
     final response = await profileController.updateProfile(
       profileData: profile,
       image:
-      profileImageNotifier.value ??
+          profileImageNotifier.value ??
           (widget.profileData.profilePic ?? '/images'),
     );
     if (!mounted) return;
@@ -339,22 +339,22 @@ class _EditProfileState extends State<EditProfile> {
                   },
                   fieldViewBuilder:
                       (context, controller, focusNode, onFieldSubmitted) {
-                    return CustomTextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      onChanged: (val) =>
-                      stateController.text = val as String,
-                      title: 'State',
-                      hintText: "Select State",
-                      inputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please select state";
-                        }
-                        return null;
+                        return CustomTextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onChanged: (val) =>
+                              stateController.text = val as String,
+                          title: 'State',
+                          hintText: "Select State",
+                          inputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please select state";
+                            }
+                            return null;
+                          },
+                        );
                       },
-                    );
-                  },
                   optionsViewBuilder: (context, onSelected, options) {
                     return Align(
                       alignment: Alignment.topLeft,
@@ -362,10 +362,7 @@ class _EditProfileState extends State<EditProfile> {
                         elevation: 4,
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
-                          width: MediaQuery
-                              .of(context)
-                              .size
-                              .width,
+                          width: MediaQuery.of(context).size.width,
                           color: AppColors.whiteText,
                           constraints: const BoxConstraints(maxHeight: 200),
                           child: ListView.builder(
@@ -413,22 +410,22 @@ class _EditProfileState extends State<EditProfile> {
                   },
                   fieldViewBuilder:
                       (context, controller, focusNode, onFieldSubmitted) {
-                    return CustomTextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      onChanged: (val) =>
-                      districtController.text = val as String,
-                      title: 'District',
-                      hintText: "Select District",
-                      inputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please select district";
-                        }
-                        return null;
+                        return CustomTextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onChanged: (val) =>
+                              districtController.text = val as String,
+                          title: 'District',
+                          hintText: "Select District",
+                          inputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please select district";
+                            }
+                            return null;
+                          },
+                        );
                       },
-                    );
-                  },
                   optionsViewBuilder: (context, onSelected, options) {
                     return Align(
                       alignment: Alignment.topLeft,
@@ -437,10 +434,7 @@ class _EditProfileState extends State<EditProfile> {
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           color: AppColors.whiteText,
-                          width: MediaQuery
-                              .of(context)
-                              .size
-                              .width,
+                          width: MediaQuery.of(context).size.width,
                           constraints: const BoxConstraints(maxHeight: 200),
                           child: ListView.builder(
                             padding: EdgeInsets.zero,
@@ -472,7 +466,7 @@ class _EditProfileState extends State<EditProfile> {
                   title: 'Email Address',
                   hintText: 'Enter email address',
                   inputType: TextInputType.emailAddress,
-
+                  isReadOnly: true,
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.done,
                   validator: (value) {
