@@ -183,7 +183,7 @@ class VideoService extends ApiRoutes {
     try {
       final response = await dio.get(
         ApiRoutes.getCategoryVideos,
-        options: headerWithToken(token),
+        // options: headerWithToken(token),
       );
       return response.data;
     } on DioException catch (e) {

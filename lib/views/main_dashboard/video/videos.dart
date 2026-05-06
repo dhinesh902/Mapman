@@ -660,9 +660,14 @@ class AllVideosCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        context.read<VideoController>().setSelectedCategory =
-            categoryVideoData[index].categoryName?.capitalize() ?? '';
-        context.pushNamed(AppRoutes.allVideos);
+        final token = SessionManager.getToken();
+        if (token != null) {
+          context.read<VideoController>().setSelectedCategory =
+              categoryVideoData[index].categoryName?.capitalize() ?? '';
+          context.pushNamed(AppRoutes.allVideos);
+        } else {
+          LoginBottomSheet.showLoginBottomSheet(context);
+        }
       },
       child: Container(
         clipBehavior: Clip.hardEdge,

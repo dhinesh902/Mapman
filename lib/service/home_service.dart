@@ -16,6 +16,15 @@ class HomeService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> nonAuthendiCateHome() async {
+    try {
+      final response = await dio.get(ApiRoutes.nonAuthendicateHome);
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> addNewCategory({
     required String token,
     required String categoryName,
@@ -56,6 +65,20 @@ class HomeService extends ApiRoutes {
       final response = await dio.get(
         ApiRoutes.searchShops,
         options: headerWithToken(token),
+        queryParameters: {'input': input},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> nonauthendicateSearch({
+    required String input,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.nonAuthendicateSearch,
         queryParameters: {'input': input},
       );
       return response.data;

@@ -15,8 +15,10 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -472,14 +474,24 @@ class HomeTopListTile extends StatelessWidget {
           children: [
             CircleContainer(
               onTap: () {
-                context.pushNamed(AppRoutes.savedVideos);
+                final token = SessionManager.getToken();
+                if (token == null || token.isEmpty) {
+                  LoginBottomSheet.showLoginBottomSheet(context);
+                } else {
+                  context.pushNamed(AppRoutes.savedVideos);
+                }
               },
               child: Image.asset(AppIcons.bookmarkP, height: 30),
             ),
             SizedBox(width: 15),
             CircleContainer(
               onTap: () {
-                context.pushNamed(AppRoutes.notifications);
+                final token = SessionManager.getToken();
+                if (token == null || token.isEmpty) {
+                  LoginBottomSheet.showLoginBottomSheet(context);
+                } else {
+                  context.pushNamed(AppRoutes.notifications);
+                }
               },
               child: Stack(
                 children: [
