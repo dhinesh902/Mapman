@@ -15,7 +15,6 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
-import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/register_shop_detail.dart';
@@ -470,6 +469,20 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     selectedCategory: homeController.category,
                     onSelected: (cat) {
                       homeController.setSelectedCategory = cat;
+                    },
+                    onDelete: (cat) async {
+                      final response = await homeController.deleteCategory(
+                        categoryName: cat,
+                      );
+                      if (!context.mounted) return;
+                      if (response.status == Status.COMPLETED) {
+                      } else {
+                        ExceptionHandler.handleUiException(
+                          context: context,
+                          status: response.status,
+                          message: response.message,
+                        );
+                      }
                     },
                     onAddCustom: () async {
                       await CategoryDialogue().showAddCategoryDialogue(context);

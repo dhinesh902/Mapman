@@ -32,6 +32,22 @@ class HomeService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> deleteCategory({
+    required String token,
+    required String categoryName,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiRoutes.deleteCategory,
+        options: headerWithToken(token),
+        data: {'categoryName': categoryName},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getSearchShops({
     required String token,
     required String input,

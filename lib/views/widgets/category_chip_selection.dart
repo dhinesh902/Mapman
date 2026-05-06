@@ -10,6 +10,7 @@ class CategoryChipSelection extends StatelessWidget {
   final String? selectedCategory;
   final Function(String) onSelected;
   final VoidCallback onAddCustom;
+  final Function(String)? onDelete;
 
   const CategoryChipSelection({
     super.key,
@@ -17,39 +18,89 @@ class CategoryChipSelection extends StatelessWidget {
     required this.selectedCategory,
     required this.onSelected,
     required this.onAddCustom,
+    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+    final List<String> iconMap = [
+      'theater',
+      'restaurant',
+      'hospital',
+      'bar',
+      'grocery',
+      'textile',
+      'resort',
+      'bunk',
+      'spa',
+      'hotel',
+    ];
+
     return Wrap(
       spacing: 10,
       runSpacing: 10,
       children: [
         ...categories.map((cat) {
-          final isSelected = selectedCategory?.toLowerCase() == cat.toLowerCase();
-          return GestureDetector(
-            onTap: () => onSelected(cat),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withOpacity(0.05)
-                    : const Color(0XFFEFF3FD),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  width: 1.5,
+          final isSelected =
+              selectedCategory?.toLowerCase() == cat.toLowerCase();
+          final isOthers = !iconMap.contains(cat.toLowerCase());
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              GestureDetector(
+                onTap: () => onSelected(cat),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected
+                            ? AppColors.primary.withOpacity(0.05)
+                            : const Color(0XFFEFF3FD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Text(
+                    cat.capitalize(),
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color:
+                          isSelected
+                              ? AppColors.primary
+                              : const Color(0XFF617193),
+                    ),
+                  ),
                 ),
               ),
-              child: Text(
-                cat.capitalize(),
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? AppColors.primary : const Color(0XFF617193),
+              if (isOthers && onDelete != null)
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: GestureDetector(
+                    onTap: () => onDelete!(cat),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: GenericColors.darkRed,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+            ],
           );
         }),
         GestureDetector(

@@ -14,10 +14,12 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class Videos extends StatefulWidget {
@@ -32,17 +34,21 @@ class _VideosState extends State<Videos> {
 
   @override
   void initState() {
-    // TODO: implement initState
     videoController = context.read<VideoController>();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        if (videoController.currentVideoIndex == 1) {
+        final token = SessionManager.getToken();
+        final hasToken = token != null && token.isNotEmpty;
+
+        if (hasToken && videoController.currentVideoIndex == 1) {
           await getMyVideos();
         }
         if (videoController.currentVideoIndex == 0) {
           await getCategoryVideos();
         }
-        await videoController.getVideoPoints();
+        if (hasToken) {
+          await videoController.getVideoPoints();
+        }
       } catch (e) {
         debugPrint('Error in Videos initState: $e');
       }
@@ -148,8 +154,13 @@ class _VideosState extends State<Videos> {
                           isLeft: false,
                           isVideo: true,
                           onTap: () async {
-                            videoController.setCurrentVideoIndex = 1;
-                            await getMyVideos();
+                            final token = SessionManager.getToken();
+                            if (token != null && token.isNotEmpty) {
+                              videoController.setCurrentVideoIndex = 1;
+                              await getMyVideos();
+                            } else {
+                              LoginBottomSheet.showLoginBottomSheet(context);
+                            }
                           },
                         ),
                       ),
@@ -159,10 +170,15 @@ class _VideosState extends State<Videos> {
                 Spacer(),
                 GestureDetector(
                   onTap: () {
-                    VideoDialogues().showRewardsDialogue(
-                      context,
-                      isEarnCoins: true,
-                    );
+                    final token = SessionManager.getToken();
+                    if (token == null || token.isEmpty) {
+                      LoginBottomSheet.showLoginBottomSheet(context);
+                    } else {
+                      VideoDialogues().showRewardsDialogue(
+                        context,
+                        isEarnCoins: true,
+                      );
+                    }
                   },
                   child: Container(
                     height: 40,
@@ -187,6 +203,14 @@ class _VideosState extends State<Videos> {
                             SizedBox(width: 5),
                             Builder(
                               builder: (context) {
+                                final token = SessionManager.getToken();
+                                if (token == null || token.isEmpty) {
+                                  return HeaderTextBlack(
+                                    title: '0',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w300,
+                                  );
+                                }
                                 if (videoController.coinResponse.status ==
                                         Status.INITIAL ||
                                     videoController.coinResponse.status ==
@@ -347,12 +371,15 @@ class VideoHeadingContainer extends StatelessWidget {
       child: Container(
         height: isVideo ? 40 : 44,
         decoration: BoxDecoration(
-          color: isActive ? AppColors.darkText : AppColors.whiteText,
-          border: Border.all(color: AppColors.whiteText, width: 1),
+          color: isActive ? GenericColors.darkBlue : AppColors.whiteText,
+          border: Border.all(color: AppColors.whiteText, width: 3),
           borderRadius: BorderRadius.horizontal(
-            left: Radius.circular(isLeft ? 20 : 0),
-            right: Radius.circular(isLeft ? 0 : 20),
+            left: Radius.circular(isLeft ? 50 : 0),
+            right: Radius.circular(isLeft ? 0 : 50),
           ),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 0),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -643,25 +670,23 @@ class AllVideosCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: CustomNetworkImage(
-                imageUrl: data.categoryVideo ?? '',
-              ),
+              child: CustomNetworkImage(imageUrl: data.categoryVideo ?? ''),
             ),
 
             /// GLASS TEXT
             Center(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(5),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 6,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(5),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.2),
                       ),

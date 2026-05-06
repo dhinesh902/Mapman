@@ -19,6 +19,7 @@ class AppColors {
 class GenericColors {
   static const Color lightPrimary = Color(0XFFBCD0FF);
   static const Color borderGrey = Color(0XFFd3d3d3);
+  static const Color darkBlue = Color(0XFF0f172a);
   static const Color darkRed = Color(0XFFD00101);
   static const Color uploadPrimary = Color(0XFF3475CB);
   static const Color homeTopPrimary = Color(0XFF5593FF);

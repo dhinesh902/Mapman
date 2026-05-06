@@ -106,11 +106,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_isDisposed || !mounted) return;
 
     final controller = _controllers[_currentIndex];
-    if (controller == null || !controller.value.isInitialized)
+    if (controller == null || !controller.value.isInitialized) {
       return;
+    }
 
     try {
-      // Removed auto-pause logic to allow videos to continue playing during phone calls or when the app is in the background
       if (state == AppLifecycleState.resumed) {
         if (!controller.value.isPlaying) {
           controller.play();
@@ -412,8 +412,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
           final shouldShowVideo =
               _controllers[index] != null &&
-                  _controllers[index]! .value.isInitialized &&
-                  _isInitialized;
+              _controllers[index]!.value.isInitialized &&
+              _isInitialized;
 
           return Stack(
             fit: StackFit.expand,
@@ -422,8 +422,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   final controller = _controllers[index];
-                  if (controller == null ||
-                      !controller.value.isInitialized) {
+                  if (controller == null || !controller.value.isInitialized) {
                     return;
                   }
 
@@ -434,29 +433,25 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 },
                 child: shouldShowVideo
                     ? FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width:
-                    _controllers[index]!.value.size.width,
-                    height:
-                    _controllers[index]!.value.size.height,
-                    child: RepaintBoundary(
-                      child: VideoPlayer(_controllers[index]!),
-                    ),
-                  ),
-                )
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _controllers[index]!.value.size.width,
+                          height: _controllers[index]!.value.size.height,
+                          child: RepaintBoundary(
+                            child: VideoPlayer(_controllers[index]!),
+                          ),
+                        ),
+                      )
                     : Container(
-                  color: AppColors.scaffoldBackgroundDark,
-                  child: const Center(child: CustomLoadingIndicator()),
-                ),
+                        color: AppColors.scaffoldBackgroundDark,
+                        child: const Center(child: CustomLoadingIndicator()),
+                      ),
               ),
 
               if (shouldShowVideo)
                 Center(
                   child: AnimatedOpacity(
-                    opacity: _controllers[index]!.value.isPlaying
-                        ? 0.0
-                        : 1.0,
+                    opacity: _controllers[index]!.value.isPlaying ? 0.0 : 1.0,
                     duration: const Duration(milliseconds: 200),
                     child: Container(
                       height: 50,
@@ -556,14 +551,14 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                 children: [
                                   Row(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
                                         child: InkWell(
                                           onTap: () {
                                             try {
                                               final controller =
-                                              _controllers[index];
+                                                  _controllers[index];
                                               if (controller != null &&
                                                   controller
                                                       .value
@@ -582,12 +577,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                           },
                                           child: HeaderTextBlack(
                                             title:
-                                            video.shopName?.capitalize() ??
+                                                video.shopName?.capitalize() ??
                                                 '',
                                             fontSize: 16,
                                             fontWeight: FontWeight.w400,
                                             textDecoration:
-                                            TextDecoration.underline,
+                                                TextDecoration.underline,
                                             decorationColor: AppColors.darkText,
                                             maxLines: 2,
                                             overflow: TextOverflow.visible,
@@ -623,7 +618,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                   SizedBox(height: 8),
                                   BodyTextHint(
                                     title:
-                                    video.description?.capitalize() ?? '',
+                                        video.description?.capitalize() ?? '',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
                                     maxLines: 2,
@@ -663,40 +658,40 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                         onTap: () async {
                                           VideoShopDialogue()
                                               .showSaveOrRemoveVideoDialogue(
-                                            context,
-                                            isRemoveShop: isActive,
-                                            onTap: () async {
-                                              final newVal = !isActive;
-                                              bookmarkNotifier.value =
-                                                  newVal;
-                                              await videoController
-                                                  .addSavedVideos(
-                                                videoId: video.id ?? 0,
-                                                status: newVal
-                                                    ? 'active'
-                                                    : 'inactive',
+                                                context,
+                                                isRemoveShop: isActive,
+                                                onTap: () async {
+                                                  final newVal = !isActive;
+                                                  bookmarkNotifier.value =
+                                                      newVal;
+                                                  await videoController
+                                                      .addSavedVideos(
+                                                        videoId: video.id ?? 0,
+                                                        status: newVal
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                  await context
+                                                      .read<ProfileController>()
+                                                      .saveShop(
+                                                        shopId:
+                                                            video.shopId ?? 0,
+                                                        status: newVal
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                },
                                               );
-                                              await context
-                                                  .read<ProfileController>()
-                                                  .saveShop(
-                                                shopId:
-                                                video.shopId ?? 0,
-                                                status: newVal
-                                                    ? 'active'
-                                                    : 'inactive',
-                                              );
-                                            },
-                                          );
                                         },
                                         child: isActive
                                             ? Image.asset(
-                                          AppIcons.bookmarkP,
-                                          height: 30,
-                                        )
+                                                AppIcons.bookmarkP,
+                                                height: 30,
+                                              )
                                             : const Icon(
-                                          Icons.bookmark_border,
-                                          size: 30,
-                                        ),
+                                                Icons.bookmark_border,
+                                                size: 30,
+                                              ),
                                       );
                                     },
                                   ),
@@ -829,11 +824,7 @@ class ShopShopButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const ShopShopButton({
-    super.key,
-    required this.onTap,
-     required this.child,
-  });
+  const ShopShopButton({super.key, required this.onTap, required this.child});
 
   @override
   State<ShopShopButton> createState() => _ShopShopButtonState();
@@ -885,7 +876,7 @@ class _ShopShopButtonState extends State<ShopShopButton>
                 color: AppColors.scaffoldBackground,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: widget.child
+              child: widget.child,
             ),
           );
         },
@@ -1006,9 +997,9 @@ class RewardContainer extends StatelessWidget {
                   builder: (context, videoController, child) {
                     return HeaderTextBlack(
                       title:
-                      (videoController.coinResponse.data ??
-                          videoController.coinsCount)
-                          .toString(),
+                          (videoController.coinResponse.data ??
+                                  videoController.coinsCount)
+                              .toString(),
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                     );

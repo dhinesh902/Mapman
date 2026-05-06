@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +12,6 @@ import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
-import 'package:mapman/utils/constants/images.dart';
-import 'package:mapman/utils/constants/text_styles.dart';
-import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
@@ -239,6 +235,20 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   onSelected: (cat) {
                     homeController.setSelectedCategory = cat;
                   },
+                  onDelete: (cat) async {
+                    final response = await homeController.deleteCategory(
+                      categoryName: cat,
+                    );
+                    if (!context.mounted) return;
+                    if (response.status == Status.COMPLETED) {
+                    } else {
+                      ExceptionHandler.handleUiException(
+                        context: context,
+                        status: response.status,
+                        message: response.message,
+                      );
+                    }
+                  },
                   onAddCustom: () async {
                     await CategoryDialogue().showAddCategoryDialogue(context);
                   },
@@ -271,7 +281,8 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               CustomTextField(
                 controller: descriptionController,
                 title: 'Description',
-                hintText: 'Describe the product you\'re selling/available/or the service you\'re providing',
+                hintText:
+                    'Describe the product you\'re selling/available/or the service you\'re providing',
                 inputAction: TextInputAction.next,
                 maxLines: 3,
                 validator: (value) {

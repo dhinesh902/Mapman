@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
@@ -13,9 +14,12 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/home/home.dart';
+import 'package:mapman/views/main_dashboard/notification/notification_settings.dart';
+import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class Profile extends StatefulWidget {
@@ -31,12 +35,14 @@ class _ProfileState extends State<Profile> {
 
   @override
   void initState() {
-    // TODO: implement initState
     profileController = context.read<ProfileController>();
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      homeController.getNotificationCount();
-      getProfile();
+      final token = SessionManager.getToken();
+      if (token != null && token.isNotEmpty) {
+        homeController.getNotificationCount();
+        getProfile();
+      }
     });
     super.initState();
   }
@@ -58,6 +64,83 @@ class _ProfileState extends State<Profile> {
     profileController = context.watch<ProfileController>();
     homeController = context.watch<HomeController>();
     final shopId = SessionManager.getShopId();
+    final token = SessionManager.getToken();
+    final isGuest = token == null || token.isEmpty;
+
+    if (isGuest) {
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundDark,
+        body: Column(
+          children: [
+            const ProfileTopCardGuest(),
+            const SizedBox(height: 40),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 20),
+                      Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Image.asset(
+                            AppIcons.shopP,
+                            height: 60,
+                            width: 60,
+                            // colorFilter: const ColorFilter.mode(
+                            //   AppColors.primary,
+                            //   BlendMode.srcIn,
+                            // ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const HeaderTextBlack(
+                        title: 'Welcome, Guest User',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      const SizedBox(height: 10),
+                      const BodyTextHint(
+                        title:
+                            'Log in or sign up to save videos, register and manage your shop, view shop analytics, and access full features.',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 40),
+                      CustomFullButton(
+                        title: 'Log In / Register',
+                        onTap: () {
+                          LoginBottomSheet.showLoginBottomSheet(context);
+                        },
+                      ),
+                      const SizedBox(height: 30),
+                      ProfileListTile(
+                        image: AppIcons.helpP,
+                        title: 'Help & Support',
+                        body: '24×7 Customer Support',
+                        onTap: () {
+                          context.pushNamed(AppRoutes.helpAndSupport);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Builder(
@@ -112,15 +195,6 @@ class _ProfileState extends State<Profile> {
                             },
                           ),
                         ],
-                        // SizedBox(height: 15),
-                        // ProfileListTile(
-                        //   image: AppIcons.chatP,
-                        //   title: 'Chat',
-                        //   body: 'Chat with your shop people',
-                        //   onTap: () {
-                        //     context.pushNamed(AppRoutes.chats);
-                        //   },
-                        // ),
                         SizedBox(height: 15),
                         ProfileListTile(
                           image: AppIcons.helpP,
@@ -140,6 +214,19 @@ class _ProfileState extends State<Profile> {
                               context,
                               title: 'Sign out',
                               isDeleteAccount: false,
+                            );
+                          },
+                        ),
+                        SizedBox(height: 15),
+                        GeneralSettingListTile(
+                          image: AppIcons.deleteBlueP,
+                          title: 'Delete Account',
+                          body: 'Permanently remove your account',
+                          onTap: () {
+                            CustomDialogues().showLogoutDialog(
+                              context,
+                              title: 'Delete Account',
+                              isDeleteAccount: true,
                             );
                           },
                         ),
@@ -167,6 +254,8 @@ class ProfileTopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final token = SessionManager.getToken();
+    final isGuest = token == null || token.isEmpty;
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 10),
       title: const HeaderTextBlack(
@@ -187,14 +276,22 @@ class ProfileTopCard extends StatelessWidget {
         children: [
           CircleContainer(
             onTap: () {
-              context.pushNamed(AppRoutes.savedVideos);
+              if (isGuest) {
+                LoginBottomSheet.showLoginBottomSheet(context);
+              } else {
+                context.pushNamed(AppRoutes.savedVideos);
+              }
             },
             child: Image.asset(AppIcons.bookmarkP, height: 30),
           ),
           const SizedBox(width: 15),
           CircleContainer(
             onTap: () {
-              context.pushNamed(AppRoutes.notifications);
+              if (isGuest) {
+                LoginBottomSheet.showLoginBottomSheet(context);
+              } else {
+                context.pushNamed(AppRoutes.notifications);
+              }
             },
             child: Stack(
               children: [
@@ -350,6 +447,30 @@ class ProfileListTile extends StatelessWidget {
             const SizedBox(width: 10),
             SvgPicture.asset(AppIcons.arrowForward),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProfileTopCardGuest extends StatelessWidget {
+  const ProfileTopCardGuest({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+      title: HeaderTextBlack(
+        title: 'Your Profile',
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+      subtitle: Padding(
+        padding: EdgeInsets.only(top: 5),
+        child: BodyTextHint(
+          title: 'Manage your profile now!!',
+          fontSize: 12,
+          fontWeight: FontWeight.w300,
         ),
       ),
     );

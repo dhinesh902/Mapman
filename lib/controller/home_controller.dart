@@ -550,4 +550,30 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
     return _newCategoryResponse;
   }
+
+  Future<ApiResponse> deleteCategory({required String categoryName}) async {
+    _newCategoryResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.deleteCategory(
+        token: token,
+        categoryName: categoryName,
+      );
+      _newCategoryResponse = ApiResponse.completed(response[Keys.data]);
+      await getHome();
+      if (_category?.toLowerCase() == categoryName.toLowerCase()) {
+        _category = null;
+      }
+    } catch (e) {
+      _newCategoryResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _newCategoryResponse;
+  }
+
+  void removeCategoryLocally(String categoryName) {
+    _categories.remove(categoryName);
+    notifyListeners();
+  }
 }
