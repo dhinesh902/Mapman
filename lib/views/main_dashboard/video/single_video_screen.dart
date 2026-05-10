@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -520,7 +521,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: SafeArea(
+                child: BottomBar(
                   child: Column(
                     children: [
                       LinearProgressIndicator(
@@ -710,6 +711,21 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         },
       ),
     );
+  }
+}
+
+class BottomBar extends StatelessWidget {
+  const BottomBar({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      return Container(child: child);
+    } else {
+      return SafeArea(child: child);
+    }
   }
 }
 
