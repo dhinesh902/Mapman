@@ -224,17 +224,18 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 context.read<AuthController>().animateTo(1);
               },
             ),
-            const SizedBox(height: 15),
-            CustomOutlineButtonWithImage(
-              title: 'Continue as Guest',
-              isGoogle: false,
-              icon: AppIcons.personP,
-              onTap: () {
-                context.read<HomeController>().setCurrentPage = 0;
-                context.goNamed(AppRoutes.mainDashboard, extra: false);
-              },
-            ),
-
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 15),
+              CustomOutlineButtonWithImage(
+                title: 'Continue as Guest',
+                isGoogle: false,
+                icon: AppIcons.personP,
+                onTap: () {
+                  context.read<HomeController>().setCurrentPage = 0;
+                  context.goNamed(AppRoutes.mainDashboard, extra: false);
+                },
+              ),
+            ],
             // SizedBox(height: 15),
             // Row(
             //   children: [

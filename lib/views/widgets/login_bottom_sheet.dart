@@ -46,7 +46,8 @@ class LoginBottomSheetContent extends StatefulWidget {
   const LoginBottomSheetContent({super.key});
 
   @override
-  State<LoginBottomSheetContent> createState() => _LoginBottomSheetContentState();
+  State<LoginBottomSheetContent> createState() =>
+      _LoginBottomSheetContentState();
 }
 
 class _LoginBottomSheetContentState extends State<LoginBottomSheetContent> {
@@ -107,16 +108,11 @@ class _LoginBottomSheetContentState extends State<LoginBottomSheetContent> {
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (page) {
-                  setState(() {
-                  });
+                  setState(() {});
                 },
                 children: [
-                  MobileNumberScreen(
-                    onOtpSent: _nextPage,
-                  ),
-                  OTPScreen(
-                    onBack: _previousPage,
-                  ),
+                  MobileNumberScreen(onOtpSent: _nextPage),
+                  OTPScreen(onBack: _previousPage),
                 ],
               ),
             ),
@@ -129,6 +125,7 @@ class _LoginBottomSheetContentState extends State<LoginBottomSheetContent> {
 
 class MobileNumberScreen extends StatefulWidget {
   final VoidCallback onOtpSent;
+
   const MobileNumberScreen({super.key, required this.onOtpSent});
 
   @override
@@ -228,14 +225,87 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
         key: formKey,
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
-              const HeaderTextBlack(
-                title: 'MapMan',
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    AppIcons.appLogoP,
+                    height: 40,
+                    width: 40,
+                    fit: BoxFit.cover,
+                  ),
+                  const HeaderTextBlack(
+                    title: 'MapMan',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 35,
+                      width: 35,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withValues(alpha: .6),
+                          ],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.lock_open,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          HeaderTextBlack(
+                            title: 'Login Securely',
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            textAlign: TextAlign.start,
+                          ),
+                          SizedBox(height: 4),
+                          BodyTextHint(
+                            title: 'Enter your mobile number to continue',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
               CustomMobileNumberTextField(
                 controller: mobileNumberController,
                 textInputType: TextInputType.phone,
@@ -279,6 +349,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
 
 class OTPScreen extends StatefulWidget {
   final VoidCallback onBack;
+
   const OTPScreen({super.key, required this.onBack});
 
   @override
@@ -377,6 +448,9 @@ class _OTPScreenState extends State<OTPScreen> {
         .getProfile();
 
     if (!mounted) return;
+    await context.read<ProfileController>().getShopDetail();
+
+    if (!mounted) return;
 
     if (profileResponse.status != Status.COMPLETED) {
       Navigator.pop(context);
@@ -424,7 +498,11 @@ class _OTPScreenState extends State<OTPScreen> {
                       color: AppColors.scaffoldBackground,
                     ),
                     child: Center(
-                      child: SvgPicture.asset(AppIcons.arrowBack, height: 20, width: 20),
+                      child: SvgPicture.asset(
+                        AppIcons.arrowBack,
+                        height: 20,
+                        width: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -530,17 +608,17 @@ class _OTPScreenState extends State<OTPScreen> {
             Center(
               child:
                   authController.verifyOTPResponse.status == Status.LOADING ||
-                          context.watch<ProfileController>().profileData.status ==
-                              Status.LOADING
-                      ? const ButtonProgressBar(isLogin: true)
-                      : AuthButton(
-                          title: 'Proceed',
-                          onTap: () async {
-                            if (formKey.currentState!.validate()) {
-                              await verifyOTP();
-                            }
-                          },
-                        ),
+                      context.watch<ProfileController>().profileData.status ==
+                          Status.LOADING
+                  ? const ButtonProgressBar(isLogin: true)
+                  : AuthButton(
+                      title: 'Proceed',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await verifyOTP();
+                        }
+                      },
+                    ),
             ),
           ],
         ),

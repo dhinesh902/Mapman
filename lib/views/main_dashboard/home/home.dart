@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:carousel_slider/carousel_slider.dart';
@@ -16,6 +17,7 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
@@ -57,6 +59,18 @@ class _HomeState extends State<Home> {
       "title": "Upload Video & Promote",
       "body": "Best and Affordable way to get new customers",
       "image": AppIcons.happy1p,
+    },
+    {
+      "banner": AppIcons.happyBg2P,
+      "title": "Promote Your Shop Online",
+      "body": "Affordable marketing solutions to boost your visibility",
+      "image": AppIcons.happy2p,
+    },
+    {
+      "banner": AppIcons.happyBg3P,
+      "title": "Turn Visitors Into Customers",
+      "body": "Smart tools to attract and engage your audience",
+      "image": AppIcons.happy3p,
     },
   ];
 
@@ -334,43 +348,72 @@ class HomeTopCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 20),
+                              padding: const EdgeInsets.only(left: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(height: 20),
                                   BodyTextColors(
                                     title: homeBanners[index]['title'],
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
                                     color: AppColors.whiteText,
                                   ),
                                   SizedBox(height: 10),
                                   BodyTextColors(
                                     title: homeBanners[index]['body'],
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w200,
                                     color: AppColors.whiteText,
                                   ),
                                   SizedBox(height: 15),
                                   InkWell(
-                                    onTap: () {},
+                                    onTap: () async {
+                                      final shopId = SessionManager.getShopId();
+                                      final token = SessionManager.getToken();
+                                      if (token == null) {
+                                        await LoginBottomSheet.showLoginBottomSheet(
+                                          context,
+                                        );
+                                      } else {
+                                        if (shopId == null) {
+                                          await showAddShopDetail(context);
+                                        } else {
+                                          CustomToast.show(
+                                            context,
+                                            title:
+                                                "You have already registered",
+                                          );
+                                        }
+                                      }
+                                    },
                                     child: Container(
-                                      height: 28,
-                                      width: 100,
+                                      height: 30,
+                                      width: 130,
                                       decoration: BoxDecoration(
                                         color: index == 1
                                             ? AppColors.darkText
                                             : AppColors.primary,
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(5),
                                       ),
-                                      child: Center(
-                                        child: BodyTextColors(
-                                          title: 'Contact Now',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                          color: AppColors.whiteText,
-                                        ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          BodyTextColors(
+                                            title: 'Register Now',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                            color: AppColors.whiteText,
+                                          ),
+                                          SizedBox(width: 5),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.whiteText,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -380,10 +423,10 @@ class HomeTopCard extends StatelessWidget {
                           ),
 
                           Padding(
-                            padding: const EdgeInsets.only(right: 10),
+                            padding: const EdgeInsets.only(right: 5),
                             child: Image.asset(
                               homeBanners[index]['image'],
-                              fit: BoxFit.contain,
+                              fit: BoxFit.fitHeight,
                             ),
                           ),
                         ],
@@ -391,7 +434,7 @@ class HomeTopCard extends StatelessWidget {
                     );
                   }),
                   options: CarouselOptions(
-                    height: 155,
+                    height: 160,
                     viewportFraction: 1.0,
                     autoPlay: true,
                     enlargeFactor: 0.3,

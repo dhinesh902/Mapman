@@ -19,6 +19,7 @@ import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class MainDashboard extends StatefulWidget {
@@ -108,11 +109,16 @@ class _MainDashboardState extends State<MainDashboard> {
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: InkWell(
             onTap: () async {
-              int? shopId = SessionManager.getShopId();
-              if (shopId != 0) {
-                VideoDialogues().showVideoUploadDialogue(context);
+              final token = SessionManager.getToken();
+              if (token != null) {
+                int? shopId = SessionManager.getShopId();
+                if (shopId != 0) {
+                  VideoDialogues().showVideoUploadDialogue(context);
+                } else {
+                  await showAddShopDetail(context);
+                }
               } else {
-                await showAddShopDetail(context);
+                await LoginBottomSheet.showLoginBottomSheet(context);
               }
             },
 
@@ -303,9 +309,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
               shape: BoxShape.circle,
               color: AppColors.whiteText,
             ),
-            child: Center(
-              child: Image.asset(AppGifs.uploadArrow, height: 23),
-            ),
+            child: Center(child: Image.asset(AppGifs.uploadArrow, height: 23)),
           ),
         );
       },

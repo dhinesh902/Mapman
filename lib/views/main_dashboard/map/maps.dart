@@ -251,14 +251,14 @@ class _MapsState extends State<Maps> {
           TextSpan(
             text: category.capitalize(),
             style: AppTextStyle(
-              fontSize: 28,
+              fontSize: 34,
               color: Colors.black54,
               fontWeight: FontWeight.normal,
             ).textStyle,
           ),
         ],
         style: AppTextStyle(
-          fontSize: 30,
+          fontSize: 38,
           color: Colors.black,
           fontWeight: FontWeight.w600,
         ).textStyle,

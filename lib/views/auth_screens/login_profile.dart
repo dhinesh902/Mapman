@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -155,11 +156,6 @@ class _LoginProfileState extends State<LoginProfile> {
       CustomToast.show(context, title: '${response.data}', isError: true);
       return false;
     } else {
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
       return true;
     }
   }
@@ -176,7 +172,7 @@ class _LoginProfileState extends State<LoginProfile> {
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Profile Details', onTap: () {}),
+        appBar: ActionBar(title: 'Profile Details', isCenterTitle: true),
         body: Form(
           key: formKey,
           child: ListView(
@@ -303,8 +299,8 @@ class _LoginProfileState extends State<LoginProfile> {
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
                           bool isEmailExists = await checkEmailExists();
-
-                          if (!isEmailExists) {
+                          if (isEmailExists) {
+                            context.read<HomeController>().setCurrentPage = 0;
                             await updateProfile();
                           }
                         }
