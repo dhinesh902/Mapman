@@ -20,6 +20,7 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class SingleVideoScreen extends StatefulWidget {
   const SingleVideoScreen({
@@ -92,6 +93,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     for (final notifier in _bookmarkMap.values) {
       notifier.dispose();
     }
+    VideoCacheManager.clearAppCache();
     super.dispose();
   }
 
@@ -140,11 +142,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       debugPrint('🎬 Initializing video at index $index');
       final player = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
-        httpHeaders: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
         videoPlayerOptions: VideoPlayerOptions(
           allowBackgroundPlayback: true,
           mixWithOthers: true,
@@ -214,10 +211,14 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   Future<void> _manageControllers(int index) async {
-    // Initialize current, next, and previous (optional)
-    await _initController(index);
-    if (index + 1 < widget.videosData.length)
+    // Start preloading the next video asynchronously before awaiting the current video initialization.
+    // This allows both videos to establish network handshakes and buffer in parallel!
+    if (index + 1 < widget.videosData.length) {
       _initController(index + 1); // Preload next
+    }
+
+    // Initialize current video
+    await _initController(index);
 
     // Dispose others
     final keysToRemove = _controllers.keys
@@ -366,8 +367,15 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _currentIndex = index;
     final newVideoId = widget.videosData[index].id ?? 0;
     _completedVideos[newVideoId] = false;
-    _isInitialized = false;
-    _progress = 0;
+
+    // Check if the controller is already preloaded and initialized to avoid loading screen flicker!
+    final bool alreadyInitialized = _controllers.containsKey(index) &&
+        _controllers[index]!.value.isInitialized;
+    _isInitialized = alreadyInitialized;
+    _progress = alreadyInitialized
+        ? (_controllers[index]!.value.position.inMilliseconds /
+            _controllers[index]!.value.duration.inMilliseconds.clamp(1, double.infinity))
+        : 0;
 
     setState(() {});
 

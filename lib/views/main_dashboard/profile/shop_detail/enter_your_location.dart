@@ -118,9 +118,10 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       ),
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
+                      rotateGesturesEnabled: false,
                       buildingsEnabled: true,
                       trafficEnabled: true,
-                      tiltGesturesEnabled: true,
+                      tiltGesturesEnabled: false,
                       onMapCreated: (controller) {
                         _mapController = controller;
                       },

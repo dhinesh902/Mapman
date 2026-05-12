@@ -12,17 +12,6 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:provider/provider.dart';
 
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-
-import 'dart:math';
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -83,11 +72,6 @@ class _SplashScreenState extends State<SplashScreen>
       _slideController.forward();
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      context.read<AuthController>().setSplashAnimation(true);
-    });
-
     handleNavigation();
   }
 
@@ -100,6 +84,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> handleNavigation() async {
     await Future.delayed(const Duration(seconds: 4));
+    if (!mounted) return;
+    context.read<AuthController>().setSplashAnimation(true);
     final isFirstTime = !(SessionManager.containsKey(key: Keys.isFirstTime));
     final hasToken = SessionManager.containsKey(key: Keys.token);
     final token = SessionManager.getToken();
@@ -175,12 +161,26 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         );
                       },
-                      child: const BodyTextColors(
-                        title: "MAPMAN",
-                        fontSize: 34,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0D1025),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const BodyTextColors(
+                            title: "MAPMAN",
+                            fontSize: 34,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0D1025),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: HeaderTextBlack(
+                              title: '®',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -188,7 +188,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                 /// ANIMATED GRADIENT LINE
                 Positioned(
-                  bottom: MediaQuery.of(context).size.height * 0.35,
+                  bottom: MediaQuery.of(context).size.height * 0.36,
                   child: TweenAnimationBuilder<double>(
                     duration: const Duration(milliseconds: 1400),
                     tween: Tween(begin: 0.0, end: 150),

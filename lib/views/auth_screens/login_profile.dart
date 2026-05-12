@@ -172,7 +172,11 @@ class _LoginProfileState extends State<LoginProfile> {
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Profile Details', isCenterTitle: true),
+        appBar: ActionBar(
+          title: 'Profile Details',
+          isCenterTitle: true,
+          isLoginProfile: true,
+        ),
         body: Form(
           key: formKey,
           child: ListView(

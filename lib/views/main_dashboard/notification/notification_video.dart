@@ -22,6 +22,7 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class NotificationVideoScreen extends StatefulWidget {
   const NotificationVideoScreen({
@@ -95,6 +96,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     }
 
     bookMarkNotifier.dispose();
+    VideoCacheManager.clearAppCache();
     super.dispose();
   }
 
@@ -134,11 +136,6 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
     _player = VideoPlayerController.networkUrl(
       Uri.parse(ApiRoutes.baseUrl + videoUrl),
-      httpHeaders: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
       videoPlayerOptions: VideoPlayerOptions(
         allowBackgroundPlayback: false,
         mixWithOthers: false,

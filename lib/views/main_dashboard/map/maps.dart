@@ -504,7 +504,7 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
+                    myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
                     padding: const EdgeInsets.only(top: 70, bottom: 100),
