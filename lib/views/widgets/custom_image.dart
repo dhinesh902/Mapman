@@ -105,6 +105,7 @@ class CustomImageCropper {
           AndroidUiSettings(
             toolbarTitle: 'Mapman',
             toolbarColor: AppColors.primary,
+            activeControlsWidgetColor: AppColors.primary,
             toolbarWidgetColor: AppColors.whiteText,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,

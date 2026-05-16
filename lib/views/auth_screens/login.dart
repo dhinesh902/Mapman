@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -418,7 +419,6 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                 maxLength: 10,
                 focusNode: _focusNode,
                 autofillHints: const [AutofillHints.telephoneNumber],
-                prefixWidget: SvgPicture.asset(AppIcons.mobile),
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter mobile number";
@@ -437,7 +437,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                     context.read<AuthController>().animateTo(3);
                   },
                   child: HeaderTextPrimary(
-                    title: 'Last registered number?',
+                    title: 'Lost registered number?',
                     fontSize: 14,
                     textDecoration: TextDecoration.underline,
                     decorationColor: AppColors.primary,
@@ -1299,7 +1299,6 @@ class _NewPhoneNumberState extends State<NewPhoneNumber> {
               textInputType: TextInputType.phone,
               maxLength: 10,
               autofillHints: const [AutofillHints.telephoneNumber],
-              prefixWidget: SvgPicture.asset(AppIcons.mobile),
               validator: (value) {
                 if (value!.isEmpty) {
                   return "Please enter mobile number";
@@ -1697,12 +1696,107 @@ class AuthBackButton extends StatelessWidget {
   }
 }
 
+// class CustomMobileNumberTextField extends StatelessWidget {
+//   const CustomMobileNumberTextField({
+//     super.key,
+//     required this.controller,
+//     this.validator,
+//     required this.prefixWidget,
+//     required this.textInputType,
+//     this.hintText,
+//     this.onTap,
+//     this.readOnly = false,
+//     this.suffixIcon,
+//     this.onChanged,
+//     this.focusNode,
+//     this.maxLength,
+//     this.inputAction = TextInputAction.done,
+//     this.autofillHints,
+//   });
+//
+//   final TextEditingController controller;
+//   final FormFieldValidator<String>? validator;
+//   final Widget prefixWidget;
+//   final TextInputType textInputType;
+//   final String? hintText;
+//   final VoidCallback? onTap;
+//   final bool readOnly;
+//   final Widget? suffixIcon;
+//   final Function(String)? onChanged;
+//   final FocusNode? focusNode;
+//   final int? maxLength;
+//   final TextInputAction inputAction;
+//   final Iterable<String>? autofillHints;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return TextFormField(
+//       controller: controller,
+//       focusNode: focusNode,
+//       onTap: onTap,
+//       readOnly: readOnly,
+//       onChanged: onChanged,
+//       style: GoogleFonts.outfit(
+//         fontSize: 14,
+//         fontWeight: FontWeight.w400,
+//         color: AppColors.darkText,
+//       ),
+//       maxLength: maxLength,
+//       keyboardType: textInputType,
+//       textInputAction: inputAction,
+//       autofillHints: autofillHints,
+//       cursorColor: AppColors.primary,
+//       decoration: InputDecoration(
+//         border: InputBorder.none,
+//         isDense: true,
+//         hintText: hintText ?? "Enter Mobile Number",
+//         counterText: '',
+//         suffixIcon: suffixIcon,
+//         hintStyle: GoogleFonts.outfit(
+//           fontSize: 14,
+//           fontWeight: FontWeight.w400,
+//           color: AppColors.darkGrey,
+//         ),
+//         focusedBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         errorBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         enabledBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         focusedErrorBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         errorStyle: GoogleFonts.outfit(
+//           fontSize: 13,
+//           fontWeight: FontWeight.w400,
+//         ),
+//
+//         prefix: CountryCodePicker(
+//           onChanged: print,
+//           initialSelection: 'IN',
+//           favorite: ['+91', 'IN'],
+//           showCountryOnly: false,
+//           showOnlyCountryWhenClosed: false,
+//           alignLeft: false,
+//         ),
+//       ),
+//       validator: validator,
+//     );
+//   }
+// }
+
 class CustomMobileNumberTextField extends StatelessWidget {
   const CustomMobileNumberTextField({
     super.key,
     required this.controller,
     this.validator,
-    required this.prefixWidget,
     required this.textInputType,
     this.hintText,
     this.onTap,
@@ -1713,11 +1807,13 @@ class CustomMobileNumberTextField extends StatelessWidget {
     this.maxLength,
     this.inputAction = TextInputAction.done,
     this.autofillHints,
+    this.onCountryChanged,
+    this.initialCountryCode = 'IN',
+    this.prefixWidget,
   });
 
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
-  final Widget prefixWidget;
   final TextInputType textInputType;
   final String? hintText;
   final VoidCallback? onTap;
@@ -1729,6 +1825,10 @@ class CustomMobileNumberTextField extends StatelessWidget {
   final TextInputAction inputAction;
   final Iterable<String>? autofillHints;
 
+  final Function(CountryCode)? onCountryChanged;
+  final String initialCountryCode;
+  final Widget? prefixWidget;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -1736,54 +1836,92 @@ class CustomMobileNumberTextField extends StatelessWidget {
       focusNode: focusNode,
       onTap: onTap,
       readOnly: readOnly,
-      onChanged: onChanged,
-      style: GoogleFonts.outfit(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.darkText,
-      ),
       maxLength: maxLength,
       keyboardType: textInputType,
       textInputAction: inputAction,
       autofillHints: autofillHints,
       cursorColor: AppColors.primary,
+      validator: validator,
+      onChanged: (value) {
+        if (onChanged != null) {
+          onChanged!(value);
+        }
+      },
+      style: GoogleFonts.outfit(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.darkText,
+      ),
       decoration: InputDecoration(
-        border: InputBorder.none,
+        counterText: '',
         isDense: true,
         hintText: hintText ?? "Enter Mobile Number",
-        counterText: '',
         suffixIcon: suffixIcon,
         hintStyle: GoogleFonts.outfit(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.darkGrey,
         ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        prefixIcon: prefixWidget != null
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
+                child: prefixWidget,
+              )
+            : Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: CountryCodePicker(
+                  onChanged: onCountryChanged,
+                  initialSelection: initialCountryCode,
+                  favorite: const ['+91', 'IN'],
+                  dialogBackgroundColor: AppColors.whiteText,
+                  boxDecoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.whiteText,
+                  ),
+                  showCountryOnly: false,
+                  showOnlyCountryWhenClosed: false,
+                  alignLeft: false,
+                  padding: EdgeInsets.zero,
+                  textStyle: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.darkText,
+                  ),
+                ),
+              ),
+        prefixIconConstraints: prefixWidget != null
+            ? null
+            : const BoxConstraints(minWidth: 100, maxWidth: 110),
+
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
-        errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
-          borderRadius: BorderRadius.circular(30),
-        ),
+
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
+
+        focusedErrorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
+          borderRadius: BorderRadius.circular(30),
+        ),
+
         errorStyle: GoogleFonts.outfit(
           fontSize: 13,
           fontWeight: FontWeight.w400,
         ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
-          child: prefixWidget,
-        ),
       ),
-      validator: validator,
     );
   }
 }

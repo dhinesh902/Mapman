@@ -163,6 +163,8 @@ class _HomeState extends State<Home> {
                               ),
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
+                            bool isFurniture =
+                                categories[index].categoryName == "furniture";
                             return GestureDetector(
                               onTap: () {
                                 homeController.setCurrentPage = 1;
@@ -202,10 +204,9 @@ class _HomeState extends State<Home> {
                                           child: Center(
                                             child: Image.network(
                                               '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
-                                              height: 40,
-                                              width: 40,
+                                              height: isFurniture ? 55 : 40,
+                                              width: isFurniture ? 55 : 40,
                                               filterQuality: FilterQuality.high,
-                                              fit: BoxFit.contain,
                                             ),
                                           ),
                                         ),

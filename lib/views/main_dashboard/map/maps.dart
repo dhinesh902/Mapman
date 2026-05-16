@@ -55,6 +55,8 @@ class _MapsState extends State<Maps> {
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
     zoom: 14.5,
+    tilt: 0,
+    bearing: 0,
   );
 
   @override
@@ -346,6 +348,9 @@ class _MapsState extends State<Maps> {
     'bunk',
     'spa',
     'hotel',
+    'jewellery',
+    'furniture',
+    'salons'
     'others',
   ];
 
@@ -504,7 +509,7 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
+                    myLocationButtonEnabled: true,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
                     padding: const EdgeInsets.only(top: 70, bottom: 100),

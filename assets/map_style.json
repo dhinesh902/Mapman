@@ -12,27 +12,27 @@
     ]
   },
   {
-    "featureType": "transit.station.bus",
+    "featureType": "transit",
     "stylers": [
       { "visibility": "off" }
     ]
   },
   {
-    "featureType": "transit.station.rail",
+    "featureType": "road.local",
     "stylers": [
       { "visibility": "off" }
     ]
   },
   {
-    "featureType": "road",
+    "featureType": "road.arterial",
     "elementType": "labels",
     "stylers": [
       { "visibility": "off" }
     ]
   },
   {
-    "featureType": "road",
-    "elementType": "labels.text",
+    "featureType": "road.local",
+    "elementType": "labels",
     "stylers": [
       { "visibility": "off" }
     ]
@@ -42,6 +42,32 @@
     "elementType": "labels.icon",
     "stylers": [
       { "visibility": "off" }
+    ]
+  },
+  {
+    "featureType": "administrative.neighborhood",
+    "stylers": [
+      { "visibility": "off" }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "stylers": [
+      { "visibility": "off" }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "elementType": "labels.text",
+    "stylers": [
+      { "visibility": "on" }
+    ]
+  },
+  {
+    "featureType": "administrative.province",
+    "elementType": "labels.text",
+    "stylers": [
+      { "visibility": "on" }
     ]
   }
 ]

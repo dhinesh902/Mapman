@@ -16,6 +16,7 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
+import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
@@ -346,7 +347,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: SafeArea(
+                    child: BottomBar(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.end,

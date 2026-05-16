@@ -237,6 +237,16 @@ class HomeController extends ChangeNotifier {
           .toList();
 
       _homeCategories = (_homeData.data?.category ?? [])
+        ..sort((a, b) {
+          final aIsOthers = a.categoryName?.toLowerCase() == 'others';
+          final bIsOthers = b.categoryName?.toLowerCase() == 'others';
+
+          if (aIsOthers && !bIsOthers) return 1;
+          if (!aIsOthers && bIsOthers) return -1;
+          return 0;
+        });
+
+      _homeCategories = _homeCategories
           .where(
             (item) =>
                 item.categoryType?.toLowerCase() == 'default' ||
@@ -262,6 +272,9 @@ class HomeController extends ChangeNotifier {
     'bunk',
     'spa',
     'hotel',
+    'jewellery',
+    'furniture',
+    'salons',
   ];
 
   Future<ApiResponse<List<ShopSearchData>>> getSearchShops({

@@ -32,6 +32,8 @@ class Videos extends StatefulWidget {
 class _VideosState extends State<Videos> {
   late VideoController videoController;
 
+  List<CategoryVideosData> categoryVideos = [];
+
   @override
   void initState() {
     videoController = context.read<VideoController>();
@@ -260,10 +262,20 @@ class _VideosState extends State<Videos> {
                     case Status.LOADING:
                       return CustomLoadingIndicator();
                     case Status.COMPLETED:
-                      return AllVideosCard(
-                        categoryVideoData:
-                            videoController.categoryVideoData.data ?? [],
-                      );
+                      categoryVideos = [...(videoController.categoryVideoData.data ?? [])];
+
+                      categoryVideos.sort((a, b) {
+                        final aIsOthers =
+                            (a.categoryName ?? '').toLowerCase() == 'others';
+                        final bIsOthers =
+                            (b.categoryName ?? '').toLowerCase() == 'others';
+
+                        if (aIsOthers && !bIsOthers) return 1;
+                        if (!aIsOthers && bIsOthers) return -1;
+
+                        return 0;
+                      });
+                      return AllVideosCard(categoryVideoData: categoryVideos);
                     case Status.ERROR:
                       return CustomErrorTextWidget(
                         title: '${videoController.categoryVideoData.message}',

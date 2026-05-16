@@ -375,9 +375,10 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
             _initController();
           }
         } else {
-          // Dispose the player whenever it goes off-screen or is covered by another route
-          // to completely free up native player memory and prevent cache storage growth!
-          if (_initialized) {
+          // Only dispose if the current route is still active (meaning the video scrolled off-screen).
+          // Do not dispose if covered by another route (like SingleVideoScreen), to avoid reloading when returning!
+          final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+          if (_initialized && isCurrentRoute) {
             _player?.pause();
             _player?.dispose();
             _player = null;

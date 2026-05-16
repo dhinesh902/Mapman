@@ -216,7 +216,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               SizedBox(height: 20),
               CustomTextField(
                 controller: shopNameController,
-                title: 'Shop Name',
+                title: 'Shop Name / Business Name',
                 hintText: 'Enter shop name',
                 inputAction: TextInputAction.next,
                 validator: (value) {
@@ -228,7 +228,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               ),
               SizedBox(height: 15),
               CustomTextFieldContainer(
-                title: 'Category',
+                title: 'Category / Service / Product',
                 child: CategoryChipSelection(
                   categories: homeController.categories,
                   selectedCategory: homeController.category,

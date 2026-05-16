@@ -55,7 +55,7 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
         _ignoreNextCameraIdle = true;
         await _mapController?.animateCamera(
           CameraUpdate.newCameraPosition(
-            CameraPosition(target: latLng, zoom: 18, tilt: 65, bearing: 30),
+            CameraPosition(target: latLng, zoom: 18, tilt: 0.0, bearing: 0.0),
           ),
         );
 
@@ -113,15 +113,16 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
                       initialCameraPosition: CameraPosition(
                         target: LatLng(initial.latitude, initial.longitude),
                         zoom: 18,
-                        tilt: 65,
-                        bearing: 30,
+                        tilt: 0.0,
+                        bearing: 0.0,
                       ),
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
                       rotateGesturesEnabled: false,
                       buildingsEnabled: true,
-                      trafficEnabled: true,
                       tiltGesturesEnabled: false,
+                      compassEnabled: false,
+                      minMaxZoomPreference: MinMaxZoomPreference(10, 22),
                       onMapCreated: (controller) {
                         _mapController = controller;
                       },

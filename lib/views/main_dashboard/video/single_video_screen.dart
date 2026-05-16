@@ -47,6 +47,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   int _currentIndex = 0;
   late PageController _pageController;
   bool _isDisposed = false;
+  bool _isAdvancing = false;
   Timer? _debounceTimer;
   bool _hasShownLastVideoToast = false;
   bool _isInitialized = false;
@@ -189,6 +190,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     controller
       ..setLooping(false)
       ..setVolume(1.0)
+      ..seekTo(Duration.zero)
       ..addListener(_videoListener)
       ..play();
 
@@ -329,8 +331,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   void _autoAdvanceToNext() {
-    if (_isDisposed || _currentIndex >= widget.videosData.length - 1) {
-      if (!_hasShownLastVideoToast && mounted) {
+    if (_isDisposed ||
+        _isAdvancing ||
+        _currentIndex >= widget.videosData.length - 1) {
+      if (!_hasShownLastVideoToast &&
+          mounted &&
+          _currentIndex >= widget.videosData.length - 1) {
         _hasShownLastVideoToast = true;
         CustomToast.show(
           context,
@@ -341,12 +347,21 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       return;
     }
 
+    _isAdvancing = true;
     Future.delayed(const Duration(milliseconds: 200), () {
       if (!_isDisposed && _pageController.hasClients) {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-        );
+        _pageController
+            .nextPage(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+            )
+            .then((_) {
+              if (mounted) {
+                _isAdvancing = false;
+              }
+            });
+      } else {
+        _isAdvancing = false;
       }
     });
   }
@@ -365,6 +380,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
 
     _currentIndex = index;
+    _isAdvancing = false;
     final newVideoId = widget.videosData[index].id ?? 0;
     _completedVideos[newVideoId] = false;
 
