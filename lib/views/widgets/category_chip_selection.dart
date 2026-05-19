@@ -34,7 +34,9 @@ class CategoryChipSelection extends StatelessWidget {
       'bunk',
       'jewellery',
       'furniture',
-      'salons'
+      'salons',
+      'spa',
+      'hotel',
     ];
 
     return Wrap(
