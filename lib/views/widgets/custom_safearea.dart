@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 
+
 class CustomSafeArea extends StatelessWidget {
   const CustomSafeArea({
     super.key,
@@ -16,7 +17,9 @@ class CustomSafeArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: color,
-      child: SafeArea(child: child),
+      child: SafeArea(
+        bottom: false,
+        child: child),
     );
   }
 }

@@ -29,6 +29,10 @@ abstract class ApiRoutes {
   static const String sendMailOTP = '/shop/auth/sendEmailOtp';
   static const String verifyOTP = '/shop/auth/verifyOtp';
   static const String verifyEmailOtp = '/shop/auth/verifyEmailOtp';
+  static const String updateSendOtp = '/shop/auth/updateSendOtp';
+  static const String updateVerifyOtp = '/shop/auth/updateVerifyOtp';
+  static const String checkEmailExists = '/shop/auth/checkEmailExists';
+  static const String nonAuthendicateHome = '/shop/nonauthendicateHome';
   static const String logout = '/shop/auth/logout';
   static const String deleteAccount = '/shop/deleteAccount';
   static const String addFcmToken = '/shop/auth/addFcmToken';
@@ -38,7 +42,9 @@ abstract class ApiRoutes {
   static const String shopRegister = '/shop/shopRegister';
   static const String home = '/shop/home';
   static const String addNewCategory = '/shop/addNewCategory';
+  static const String deleteCategory = '/shop/deleteCategory';
   static const String searchShops = '/shop/search';
+  static const String nonAuthendicateSearch = '/shop/nonauthendicateSearch';
   static const String fetchShop = '/shop/fetchShop';
   static const String saveShop = '/shop/saveShop';
   static const String fetchSavedShops = '/shop/fetchSavedShops';

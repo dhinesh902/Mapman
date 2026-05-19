@@ -123,38 +123,96 @@ class AuthController extends ChangeNotifier {
     return _verifyOTPResponse;
   }
 
-  // Future<ApiResponse> verifyEmailOtp({
-  //   required String email,
-  //   required int otp,
-  // }) async {
-  //   _verifyOTPResponse = ApiResponse.loading(Strings.loading);
-  //   notifyListeners();
-  //   try {
-  //     final response = await authService.verifyEmailOtp(email: email, otp: otp);
-  //     final String token = response[Keys.data]?[Keys.token] ?? '';
-  //     final int userId = response[Keys.data]?[Keys.userId] ?? 0;
-  //     await SessionManager.setToken(token: token);
-  //     await SessionManager.setUserId(userId: userId);
-  //     _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);
-  //     await addFcmToken();
-  //   } catch (e) {
-  //     _verifyOTPResponse = ApiResponse.error(e.toString());
-  //   }
-  //   notifyListeners();
-  //   return _verifyOTPResponse;
-  // }
-  // Future<ApiResponse> sendMailOTP({required String email}) async {
-  //     _apiResponse = ApiResponse.loading(Strings.loading);
-  //     notifyListeners();
-  //     try {
-  //       final response = await authService.sendMailOTP(email: email);
-  //       _apiResponse = ApiResponse.completed(response[Keys.data]);
-  //     } catch (e) {
-  //       _apiResponse = ApiResponse.error(e.toString());
-  //     }
-  //     notifyListeners();
-  //     return _apiResponse;
-  //   }
+  Future<ApiResponse> verifyEmailOtp({
+    required String email,
+    required int otp,
+  }) async {
+    _verifyOTPResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.verifyEmailOtp(email: email, otp: otp);
+      final String token = response[Keys.data]?[Keys.token] ?? '';
+      final int userId = response[Keys.data]?[Keys.userId] ?? 0;
+      await SessionManager.setToken(token: token);
+      await SessionManager.setUserId(userId: userId);
+      _verifyOTPResponse = ApiResponse.completed(response[Keys.data]);
+      await addFcmToken();
+    } catch (e) {
+      _verifyOTPResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _verifyOTPResponse;
+  }
+
+  Future<ApiResponse> sendMailOTP({required String email}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.sendMailOTP(email: email);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> updateSendOtp({
+    required String email,
+    required String phone,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.updateSendOtp(
+        email: email,
+        phone: phone,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> updateVerifyOtp({
+    required String email,
+    required String phone,
+    required int otp,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.updateVerifyOtp(
+        email: email,
+        phone: phone,
+        otp: otp,
+      );
+      final String token = response[Keys.data][Keys.token] ?? '';
+      final int userId = response[Keys.data][Keys.userId] ?? 0;
+      await SessionManager.setToken(token: token);
+      await SessionManager.setUserId(userId: userId);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
+  Future<ApiResponse> checkEmailExists({required String email}) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final response = await authService.checkEmailExists(email: email);
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
 
   Future<ApiResponse> logout() async {
     _apiResponse = ApiResponse.loading(Strings.loading);
@@ -260,7 +318,7 @@ class AuthController extends ChangeNotifier {
       "Vellore",
       "Viluppuram",
       "Virudhunagar",
-      "Nilgiris"
-    ]
+      "Nilgiris",
+    ],
   };
 }

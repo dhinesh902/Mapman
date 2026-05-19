@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:carousel_slider/carousel_slider.dart';
@@ -15,8 +16,11 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -43,20 +47,32 @@ class _HomeState extends State<Home> {
     super.initState();
   }
 
-  final List<Map<String, dynamic>> homeBanners = [
-    {
-      "banner": AppIcons.happyBgP,
-      "title": "Boost Your shop’s",
-      "body": "Best and Affordable way to get new customers",
-      "image": AppIcons.happyP,
-    },
-    {
-      "banner": AppIcons.happyBg1P,
-      "title": "Upload Video & Promote",
-      "body": "Best and Affordable way to get new customers",
-      "image": AppIcons.happy1p,
-    },
-  ];
+  // final List<Map<String, dynamic>> homeBanners = [
+  //   {
+  //     "banner": AppIcons.happyBgP,
+  //     "title": "Boost Your shop’s",
+  //     "body": "Best and Affordable way to get new customers",
+  //     "image": AppIcons.happyP,
+  //   },
+  //   {
+  //     "banner": AppIcons.happyBg1P,
+  //     "title": "Upload Video & Promote",
+  //     "body": "Best and Affordable way to get new customers",
+  //     "image": AppIcons.happy1p,
+  //   },
+  //   {
+  //     "banner": AppIcons.happyBg2P,
+  //     "title": "Promote Your Shop Online",
+  //     "body": "Affordable marketing solutions to boost your visibility",
+  //     "image": AppIcons.happy2p,
+  //   },
+  //   {
+  //     "banner": AppIcons.happyBg3P,
+  //     "title": "Turn Visitors Into Customers",
+  //     "body": "Smart tools to attract and engage your audience",
+  //     "image": AppIcons.happy3p,
+  //   },
+  // ];
 
   Future<void> getHome() async {
     final response = await homeController.getHome();
@@ -71,25 +87,27 @@ class _HomeState extends State<Home> {
   }
 
   Future<bool> requestNotificationPermission() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      final status = await Permission.notification.status;
-      if (status.isGranted) {
-        return true;
-      }
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
-        return false;
-      }
-      final result = await Permission.notification.request();
-
-      if (result.isPermanentlyDenied) {
-        await openAppSettings();
-        return false;
-      }
-      return result.isGranted;
-    }
+  if (!Platform.isAndroid && !Platform.isIOS) {
     return false;
   }
+
+  PermissionStatus status = await Permission.notification.status;
+
+  // Already granted
+  if (status.isGranted) {
+    return true;
+  }
+
+  // Permanently denied
+  if (status.isPermanentlyDenied) {
+    return false;
+  }
+
+  // Request permission
+  status = await Permission.notification.request();
+
+  return status.isGranted;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -105,10 +123,11 @@ class _HomeState extends State<Home> {
               return CustomLoadingIndicator();
             case Status.COMPLETED:
               final categories = homeController.homeCategories;
+              final topBanner = homeController.homeData.data?.topBanners ?? [];
               return Column(
                 children: [
                   HomeTopCard(
-                    homeBanners: homeBanners,
+                    homeBanners: topBanner,
                     homeController: homeController,
                     homeData: homeController.homeData.data ?? HomeData(),
                   ),
@@ -226,23 +245,9 @@ class _HomeState extends State<Home> {
                           height: MediaQuery.of(context).size.height * .18,
                         ),
                         BottomCarousalSlider(
-                          images: [
-                            {
-                              'title': 'Near by Wine shop',
-                              'banner': AppIcons.beerBgP,
-                              'image': AppIcons.beerManP,
-                            },
-                            {
-                              'title': 'Near by Super market',
-                              'banner': AppIcons.groceryBgP,
-                              'image': AppIcons.groceryP,
-                            },
-                            {
-                              'title': 'Near by Hospital',
-                              'banner': AppIcons.doctorBgP,
-                              'image': AppIcons.doctorP,
-                            },
-                          ],
+                          images:
+                              homeController.homeData.data?.categoryBanners ??
+                              [],
                           homeController: homeController,
                           height: 100,
                         ),
@@ -276,7 +281,7 @@ class HomeTopCard extends StatelessWidget {
     required this.homeData,
   });
 
-  final List<Map<String, dynamic>> homeBanners;
+  final List<TopBanners> homeBanners;
   final HomeController homeController;
   final HomeData homeData;
 
@@ -316,59 +321,107 @@ class HomeTopCard extends StatelessWidget {
             right: 10,
             child: Stack(
               children: [
-                CarouselSlider(
-                  items: List.generate(homeBanners.length, (index) {
+                CarouselSlider.builder(
+                  itemCount: homeBanners.length,
+                  itemBuilder: (context, index, realIndex) {
+                    final banner = homeBanners[index];
+
                     return Container(
-                      margin: EdgeInsets.fromLTRB(2, 0, 0, 10),
+                      margin: const EdgeInsets.fromLTRB(0, 15, 0, 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: DecorationImage(
-                          image: AssetImage(homeBanners[index]['banner']),
+                          image: NetworkImage(
+                            banner.backgroundImage?.startsWith('https') ?? false
+                                ? banner.backgroundImage!
+                                : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ''}',
+                          ),
                           fit: BoxFit.cover,
                         ),
                       ),
                       clipBehavior: Clip.hardEdge,
                       child: Row(
                         children: [
+                          /// LEFT CONTENT
                           Expanded(
+                            flex: 5,
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 20),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 5,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SizedBox(height: 20),
                                   BodyTextColors(
-                                    title: homeBanners[index]['title'],
+                                    title: banner.title?.capitalize() ?? '',
                                     fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                     color: AppColors.whiteText,
                                   ),
-                                  SizedBox(height: 10),
+
+                                  const SizedBox(height: 5),
+
                                   BodyTextColors(
-                                    title: homeBanners[index]['body'],
+                                    title: banner.subtitle?.capitalize() ?? '',
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w200,
+                                    fontWeight: FontWeight.w300,
                                     color: AppColors.whiteText,
                                   ),
-                                  SizedBox(height: 15),
+
+                                  const SizedBox(height: 20),
+
                                   InkWell(
-                                    onTap: () {},
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: () async {
+                                      final shopId = SessionManager.getShopId();
+                                      final token = SessionManager.getToken();
+
+                                      if (token == null) {
+                                        await LoginBottomSheet.showLoginBottomSheet(
+                                          context,
+                                        );
+                                        return;
+                                      }
+
+                                      if (shopId == null) {
+                                        await showAddShopDetail(context);
+                                      } else {
+                                        CustomToast.show(
+                                          context,
+                                          title: "You have already registered",
+                                        );
+                                      }
+                                    },
                                     child: Container(
                                       height: 28,
-                                      width: 100,
+                                      width: 120,
                                       decoration: BoxDecoration(
                                         color: index == 1
                                             ? AppColors.darkText
                                             : AppColors.primary,
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Center(
-                                        child: BodyTextColors(
-                                          title: 'Contact Now',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                          color: AppColors.whiteText,
-                                        ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          BodyTextColors(
+                                            title: 'Register Now',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.whiteText,
+                                          ),
+
+                                          const SizedBox(width: 6),
+
+                                          const Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 16,
+                                            color: AppColors.whiteText,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -377,26 +430,31 @@ class HomeTopCard extends StatelessWidget {
                             ),
                           ),
 
-                          Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: Image.asset(
-                              homeBanners[index]['image'],
+                          /// RIGHT IMAGE
+                          SizedBox(
+                            width: 130,
+                            height: 170,
+                            child: Image.network(
+                              '${ApiRoutes.baseUrl}${banner.image ?? ""}',
                               fit: BoxFit.contain,
                             ),
                           ),
                         ],
                       ),
                     );
-                  }),
+                  },
                   options: CarouselOptions(
-                    height: 155,
+                    height: 180,
                     viewportFraction: 1.0,
                     autoPlay: true,
-                    enlargeFactor: 0.3,
-                    autoPlayInterval: Duration(seconds: 2),
+                    autoPlayInterval: const Duration(seconds: 3),
+                    autoPlayAnimationDuration: const Duration(
+                      milliseconds: 800,
+                    ),
                     enlargeCenterPage: false,
                     enableInfiniteScroll: true,
                     pageSnapping: true,
+                    pauseAutoPlayOnTouch: true,
                     onPageChanged: (index, reason) {
                       homeController.setHomeBannerCurrentIndex(index);
                     },
@@ -472,14 +530,24 @@ class HomeTopListTile extends StatelessWidget {
           children: [
             CircleContainer(
               onTap: () {
-                context.pushNamed(AppRoutes.savedVideos);
+                final token = SessionManager.getToken();
+                if (token == null || token.isEmpty) {
+                  LoginBottomSheet.showLoginBottomSheet(context);
+                } else {
+                  context.pushNamed(AppRoutes.savedVideos);
+                }
               },
               child: Image.asset(AppIcons.bookmarkP, height: 30),
             ),
             SizedBox(width: 15),
             CircleContainer(
               onTap: () {
-                context.pushNamed(AppRoutes.notifications);
+                final token = SessionManager.getToken();
+                if (token == null || token.isEmpty) {
+                  LoginBottomSheet.showLoginBottomSheet(context);
+                } else {
+                  context.pushNamed(AppRoutes.notifications);
+                }
               },
               child: Stack(
                 children: [
@@ -585,12 +653,15 @@ class BottomCarousalSlider extends StatelessWidget {
     required this.height,
   });
 
-  final List<Map<String, dynamic>> images;
+  final List<CategoryBanners> images;
   final HomeController homeController;
   final double height;
 
   @override
   Widget build(BuildContext context) {
+    if (images.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 15),
       child: Stack(
@@ -604,7 +675,12 @@ class BottomCarousalSlider extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
                   image: DecorationImage(
-                    image: AssetImage(images[index]['banner']),
+                    image: NetworkImage(
+                      images[index].backgroundImage?.startsWith('https') ??
+                              false
+                          ? images[index].backgroundImage!
+                          : '${ApiRoutes.baseUrl}${images[index].backgroundImage ?? ''}',
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -613,52 +689,57 @@ class BottomCarousalSlider extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        BodyTextColors(
-                          title: images[index]['title'],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.whiteText,
-                        ),
-                        SizedBox(height: 10),
-                        InkWell(
-                          onTap: () {
-                            homeController.setCurrentPage = 1;
-                            homeController.setIsShowAddNearBy = true;
+                    Expanded(
+                      flex: 7,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          BodyTextColors(
+                            title: images[index].title?.capitalize() ?? "",
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.whiteText,
+                          ),
+                          SizedBox(height: 10),
+                          InkWell(
+                            onTap: () {
+                              homeController.setCurrentPage = 1;
+                              homeController.setIsShowAddNearBy = true;
 
-                            const categories = ['bars', 'grocery', 'hospital'];
-
-                            if (index < categories.length) {
                               homeController.setSearchCategory =
-                                  categories[index];
-                            } else {
-                              homeController.setSearchCategory = 'others';
-                            }
-                          },
-                          child: Container(
-                            height: 28,
-                            width: 88,
-                            margin: const EdgeInsets.only(top: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.darkText,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: const Center(
-                              child: BodyTextColors(
-                                title: 'Explore Now',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
-                                color: AppColors.whiteText,
+                                  images[index].category?.toLowerCase() ?? "";
+                            },
+                            child: Container(
+                              height: 28,
+                              width: 88,
+                              margin: const EdgeInsets.only(top: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.darkText,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: const Center(
+                                child: BodyTextColors(
+                                  title: 'Explore Now',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300,
+                                  color: AppColors.whiteText,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    Image.asset(images[index]['image']),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Image.network(
+                        '${ApiRoutes.baseUrl}${images[index].image ?? ''}',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ],
                 ),
               );

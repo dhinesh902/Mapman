@@ -122,7 +122,7 @@ class _MainDashboardState extends State<MainDashboard> {
             alignment: Alignment.center,
             children: [
               AnimatedBottomNavigationBar.builder(
-                height: 65,
+                height: 58,
                 itemCount: 4,
                 notchMargin: 8,
                 rightCornerRadius: 6,
@@ -150,6 +150,7 @@ class _MainDashboardState extends State<MainDashboard> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      const SizedBox(height: 8),
                       SvgPicture.asset(
                         isActive ? fillIcons[index] : outlineIcons[index],
                         height: 24,
@@ -159,7 +160,7 @@ class _MainDashboardState extends State<MainDashboard> {
                           BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       BodyTextColors(
                         title: labels[index],
                         fontSize: 12,
@@ -187,7 +188,7 @@ class _MainDashboardState extends State<MainDashboard> {
                 },
               ),
               Positioned(
-                bottom: 1,
+                bottom: MediaQuery.of(context).size.height * 0.035,
                 child: HeaderTextPrimary(
                   title: shopId != 0 ? "Upload" : "Create",
                   fontSize: 12,

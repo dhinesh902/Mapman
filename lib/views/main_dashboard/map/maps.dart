@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,10 +17,12 @@ import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class Maps extends StatefulWidget {
@@ -33,11 +36,14 @@ class _MapsState extends State<Maps> {
   late HomeController homeController;
 
   final ValueNotifier<ShopSearchData?> tapNotifier = ValueNotifier(null);
+  final Map<String, BitmapDescriptor> _customMarkers = {};
   final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
   GoogleMapController? _mapController;
   late DraggableScrollableController sheetController;
+
+  double _currentZoom = 14.5;
 
   String? _mapStyle;
 
@@ -182,6 +188,7 @@ class _MapsState extends State<Maps> {
   }
 
   Future<void> getSearchShops() async {
+    _customMarkers.clear();
     final response = await homeController.getSearchShops(
       input: homeController.searchCategory ?? 'all',
     );
@@ -198,6 +205,134 @@ class _MapsState extends State<Maps> {
     }
 
     await homeController.filterNearbyShops();
+    await _generateMarkers();
+  }
+
+  Future<void> _generateMarkers() async {
+    final response = homeController.shopSearchData;
+    if (response.status != Status.COMPLETED || response.data == null) return;
+
+    for (var shop in response.data!) {
+      final id = shop.id?.toString();
+      if (id != null && !_customMarkers.containsKey(id)) {
+        final icon = await createMarkerWithLabel(
+          text: shop.shopName?.capitalize() ?? '',
+          category: shop.category?.toLowerCase().trim() ?? 'others',
+        );
+        _customMarkers[id] = icon;
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<BitmapDescriptor> createMarkerWithLabel({
+    required String text,
+    required String category,
+  }) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+
+    // Load category icon
+    final assetPath = _getIconPath(category);
+    final ByteData data = await rootBundle.load(assetPath);
+    final ui.Codec codec = await ui.instantiateImageCodec(
+      data.buffer.asUint8List(),
+      targetWidth: 60,
+      targetHeight: 70,
+    );
+    final ui.FrameInfo fi = await codec.getNextFrame();
+    final ui.Image iconImage = fi.image;
+
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        children: [
+          TextSpan(text: "${text.capitalize()}\n"),
+          TextSpan(
+            text: category.capitalize(),
+            style: AppTextStyle(
+              fontSize: 34,
+              color: Colors.black54,
+              fontWeight: FontWeight.normal,
+            ).textStyle,
+          ),
+        ],
+        style: AppTextStyle(
+          fontSize: 38,
+          color: Colors.black,
+          fontWeight: FontWeight.w600,
+        ).textStyle,
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    final double labelPadding = 15.0;
+    final double labelWidth = textPainter.width + (labelPadding * 2);
+    final double labelHeight = textPainter.height + 10;
+    final double iconWidth = iconImage.width.toDouble();
+    final double iconHeight = iconImage.height.toDouble();
+
+    final double totalWidth = labelWidth > iconWidth ? labelWidth : iconWidth;
+    final double totalHeight = labelHeight + iconHeight + 5;
+
+    final double labelX = (totalWidth - labelWidth) / 2;
+    final double iconX = (totalWidth - iconWidth) / 2;
+
+    // Draw label bubble
+    final paint = Paint()..color = Colors.white;
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(labelX, 0, labelWidth, labelHeight),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(rect, paint);
+
+    // Draw shadow/border for bubble
+    final borderPaint = Paint()
+      ..color = Colors.black26
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    canvas.drawRRect(rect, borderPaint);
+
+    // Draw text
+    textPainter.paint(canvas, Offset(labelX + labelPadding, 5));
+
+    // Draw icon
+    canvas.drawImage(iconImage, Offset(iconX, labelHeight + 5), Paint());
+
+    final picture = pictureRecorder.endRecording();
+    final img = await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
+
+  String _getIconPath(String category) {
+    switch (category.toLowerCase().trim()) {
+      case 'theater':
+        return AppIcons.theatersMap;
+      case 'restaurant':
+        return AppIcons.resortsMap;
+      case 'hospital':
+        return AppIcons.hospitalsMap;
+      case 'bars':
+        return AppIcons.barsMap;
+      case 'grocery':
+        return AppIcons.groceryMap;
+      case 'textile':
+        return AppIcons.textilesMap;
+      case 'resort':
+        return AppIcons.resortsMap;
+      case 'bunk':
+        return AppIcons.petrolBunkMap;
+      case 'spa':
+        return AppIcons.spaMap;
+      case 'hotel':
+        return AppIcons.hotelsMap;
+      default:
+        return AppIcons.othersMap;
+    }
   }
 
   final List<String> _iconMap = [
@@ -213,6 +348,48 @@ class _MapsState extends State<Maps> {
     'hotel',
     'others',
   ];
+
+  // Set<Marker> getMarkers() {
+  //   final response = homeController.shopSearchData;
+  //   if (response.status != Status.COMPLETED || response.data == null) {
+  //     return {};
+  //   }
+  //
+  //   final Set<Marker> markerSet = {};
+  //
+  //   for (int i = 0; i < response.data!.length; i++) {
+  //     final shop = response.data![i];
+  //
+  //     final String rawCategory =
+  //         shop.category?.toLowerCase().trim() ?? 'others';
+  //     final String category = _iconMap.contains(rawCategory)
+  //         ? rawCategory
+  //         : 'others';
+  //
+  //     final icon = LocationIconService().getMarkerIconSync(category: category);
+  //
+  //     try {
+  //       final double? lat = double.tryParse(shop.lat.toString());
+  //       final double? long = double.tryParse(shop.long.toString());
+  //
+  //       if (lat != null && long != null) {
+  //         markerSet.add(
+  //           Marker(
+  //             markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
+  //             position: LatLng(lat, long),
+  //             icon: icon,
+  //             onTap: () {
+  //               tapNotifier.value = shop;
+  //             },
+  //           ),
+  //         );
+  //       }
+  //     } catch (e) {
+  //       debugPrint('Error parsing lat/long for shop ${shop.id}: $e');
+  //     }
+  //   }
+  //   return markerSet;
+  // }
 
   Set<Marker> getMarkers() {
     final response = homeController.shopSearchData;
@@ -231,7 +408,9 @@ class _MapsState extends State<Maps> {
           ? rawCategory
           : 'others';
 
-      final icon = LocationIconService().getMarkerIconSync(category: category);
+      final baseIcon = LocationIconService().getMarkerIconSync(
+        category: category,
+      );
 
       try {
         final double? lat = double.tryParse(shop.lat.toString());
@@ -242,7 +421,9 @@ class _MapsState extends State<Maps> {
             Marker(
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
-              icon: icon,
+
+              icon: _customMarkers[shop.id?.toString()] ?? baseIcon,
+
               onTap: () {
                 tapNotifier.value = shop;
               },
@@ -253,6 +434,7 @@ class _MapsState extends State<Maps> {
         debugPrint('Error parsing lat/long for shop ${shop.id}: $e');
       }
     }
+
     return markerSet;
   }
 
@@ -269,6 +451,37 @@ class _MapsState extends State<Maps> {
         strokeWidth: 0,
       ),
     };
+  }
+
+  Future<void> _zoomIn() async {
+    _currentZoom++;
+    await _mapController?.animateCamera(CameraUpdate.zoomTo(_currentZoom));
+  }
+
+  Future<void> _zoomOut() async {
+    _currentZoom--;
+    await _mapController?.animateCamera(CameraUpdate.zoomTo(_currentZoom));
+  }
+
+  Widget _zoomButton({required String icon, required VoidCallback onTap}) {
+    return Material(
+      elevation: 6,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Image.network(icon, height: 20, color: Colors.black54),
+        ),
+      ),
+    );
   }
 
   @override
@@ -291,11 +504,30 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
+                    myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
-                    padding: const EdgeInsets.only(top: 70),
+                    padding: const EdgeInsets.only(top: 70, bottom: 100),
                     onMapCreated: onMapCreated,
+                  ),
+                  Positioned(
+                    right: 16,
+                    bottom: 100,
+                    child: Column(
+                      children: [
+                        _zoomButton(
+                          icon:
+                              "https://cdn-icons-png.flaticon.com/128/13919/13919685.png",
+                          onTap: _zoomIn,
+                        ),
+                        const SizedBox(height: 10),
+                        _zoomButton(
+                          icon:
+                              "https://cdn-icons-png.flaticon.com/128/4674/4674428.png",
+                          onTap: _zoomOut,
+                        ),
+                      ],
+                    ),
                   ),
 
                   Positioned(
@@ -622,7 +854,12 @@ class LocationShopContainer extends StatelessWidget {
     return SafeArea(
       child: GestureDetector(
         onTap: () {
-          context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
+          final token = SessionManager.getToken();
+          if (token == null || token.isEmpty) {
+            LoginBottomSheet.showLoginBottomSheet(context);
+          } else {
+            context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
+          }
         },
         child: Container(
           decoration: BoxDecoration(
