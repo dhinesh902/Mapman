@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -19,6 +20,8 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:cached_video_player_plus/cached_video_player_plus.dart' hide VideoCacheManager;
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class SingleVideoScreen extends StatefulWidget {
   const SingleVideoScreen({
@@ -45,9 +48,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   int _currentIndex = 0;
   late PageController _pageController;
   bool _isDisposed = false;
+  bool _isAdvancing = false;
   Timer? _debounceTimer;
   bool _hasShownLastVideoToast = false;
-  bool _isInitialized = false;
   double _progress = 0.0;
   final Map<int, bool> _watchedMap = {};
   final Map<int, bool> _apiCallInProgress = {};
@@ -91,6 +94,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     for (final notifier in _bookmarkMap.values) {
       notifier.dispose();
     }
+    VideoCacheManager.clearAppCache();
     super.dispose();
   }
 
@@ -106,11 +110,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_isDisposed || !mounted) return;
 
     final controller = _controllers[_currentIndex];
-    if (controller == null || !controller.value.isInitialized)
+    if (controller == null || !controller.value.isInitialized) {
       return;
+    }
 
     try {
-      // Removed auto-pause logic to allow videos to continue playing during phone calls or when the app is in the background
       if (state == AppLifecycleState.resumed) {
         if (!controller.value.isPlaying) {
           controller.play();
@@ -136,18 +140,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     final videoUrl = ApiRoutes.baseUrl + (video.video ?? '');
 
     try {
-      debugPrint('🎬 Initializing video at index $index');
-      final player = VideoPlayerController.networkUrl(
+      debugPrint('🎬 Initializing progressive streaming video at index $index');
+      final player = CachedVideoPlayerPlus.networkUrl(
         Uri.parse(videoUrl),
-        httpHeaders: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        videoPlayerOptions: VideoPlayerOptions(
-          allowBackgroundPlayback: true,
-          mixWithOthers: true,
-        ),
+        invalidateCacheIfOlderThan: const Duration(days: 7),
       );
 
       await player.initialize();
@@ -164,12 +160,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         return;
       }
 
-      _controllers[index] = player;
+      _controllers[index] = player.controller;
 
       if (index == _currentIndex) {
         _playVideo(index);
       } else {
-        player
+        player.controller
           ..setLooping(false)
           ..setVolume(0.0)
           ..pause();
@@ -191,13 +187,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     controller
       ..setLooping(false)
       ..setVolume(1.0)
+      ..seekTo(Duration.zero)
       ..addListener(_videoListener)
       ..play();
 
     if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
+      setState(() {});
     }
   }
 
@@ -213,10 +208,14 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   Future<void> _manageControllers(int index) async {
-    // Initialize current, next, and previous (optional)
-    await _initController(index);
-    if (index + 1 < widget.videosData.length)
+    // Start preloading the next video asynchronously before awaiting the current video initialization.
+    // This allows both videos to establish network handshakes and buffer in parallel!
+    if (index + 1 < widget.videosData.length) {
       _initController(index + 1); // Preload next
+    }
+
+    // Initialize current video
+    await _initController(index);
 
     // Dispose others
     final keysToRemove = _controllers.keys
@@ -258,9 +257,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         _completedVideos[videoId] = false;
       }
 
-      if (position >= duration &&
-          _currentIndex < widget.videosData.length - 1) {
-        _autoAdvanceToNext();
+      if (position >= duration) {
+        player.seekTo(Duration.zero);
+        player.play();
       }
     } catch (e) {
       debugPrint('Error in videoListener: $e');
@@ -327,8 +326,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   void _autoAdvanceToNext() {
-    if (_isDisposed || _currentIndex >= widget.videosData.length - 1) {
-      if (!_hasShownLastVideoToast && mounted) {
+    if (_isDisposed ||
+        _isAdvancing ||
+        _currentIndex >= widget.videosData.length - 1) {
+      if (!_hasShownLastVideoToast &&
+          mounted &&
+          _currentIndex >= widget.videosData.length - 1) {
         _hasShownLastVideoToast = true;
         CustomToast.show(
           context,
@@ -339,12 +342,21 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       return;
     }
 
+    _isAdvancing = true;
     Future.delayed(const Duration(milliseconds: 200), () {
       if (!_isDisposed && _pageController.hasClients) {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-        );
+        _pageController
+            .nextPage(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+            )
+            .then((_) {
+              if (mounted) {
+                _isAdvancing = false;
+              }
+            });
+      } else {
+        _isAdvancing = false;
       }
     });
   }
@@ -363,10 +375,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
 
     _currentIndex = index;
+    _isAdvancing = false;
     final newVideoId = widget.videosData[index].id ?? 0;
     _completedVideos[newVideoId] = false;
-    _isInitialized = false;
-    _progress = 0;
+
+    // Check if the controller is already preloaded and initialized to avoid loading screen flicker!
+    final bool alreadyInitialized = _controllers.containsKey(index) &&
+        _controllers[index]!.value.isInitialized;
+    _progress = alreadyInitialized
+        ? (_controllers[index]!.value.position.inMilliseconds /
+            _controllers[index]!.value.duration.inMilliseconds.clamp(1, double.infinity))
+        : 0;
 
     setState(() {});
 
@@ -412,8 +431,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
           final shouldShowVideo =
               _controllers[index] != null &&
-                  _controllers[index]! .value.isInitialized &&
-                  _isInitialized;
+              _controllers[index]!.value.isInitialized;
 
           return Stack(
             fit: StackFit.expand,
@@ -422,8 +440,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   final controller = _controllers[index];
-                  if (controller == null ||
-                      !controller.value.isInitialized) {
+                  if (controller == null || !controller.value.isInitialized) {
                     return;
                   }
 
@@ -434,29 +451,25 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 },
                 child: shouldShowVideo
                     ? FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width:
-                    _controllers[index]!.value.size.width,
-                    height:
-                    _controllers[index]!.value.size.height,
-                    child: RepaintBoundary(
-                      child: VideoPlayer(_controllers[index]!),
-                    ),
-                  ),
-                )
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _controllers[index]!.value.size.width,
+                          height: _controllers[index]!.value.size.height,
+                          child: RepaintBoundary(
+                            child: VideoPlayer(_controllers[index]!),
+                          ),
+                        ),
+                      )
                     : Container(
-                  color: AppColors.scaffoldBackgroundDark,
-                  child: const Center(child: CustomLoadingIndicator()),
-                ),
+                        color: AppColors.scaffoldBackgroundDark,
+                        child: const Center(child: CustomLoadingIndicator()),
+                      ),
               ),
 
               if (shouldShowVideo)
                 Center(
                   child: AnimatedOpacity(
-                    opacity: _controllers[index]!.value.isPlaying
-                        ? 0.0
-                        : 1.0,
+                    opacity: _controllers[index]!.value.isPlaying ? 0.0 : 1.0,
                     duration: const Duration(milliseconds: 200),
                     child: Container(
                       height: 50,
@@ -525,7 +538,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: SafeArea(
+                child: BottomBar(
                   child: Column(
                     children: [
                       LinearProgressIndicator(
@@ -556,14 +569,14 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                 children: [
                                   Row(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
                                         child: InkWell(
                                           onTap: () {
                                             try {
                                               final controller =
-                                              _controllers[index];
+                                                  _controllers[index];
                                               if (controller != null &&
                                                   controller
                                                       .value
@@ -582,12 +595,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                           },
                                           child: HeaderTextBlack(
                                             title:
-                                            video.shopName?.capitalize() ??
+                                                video.shopName?.capitalize() ??
                                                 '',
                                             fontSize: 16,
                                             fontWeight: FontWeight.w400,
                                             textDecoration:
-                                            TextDecoration.underline,
+                                                TextDecoration.underline,
                                             decorationColor: AppColors.darkText,
                                             maxLines: 2,
                                             overflow: TextOverflow.visible,
@@ -623,7 +636,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                   SizedBox(height: 8),
                                   BodyTextHint(
                                     title:
-                                    video.description?.capitalize() ?? '',
+                                        video.description?.capitalize() ?? '',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
                                     maxLines: 2,
@@ -663,40 +676,40 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                         onTap: () async {
                                           VideoShopDialogue()
                                               .showSaveOrRemoveVideoDialogue(
-                                            context,
-                                            isRemoveShop: isActive,
-                                            onTap: () async {
-                                              final newVal = !isActive;
-                                              bookmarkNotifier.value =
-                                                  newVal;
-                                              await videoController
-                                                  .addSavedVideos(
-                                                videoId: video.id ?? 0,
-                                                status: newVal
-                                                    ? 'active'
-                                                    : 'inactive',
+                                                context,
+                                                isRemoveShop: isActive,
+                                                onTap: () async {
+                                                  final newVal = !isActive;
+                                                  bookmarkNotifier.value =
+                                                      newVal;
+                                                  await videoController
+                                                      .addSavedVideos(
+                                                        videoId: video.id ?? 0,
+                                                        status: newVal
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                  await context
+                                                      .read<ProfileController>()
+                                                      .saveShop(
+                                                        shopId:
+                                                            video.shopId ?? 0,
+                                                        status: newVal
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                },
                                               );
-                                              await context
-                                                  .read<ProfileController>()
-                                                  .saveShop(
-                                                shopId:
-                                                video.shopId ?? 0,
-                                                status: newVal
-                                                    ? 'active'
-                                                    : 'inactive',
-                                              );
-                                            },
-                                          );
                                         },
                                         child: isActive
                                             ? Image.asset(
-                                          AppIcons.bookmarkP,
-                                          height: 30,
-                                        )
+                                                AppIcons.bookmarkP,
+                                                height: 30,
+                                              )
                                             : const Icon(
-                                          Icons.bookmark_border,
-                                          size: 30,
-                                        ),
+                                                Icons.bookmark_border,
+                                                size: 30,
+                                              ),
                                       );
                                     },
                                   ),
@@ -715,6 +728,21 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         },
       ),
     );
+  }
+}
+
+class BottomBar extends StatelessWidget {
+  const BottomBar({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      return Container(child: child);
+    } else {
+      return SafeArea(child: child);
+    }
   }
 }
 
@@ -829,11 +857,7 @@ class ShopShopButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const ShopShopButton({
-    super.key,
-    required this.onTap,
-     required this.child,
-  });
+  const ShopShopButton({super.key, required this.onTap, required this.child});
 
   @override
   State<ShopShopButton> createState() => _ShopShopButtonState();
@@ -885,7 +909,7 @@ class _ShopShopButtonState extends State<ShopShopButton>
                 color: AppColors.scaffoldBackground,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: widget.child
+              child: widget.child,
             ),
           );
         },
@@ -1006,9 +1030,9 @@ class RewardContainer extends StatelessWidget {
                   builder: (context, videoController, child) {
                     return HeaderTextBlack(
                       title:
-                      (videoController.coinResponse.data ??
-                          videoController.coinsCount)
-                          .toString(),
+                          (videoController.coinResponse.data ??
+                                  videoController.coinsCount)
+                              .toString(),
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                     );

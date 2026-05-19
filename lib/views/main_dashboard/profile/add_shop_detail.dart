@@ -12,11 +12,13 @@ import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/edit_shop_details.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class AddShopDetail extends StatefulWidget {
@@ -168,12 +170,17 @@ Future<dynamic> showAddShopDetail(BuildContext context) async {
             ),
             CupertinoDialogAction(
               isDefaultAction: true,
-              onPressed: () {
-                Navigator.pop(context);
-                Future.microtask(() {
-                  if (!context.mounted) return;
-                  context.pushNamed(AppRoutes.registerShopDetail);
-                });
+              onPressed: () async {
+                final token = SessionManager.getToken();
+                if (token != null) {
+                  Navigator.pop(context);
+                  Future.microtask(() {
+                    if (!context.mounted) return;
+                    context.pushNamed(AppRoutes.registerShopDetail);
+                  });
+                } else {
+                  await LoginBottomSheet.showLoginBottomSheet(context);
+                }
               },
               child: HeaderTextPrimary(
                 title: 'Register',
@@ -231,12 +238,17 @@ Future<dynamic> showAddShopDetail(BuildContext context) async {
                     child: CustomFullButton(
                       title: 'Register',
                       isDialogue: true,
-                      onTap: () {
-                        Navigator.pop(context);
-                        Future.microtask(() {
-                          if (!context.mounted) return;
-                          context.pushNamed(AppRoutes.registerShopDetail);
-                        });
+                      onTap: () async {
+                        final token = SessionManager.getToken();
+                        if (token != null) {
+                          Navigator.pop(context);
+                          Future.microtask(() {
+                            if (!context.mounted) return;
+                            context.pushNamed(AppRoutes.registerShopDetail);
+                          });
+                        } else {
+                          await LoginBottomSheet.showLoginBottomSheet(context);
+                        }
                       },
                     ),
                   ),

@@ -37,7 +37,7 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>This app requires access to the microphone to record audio when capturing videos.</string>
 
-	<key>NSUserTrackingUsageDescription</key>
+    <key>NSUserTrackingUsageDescription</key>
     <string>This app uses your data to provide personalized experience and ads.</string>
 
 	<key>CFBundleDevelopmentRegion</key>

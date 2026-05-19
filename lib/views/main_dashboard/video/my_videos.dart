@@ -16,6 +16,7 @@ import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:video_player/video_player.dart';
+import 'package:cached_video_player_plus/cached_video_player_plus.dart' hide VideoCacheManager;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -84,24 +85,40 @@ class MyVideos extends StatelessWidget {
                   },
                 );
               },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
-                  children: [
-                    MyVideoContainer(
-                      videoUrl: '${ApiRoutes.baseUrl}${video.video ?? ''}',
-                      views: video.views.toString(),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: VideoTitleBlurContainer(
-                        isEditIcon: true,
-                        videosData: video,
-                      ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Stack(
+                    children: [
+                      MyVideoContainer(
+                        videoUrl: '${ApiRoutes.baseUrl}${video.video ?? ''}',
+                        views: video.views.toString(),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: VideoTitleBlurContainer(
+                          isEditIcon: true,
+                          videosData: video,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -470,15 +487,14 @@ class MyVideoContainer extends StatefulWidget {
 }
 
 class _MyVideoContainerState extends State<MyVideoContainer> {
-  VideoPlayerController? _player;
+  CachedVideoPlayerPlus? _player;
   bool _initialized = false;
   bool _error = false;
-  bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
-    // Do not initialize here -- wait for VisibilityDetector
+    _initController();
   }
 
 
@@ -486,17 +502,9 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
   Future<void> _initController() async {
     if (_player != null || _error || !mounted) return;
     try {
-      _player = VideoPlayerController.networkUrl(
+      _player = CachedVideoPlayerPlus.networkUrl(
         Uri.parse(widget.videoUrl),
-        httpHeaders: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        videoPlayerOptions: VideoPlayerOptions(
-          mixWithOthers: true,
-          allowBackgroundPlayback: false,
-        ),
+        invalidateCacheIfOlderThan: const Duration(days: 7),
       );
 
       await _player!.initialize();
@@ -518,7 +526,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
 
   @override
   void dispose() {
-    _player?.pause();
+    _player?.controller.pause();
     _player?.dispose();
     _player = null;
     super.dispose();
@@ -532,28 +540,20 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
         if (!mounted) return;
 
         final bool isVisible = visibilityInfo.visibleFraction > 0.05;
-        _isVisible = isVisible;
 
         if (isVisible) {
           if (!_initialized && !_error) {
             _initController();
           }
         } else {
-          // Check if the current route is still active (not covered by another screen)
-          final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
-
-          if (isCurrentRoute) {
-            // We are on top but scrolled off screen - dispose to save memory
-            if (_initialized) {
-              _player?.pause();
-              _player?.dispose();
-              _player = null;
-              _initialized = false;
-            }
-          } else {
-            // We are covered by another screen (like SingleVideoScreen)
-            // Just pause the video but keep it initialized for quick return
-            _player?.pause();
+          // Only dispose if the current route is still active (meaning the video scrolled off-screen).
+          // Do not dispose if covered by another route (like SingleVideoScreen), to avoid reloading when returning!
+          final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+          if (_initialized && isCurrentRoute) {
+            _player?.controller.pause();
+            _player?.dispose();
+            _player = null;
+            _initialized = false;
           }
         }
       },
@@ -562,9 +562,9 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           children: [
             Positioned.fill(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(widget.isAllVideos ? 0 : 6),
+                borderRadius: BorderRadius.circular(widget.isAllVideos ? 0 : 11),
                 child: _initialized && _player != null
-                    ? VideoPlayer(_player!)
+                    ? VideoPlayer(_player!.controller)
                     : _error
                     ? Container(
                         color: AppColors.bgGrey,
@@ -577,14 +577,23 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
                         ),
                       )
                     : Container(
-                        color: AppColors.bgGrey,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF2A2D32),
+                              Color(0xFF131417),
+                            ],
+                          ),
+                        ),
                         child: const Center(
                           child: SizedBox(
-                            height: 20,
-                            width: 20,
+                            height: 24,
+                            width: 24,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white24,
+                              strokeWidth: 2.5,
+                              color: Colors.white54,
                             ),
                           ),
                         ),

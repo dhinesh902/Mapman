@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -37,11 +38,40 @@ class _LoginState extends State<Login> {
 
   bool _scrollingDown = true;
 
-  List<Widget> screens = [
-    MobileOrGoogleSignIn(),
-    MobileNumberScreen(),
-    OTPScreen(),
+  List<LoginStep> steps = [
+    LoginStep.loginOptions,
+    LoginStep.mobileInput,
+    LoginStep.otp,
+    LoginStep.changeNumber,
+    LoginStep.emailVerification,
+    LoginStep.checkMail,
+    LoginStep.newPhone,
+    LoginStep.verifyNewNumber,
+    LoginStep.numberUpdated,
   ];
+
+  Widget getScreen(LoginStep step) {
+    switch (step) {
+      case LoginStep.loginOptions:
+        return MobileOrGoogleSignIn();
+      case LoginStep.mobileInput:
+        return MobileNumberScreen();
+      case LoginStep.otp:
+        return OTPScreen();
+      case LoginStep.changeNumber:
+        return ChangeNumber();
+      case LoginStep.emailVerification:
+        return EmailVerification();
+      case LoginStep.checkMail:
+        return CheckYourMail();
+      case LoginStep.newPhone:
+        return NewPhoneNumber();
+      case LoginStep.verifyNewNumber:
+        return VerifyNewNumber();
+      case LoginStep.numberUpdated:
+        return NumberUpdated();
+    }
+  }
 
   @override
   void initState() {
@@ -136,10 +166,10 @@ class _LoginState extends State<Login> {
                     height: pageViewHeight,
                     child: PageView.builder(
                       controller: authController.pageController,
-                      itemCount: screens.length,
+                      itemCount: steps.length,
                       physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: authController.onPageChanged,
-                      itemBuilder: (context, index) => screens[index],
+                      itemBuilder: (context, index) => getScreen(steps[index]),
                     ),
                   ),
                 ],
@@ -186,7 +216,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 ),
               ],
             ),
-            SizedBox(height: 15),
+            SizedBox(height: 20),
             CustomOutlineButtonWithImage(
               title: 'Continue with Mobile',
               isGoogle: false,
@@ -195,8 +225,18 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 context.read<AuthController>().animateTo(1);
               },
             ),
-
-            // SizedBox(height: 15), ̰
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 15),
+              CustomOutlineButtonWithImage(
+                title: 'Continue as Guest',
+                isGoogle: false,
+                icon: AppIcons.personP,
+                onTap: () {
+                  context.read<HomeController>().setCurrentPage = 0;
+                  context.goNamed(AppRoutes.mainDashboard, extra: false);
+                },
+              ),
+            ],
             // Row(
             //   children: [
             //     Expanded(child: Divider(color: GenericColors.borderGrey)),
@@ -286,7 +326,9 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   Future<void> getPhoneNumber() async {
     if (!Platform.isAndroid) {
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _focusNode.requestFocus();
+        if (mounted && authController.currentPage == 1) {
+          _focusNode.requestFocus();
+        }
       });
       return;
     }
@@ -310,7 +352,9 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     setState(() {
       if (result != null && result.isEmpty) {
         Future.delayed(Duration(milliseconds: 500), () {
-          _focusNode.requestFocus();
+          if (mounted && authController.currentPage == 1) {
+            _focusNode.requestFocus();
+          }
         });
       }
     });
@@ -343,25 +387,6 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     }
   }
 
-  // Future<void> sendOTP() async {
-  //   final response = await authController.sendMailOTP(
-  //     email: emailController.text.trim(),
-  //   );
-  //   if (!mounted) return;
-  //   if (response.status == Status.COMPLETED) {
-  //     if (!mounted) return;
-  //     SessionManager.setEmail(email: emailController.text.trim());
-  //     CustomToast.show(context, title: '${response.data}');
-  //     context.read<AuthController>().animateTo(2);
-  //   } else {
-  //     ExceptionHandler.handleUiException(
-  //       context: context,
-  //       status: response.status,
-  //       message: response.message,
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     authController = context.watch<AuthController>();
@@ -387,14 +412,12 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                 ],
               ),
               SizedBox(height: 30),
-
               CustomMobileNumberTextField(
                 controller: mobileNumberController,
                 textInputType: TextInputType.phone,
                 maxLength: 10,
                 focusNode: _focusNode,
                 autofillHints: const [AutofillHints.telephoneNumber],
-                prefixWidget: SvgPicture.asset(AppIcons.mobile),
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Please enter mobile number";
@@ -405,7 +428,22 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                   return null;
                 },
               ),
-
+              Align(
+                alignment: AlignmentGeometry.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    context.read<AuthController>().animateTo(3);
+                  },
+                  child: HeaderTextPrimary(
+                    title: 'Lost registered number?',
+                    fontSize: 14,
+                    textDecoration: TextDecoration.underline,
+                    decorationColor: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
               SizedBox(height: 50),
               Center(
                 child: authController.apiResponse.status == Status.LOADING
@@ -551,25 +589,6 @@ class _OTPScreenState extends State<OTPScreen> {
     }
   }
 
-  // Future<void> verifyEmailOtp() async {
-  //   final email = SessionManager.getEmail() ?? '';
-  //   final response = await authController.verifyEmailOtp(
-  //     email: email,
-  //     otp: int.parse(otpController.text.trim()),
-  //   );
-  //   if (!mounted) return;
-  //   if (response.status == Status.COMPLETED) {
-  //     context.read<HomeController>().setCurrentPage = 0;
-  //     context.goNamed(AppRoutes.mainDashboard, extra: true);
-  //   } else {
-  //     ExceptionHandler.handleUiException(
-  //       context: context,
-  //       status: response.status,
-  //       message: response.message,
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     authController = context.watch<AuthController>();
@@ -597,7 +616,7 @@ class _OTPScreenState extends State<OTPScreen> {
             Pinput(
               length: 6,
               controller: otpController,
-              autofocus: true,
+              autofocus: authController.currentPage == 2,
               smsRetriever: smsRetriever,
               autofillHints: const [AutofillHints.oneTimeCode],
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -706,6 +725,943 @@ class _OTPScreenState extends State<OTPScreen> {
   }
 }
 
+/// Change Number
+
+class ChangeNumber extends StatefulWidget {
+  const ChangeNumber({super.key});
+
+  @override
+  State<ChangeNumber> createState() => _ChangeNumberState();
+}
+
+class _ChangeNumberState extends State<ChangeNumber> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AuthBackButton(),
+              SizedBox(width: 30),
+              HeaderTextBlack(
+                title: 'Change Number',
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
+          Container(
+            decoration: BoxDecoration(
+              color: GenericColors.darkAmber.withValues(alpha: .1),
+              border: Border.all(color: GenericColors.darkAmber),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: EdgeInsetsGeometry.all(15),
+            child: Row(
+              children: [
+                Image.asset(AppIcons.padLockP, height: 30),
+                SizedBox(width: 10),
+                Flexible(
+                  child: BodyTextHint(
+                    title:
+                        'Verify your identity first before changing your phone number.',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+          BodyTextHint(
+            title: 'Verify VIA',
+            fontSize: 15,
+            fontWeight: FontWeight.w300,
+          ),
+          SizedBox(height: 15),
+          GestureDetector(
+            onTap: () {
+              context.read<AuthController>().animateTo(4);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: GenericColors.borderGrey),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsetsGeometry.all(15),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: GenericColors.lightPrimary.withValues(alpha: .4),
+                    ),
+                    padding: EdgeInsets.all(15),
+                    child: Image.asset(AppIcons.padMailP, height: 30),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: AppTextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.darkText,
+                            ).textStyle,
+                            children: [
+                              TextSpan(text: 'Recover via Email'),
+                              WidgetSpan(
+                                child: Icon(
+                                  Icons.keyboard_arrow_right,
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        BodyTextHint(
+                          title:
+                              'Verification link sent to your registered email',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 15),
+        ],
+      ),
+    );
+  }
+}
+
+/// Email Verification
+
+class EmailVerification extends StatefulWidget {
+  const EmailVerification({super.key});
+
+  @override
+  State<EmailVerification> createState() => _EmailVerificationState();
+}
+
+class _EmailVerificationState extends State<EmailVerification> {
+  final formKey = GlobalKey<FormState>();
+  late TextEditingController mailController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    mailController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    mailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> sendMailOTP() async {
+    final response = await context.read<AuthController>().sendMailOTP(
+      email: mailController.text.trim(),
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      SessionManager.setEmail(email: mailController.text.trim());
+      CustomToast.show(context, title: '${response.data}');
+      context.read<AuthController>().animateTo(5);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Form(
+        key: formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  AuthBackButton(),
+                  SizedBox(width: 30),
+                  HeaderTextBlack(
+                    title: 'Email Verification',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+              CustomMobileNumberTextField(
+                controller: mailController,
+                textInputType: TextInputType.emailAddress,
+                hintText: "Enter Registered Email",
+                autofillHints: const [AutofillHints.email],
+                prefixWidget: Image.asset(AppIcons.gmailP, height: 16),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter email";
+                  }
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
+                  if (!emailRegex.hasMatch(value)) {
+                    return "Please enter valid email";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 50),
+              context.watch<AuthController>().apiResponse.status ==
+                      Status.LOADING
+                  ? ButtonProgressBar()
+                  : AuthButton(
+                      title: 'Verify',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await sendMailOTP();
+                        }
+                      },
+                    ),
+              SizedBox(height: 15),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Check Your Email
+
+class CheckYourMail extends StatefulWidget {
+  const CheckYourMail({super.key});
+
+  @override
+  State<CheckYourMail> createState() => _CheckYourMailState();
+}
+
+class _CheckYourMailState extends State<CheckYourMail> {
+  late AuthController authController;
+  final formKey = GlobalKey<FormState>();
+  late TextEditingController otpController;
+
+  Timer? _timer;
+  int _remainingTime = 60;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    authController = context.read<AuthController>();
+    otpController = TextEditingController();
+    startTimer();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    otpController.dispose();
+    super.dispose();
+  }
+
+  void startTimer() {
+    _timer?.cancel();
+    _remainingTime = 60;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      if (_remainingTime > 0) {
+        setState(() {
+          _remainingTime--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  final defaultPinTheme = PinTheme(
+    width: 50,
+    height: 50,
+    textStyle: GoogleFonts.outfit(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: AppColors.darkText,
+    ),
+    decoration: BoxDecoration(
+      border: Border.all(color: GenericColors.borderGrey, width: 1),
+      shape: BoxShape.circle,
+    ),
+  );
+
+  Future<void> verifyEmailOtp() async {
+    final email = SessionManager.getEmail() ?? '';
+    final response = await authController.verifyEmailOtp(
+      email: email,
+      otp: int.parse(otpController.text.trim()),
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      context.read<AuthController>().animateTo(6);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    authController = context.watch<AuthController>();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AuthBackButton(),
+                SizedBox(width: 30),
+                HeaderTextBlack(
+                  title: 'Check Your Email',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Container(
+              width: double.maxFinite,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                border: Border.all(color: GenericColors.borderGrey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: HeaderTextBlack(
+                      title: 'Verification OTP Sent',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  HeaderTextPrimary(
+                    title: SessionManager.getEmail() ?? '',
+                    fontSize: 12,
+                    textDecoration: TextDecoration.underline,
+                    decorationColor: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 15),
+            Pinput(
+              length: 6,
+              controller: otpController,
+              autofocus: authController.currentPage == 5,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              defaultPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: GenericColors.borderGrey),
+                ),
+              ),
+              hapticFeedbackType: HapticFeedbackType.lightImpact,
+              focusedPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: AppColors.primary, width: 1),
+                ),
+              ),
+              preFilledWidget: SvgPicture.asset(AppIcons.pinput),
+              errorTextStyle: AppTextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+                color: Colors.red.shade700,
+              ).textStyle,
+              onCompleted: (pin) {
+                if (formKey.currentState!.validate()) {
+                  verifyEmailOtp();
+                }
+              },
+              onChanged: (value) {},
+              onSubmitted: (value) {},
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'Please enter OTP';
+                } else if (value.length != 6) {
+                  return 'Please enter 6 digit OTP';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 15),
+            Row(
+              children: [
+                SizedBox(width: 10),
+                BodyTextColors(
+                  title: '00:${_remainingTime.toString().padLeft(2, '0')}',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: GenericColors.darkRed,
+                ),
+                Spacer(),
+                InkWell(
+                  onTap: _remainingTime == 0
+                      ? () async {
+                          final email = SessionManager.getEmail() ?? '';
+                          final response = await authController.sendMailOTP(
+                            email: email,
+                          );
+                          if (!context.mounted) return;
+                          if (response.status == Status.COMPLETED) {
+                            CustomToast.show(
+                              context,
+                              title: '${response.data}',
+                            );
+                            startTimer();
+                          } else {
+                            ExceptionHandler.handleUiException(
+                              context: context,
+                              status: response.status,
+                              message: response.message,
+                            );
+                          }
+                        }
+                      : null,
+                  child: BodyTextColors(
+                    title: "Resend",
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    textDecoration: TextDecoration.underline,
+                    decorationColor: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
+                    color: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 40),
+            Center(
+              child:
+                  authController.verifyOTPResponse.status == Status.LOADING ||
+                      context.watch<ProfileController>().profileData.status ==
+                          Status.LOADING
+                  ? ButtonProgressBar(isLogin: true)
+                  : AuthButton(
+                      title: 'Proceed',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await verifyEmailOtp();
+                        }
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// New Phone Number
+
+class NewPhoneNumber extends StatefulWidget {
+  const NewPhoneNumber({super.key});
+
+  @override
+  State<NewPhoneNumber> createState() => _NewPhoneNumberState();
+}
+
+class _NewPhoneNumberState extends State<NewPhoneNumber> {
+  final formKey = GlobalKey<FormState>();
+  late TextEditingController mobileNumberController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    mobileNumberController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    mobileNumberController.dispose();
+    super.dispose();
+  }
+
+  Future<void> updateSendOtp() async {
+    final email = SessionManager.getEmail() ?? '';
+    final response = await context.read<AuthController>().updateSendOtp(
+      phone: '91${mobileNumberController.text.trim()}',
+      email: email,
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      if (!mounted) return;
+      SessionManager.setMobile(phone: mobileNumberController.text.trim());
+      CustomToast.show(context, title: '${response.data}');
+      context.read<AuthController>().animateTo(7);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AuthBackButton(),
+                SizedBox(width: 30),
+                HeaderTextBlack(
+                  title: 'New Phone Number',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Container(
+              width: double.maxFinite,
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                border: Border.all(color: GenericColors.borderGrey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.all(15),
+              child: BodyTextHint(
+                title: 'Identity verified ✅ Enter your new phone number below',
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            SizedBox(height: 30),
+            CustomMobileNumberTextField(
+              controller: mobileNumberController,
+              textInputType: TextInputType.phone,
+              maxLength: 10,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return "Please enter mobile number";
+                }
+                if (value.length != 10) {
+                  return "Please enter 10 digit mobile number";
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 50),
+            context.watch<AuthController>().apiResponse.status == Status.LOADING
+                ? ButtonProgressBar()
+                : Center(
+                    child: AuthButton(
+                      title: 'Get OTP',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await updateSendOtp();
+                        }
+                      },
+                    ),
+                  ),
+            SizedBox(height: 15),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Verify New Number
+
+class VerifyNewNumber extends StatefulWidget {
+  const VerifyNewNumber({super.key});
+
+  @override
+  State<VerifyNewNumber> createState() => _VerifyNewNumberState();
+}
+
+class _VerifyNewNumberState extends State<VerifyNewNumber> {
+  late AuthController authController;
+  final formKey = GlobalKey<FormState>();
+  late TextEditingController otpController;
+
+  Timer? _timer;
+  int _remainingTime = 60;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    authController = context.read<AuthController>();
+    otpController = TextEditingController();
+    startTimer();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    otpController.dispose();
+    super.dispose();
+  }
+
+  void startTimer() {
+    _timer?.cancel();
+    _remainingTime = 60;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      if (_remainingTime > 0) {
+        setState(() {
+          _remainingTime--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  final defaultPinTheme = PinTheme(
+    width: 50,
+    height: 50,
+    textStyle: GoogleFonts.outfit(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: AppColors.darkText,
+    ),
+    decoration: BoxDecoration(
+      border: Border.all(color: GenericColors.borderGrey, width: 1),
+      shape: BoxShape.circle,
+    ),
+  );
+
+  Future<void> updateVerifyOtp() async {
+    final mobile = SessionManager.getMobile();
+    final email = SessionManager.getEmail() ?? '';
+    final otpText = otpController.text.trim();
+
+    if (otpText.isEmpty || int.tryParse(otpText) == null) {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: Status.ERROR,
+        message: "Invalid OTP",
+      );
+      return;
+    }
+
+    final response = await authController.updateVerifyOtp(
+      phone: '91$mobile',
+      otp: int.parse(otpText),
+      email: email,
+    );
+    if (!mounted) return;
+    if (response.status == Status.COMPLETED) {
+      CustomToast.show(context, title: 'OTP Verified Successfully');
+      authController.animateTo(8);
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    authController = context.watch<AuthController>();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AuthBackButton(),
+                SizedBox(width: 30),
+                HeaderTextBlack(
+                  title: 'Verify New Number',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Container(
+              width: double.maxFinite,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                border: Border.all(color: GenericColors.borderGrey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: HeaderTextBlack(
+                      title: '+91 ${SessionManager.getMobile()}',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Image.network(
+                    'https://cdn-icons-png.flaticon.com/128/1040/1040228.png',
+                    height: 10,
+                  ),
+                  SizedBox(width: 5),
+                  HeaderTextPrimary(
+                    title: 'Change Number',
+                    fontSize: 12,
+                    textDecoration: TextDecoration.underline,
+                    decorationColor: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 15),
+            Pinput(
+              length: 6,
+              controller: otpController,
+              autofocus: authController.currentPage == 7,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              defaultPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: GenericColors.borderGrey),
+                ),
+              ),
+              hapticFeedbackType: HapticFeedbackType.lightImpact,
+              focusedPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: AppColors.primary, width: 1),
+                ),
+              ),
+              preFilledWidget: SvgPicture.asset(AppIcons.pinput),
+              errorTextStyle: AppTextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+                color: Colors.red.shade700,
+              ).textStyle,
+              onCompleted: (pin) {
+                if (formKey.currentState!.validate()) {
+                  updateVerifyOtp();
+                }
+              },
+              onChanged: (value) {},
+              onSubmitted: (value) {},
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'Please enter OTP';
+                } else if (value.length != 6) {
+                  return 'Please enter 6 digit OTP';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 15),
+            Row(
+              children: [
+                SizedBox(width: 10),
+                BodyTextColors(
+                  title: '00:${_remainingTime.toString().padLeft(2, '0')}',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: GenericColors.darkRed,
+                ),
+                Spacer(),
+                InkWell(
+                  onTap: _remainingTime == 0
+                      ? () async {
+                          final phone = SessionManager.getMobile() ?? '';
+                          final email = SessionManager.getEmail() ?? '';
+                          final response = await authController.updateSendOtp(
+                            phone: '91$phone',
+                            email: email,
+                          );
+                          if (!context.mounted) return;
+                          if (response.status == Status.COMPLETED) {
+                            CustomToast.show(
+                              context,
+                              title: '${response.data}',
+                            );
+                            startTimer();
+                          } else {
+                            ExceptionHandler.handleUiException(
+                              context: context,
+                              status: response.status,
+                              message: response.message,
+                            );
+                          }
+                        }
+                      : null,
+                  child: BodyTextColors(
+                    title: "Resend",
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    textDecoration: TextDecoration.underline,
+                    decorationColor: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
+                    color: _remainingTime == 0
+                        ? AppColors.primary
+                        : AppColors.darkGrey,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 40),
+            Center(
+              child: authController.apiResponse.status == Status.LOADING
+                  ? ButtonProgressBar()
+                  : AuthButton(
+                      title: 'Proceed',
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          await updateVerifyOtp();
+                        }
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Number Updated
+
+class NumberUpdated extends StatefulWidget {
+  const NumberUpdated({super.key});
+
+  @override
+  State<NumberUpdated> createState() => _NumberUpdatedState();
+}
+
+class _NumberUpdatedState extends State<NumberUpdated> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      color: AppColors.scaffoldBackgroundDark,
+      child: Center(
+        child: Column(
+          children: [
+            SizedBox(height: 30),
+            Image.asset(AppIcons.checkedP, height: 60, width: 60),
+            SizedBox(height: 20),
+            HeaderTextBlack(
+              title: 'Number Updated!',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            SizedBox(height: 15),
+            BodyTextHint(
+              title: 'Your phone number has been successfully changed.',
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+            SizedBox(height: 30),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(AppIcons.padCallP, height: 18),
+                  HeaderTextBlack(
+                    title: '+91 ${SessionManager.getMobile()}',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 30),
+            AuthButton(
+              title: 'Go to Dashboard',
+              onTap: () {
+                context.read<HomeController>().setCurrentPage = 0;
+                context.goNamed(AppRoutes.mainDashboard, extra: true);
+              },
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class AuthBackButton extends StatelessWidget {
   const AuthBackButton({super.key});
 
@@ -716,12 +1672,12 @@ class AuthBackButton extends StatelessWidget {
       onTap: () {
         if (authController.currentPage == 1) {
           authController.animateTo(0);
-        }
-        if (authController.currentPage == 2) {
+        } else if (authController.currentPage == 2) {
           authController.animateTo(1);
-        }
-        if (authController.currentPage == 3) {
-          authController.animateTo(2);
+        } else if (authController.currentPage == 3) {
+          authController.animateTo(1);
+        } else if (authController.currentPage > 3) {
+          authController.animateTo(authController.currentPage - 1);
         }
       },
       child: Container(
@@ -739,12 +1695,107 @@ class AuthBackButton extends StatelessWidget {
   }
 }
 
+// class CustomMobileNumberTextField extends StatelessWidget {
+//   const CustomMobileNumberTextField({
+//     super.key,
+//     required this.controller,
+//     this.validator,
+//     required this.prefixWidget,
+//     required this.textInputType,
+//     this.hintText,
+//     this.onTap,
+//     this.readOnly = false,
+//     this.suffixIcon,
+//     this.onChanged,
+//     this.focusNode,
+//     this.maxLength,
+//     this.inputAction = TextInputAction.done,
+//     this.autofillHints,
+//   });
+//
+//   final TextEditingController controller;
+//   final FormFieldValidator<String>? validator;
+//   final Widget prefixWidget;
+//   final TextInputType textInputType;
+//   final String? hintText;
+//   final VoidCallback? onTap;
+//   final bool readOnly;
+//   final Widget? suffixIcon;
+//   final Function(String)? onChanged;
+//   final FocusNode? focusNode;
+//   final int? maxLength;
+//   final TextInputAction inputAction;
+//   final Iterable<String>? autofillHints;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return TextFormField(
+//       controller: controller,
+//       focusNode: focusNode,
+//       onTap: onTap,
+//       readOnly: readOnly,
+//       onChanged: onChanged,
+//       style: GoogleFonts.outfit(
+//         fontSize: 14,
+//         fontWeight: FontWeight.w400,
+//         color: AppColors.darkText,
+//       ),
+//       maxLength: maxLength,
+//       keyboardType: textInputType,
+//       textInputAction: inputAction,
+//       autofillHints: autofillHints,
+//       cursorColor: AppColors.primary,
+//       decoration: InputDecoration(
+//         border: InputBorder.none,
+//         isDense: true,
+//         hintText: hintText ?? "Enter Mobile Number",
+//         counterText: '',
+//         suffixIcon: suffixIcon,
+//         hintStyle: GoogleFonts.outfit(
+//           fontSize: 14,
+//           fontWeight: FontWeight.w400,
+//           color: AppColors.darkGrey,
+//         ),
+//         focusedBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         errorBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         enabledBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         focusedErrorBorder: OutlineInputBorder(
+//           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//         errorStyle: GoogleFonts.outfit(
+//           fontSize: 13,
+//           fontWeight: FontWeight.w400,
+//         ),
+//
+//         prefix: CountryCodePicker(
+//           onChanged: print,
+//           initialSelection: 'IN',
+//           favorite: ['+91', 'IN'],
+//           showCountryOnly: false,
+//           showOnlyCountryWhenClosed: false,
+//           alignLeft: false,
+//         ),
+//       ),
+//       validator: validator,
+//     );
+//   }
+// }
+
 class CustomMobileNumberTextField extends StatelessWidget {
   const CustomMobileNumberTextField({
     super.key,
     required this.controller,
     this.validator,
-    required this.prefixWidget,
     required this.textInputType,
     this.hintText,
     this.onTap,
@@ -755,11 +1806,13 @@ class CustomMobileNumberTextField extends StatelessWidget {
     this.maxLength,
     this.inputAction = TextInputAction.done,
     this.autofillHints,
+    this.onCountryChanged,
+    this.initialCountryCode = 'IN',
+    this.prefixWidget,
   });
 
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
-  final Widget prefixWidget;
   final TextInputType textInputType;
   final String? hintText;
   final VoidCallback? onTap;
@@ -771,6 +1824,10 @@ class CustomMobileNumberTextField extends StatelessWidget {
   final TextInputAction inputAction;
   final Iterable<String>? autofillHints;
 
+  final Function(CountryCode)? onCountryChanged;
+  final String initialCountryCode;
+  final Widget? prefixWidget;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -778,54 +1835,92 @@ class CustomMobileNumberTextField extends StatelessWidget {
       focusNode: focusNode,
       onTap: onTap,
       readOnly: readOnly,
-      onChanged: onChanged,
-      style: GoogleFonts.outfit(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.darkText,
-      ),
       maxLength: maxLength,
       keyboardType: textInputType,
       textInputAction: inputAction,
       autofillHints: autofillHints,
       cursorColor: AppColors.primary,
+      validator: validator,
+      onChanged: (value) {
+        if (onChanged != null) {
+          onChanged!(value);
+        }
+      },
+      style: GoogleFonts.outfit(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.darkText,
+      ),
       decoration: InputDecoration(
-        border: InputBorder.none,
+        counterText: '',
         isDense: true,
         hintText: hintText ?? "Enter Mobile Number",
-        counterText: '',
         suffixIcon: suffixIcon,
         hintStyle: GoogleFonts.outfit(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.darkGrey,
         ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        prefixIcon: prefixWidget != null
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
+                child: prefixWidget,
+              )
+            : Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: CountryCodePicker(
+                  onChanged: onCountryChanged,
+                  initialSelection: initialCountryCode,
+                  favorite: const ['+91', 'IN'],
+                  dialogBackgroundColor: AppColors.whiteText,
+                  boxDecoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.whiteText,
+                  ),
+                  showCountryOnly: false,
+                  showOnlyCountryWhenClosed: false,
+                  alignLeft: false,
+                  padding: EdgeInsets.zero,
+                  textStyle: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.darkText,
+                  ),
+                ),
+              ),
+        prefixIconConstraints: prefixWidget != null
+            ? null
+            : const BoxConstraints(minWidth: 100, maxWidth: 110),
+
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
-        errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
-          borderRadius: BorderRadius.circular(30),
-        ),
+
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: GenericColors.borderGrey, width: 1),
+
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
           borderRadius: BorderRadius.circular(30),
         ),
+
+        focusedErrorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: GenericColors.darkRed, width: 1),
+          borderRadius: BorderRadius.circular(30),
+        ),
+
         errorStyle: GoogleFonts.outfit(
           fontSize: 13,
           fontWeight: FontWeight.w400,
         ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.fromLTRB(25, 15, 0, 15),
-          child: prefixWidget,
-        ),
       ),
-      validator: validator,
     );
   }
 }

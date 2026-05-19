@@ -329,11 +329,6 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
     try {
       _player = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoUrl),
-        httpHeaders: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
         videoPlayerOptions: VideoPlayerOptions(
           mixWithOthers: true,
           allowBackgroundPlayback: false,
@@ -380,21 +375,14 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
             _initController();
           }
         } else {
-          // Check if the current route is still active (not covered by another screen)
-          final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
-
-          if (isCurrentRoute) {
-            // We are on top but scrolled off screen - dispose to save memory
-            if (_initialized) {
-              _player?.pause();
-              _player?.dispose();
-              _player = null;
-              _initialized = false;
-            }
-          } else {
-            // We are covered by another screen (like SingleVideoScreen)
-            // Just pause the video but keep it initialized for quick return
+          // Only dispose if the current route is still active (meaning the video scrolled off-screen).
+          // Do not dispose if covered by another route (like SingleVideoScreen), to avoid reloading when returning!
+          final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+          if (_initialized && isCurrentRoute) {
             _player?.pause();
+            _player?.dispose();
+            _player = null;
+            _initialized = false;
           }
         }
       },

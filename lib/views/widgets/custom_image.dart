@@ -14,11 +14,13 @@ class CustomNetworkImage extends StatelessWidget {
     required this.imageUrl,
     this.placeHolderHeight = 36,
     this.isProfile = false,
+    this.showProgressIndicator = true,
   });
 
   final String imageUrl;
   final double placeHolderHeight;
   final bool isProfile;
+  final bool showProgressIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -29,23 +31,56 @@ class CustomNetworkImage extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            color: GenericColors.placeHolderGrey,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Center(
-            child: isProfile
-                ? Image.asset(AppIcons.profilePlaceholderP)
-                : SvgPicture.asset(
-                    AppIcons.galleryPlaceholder,
-                    height: placeHolderHeight,
-                  ),
-          ),
-        );
-      },
+      progressIndicatorBuilder: showProgressIndicator
+          ? (context, url, downloadProgress) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: GenericColors.placeHolderGrey,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    isProfile
+                        ? Image.asset(AppIcons.profilePlaceholderP)
+                        : SvgPicture.asset(
+                            AppIcons.galleryPlaceholder,
+                            height: placeHolderHeight,
+                          ),
+                    SizedBox(
+                      height: placeHolderHeight + 10,
+                      width: placeHolderHeight + 10,
+                      child: CircularProgressIndicator(
+                        value: downloadProgress.progress,
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          : null,
+      placeholder: !showProgressIndicator
+          ? (context, url) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: GenericColors.placeHolderGrey,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Center(
+                  child: isProfile
+                      ? Image.asset(AppIcons.profilePlaceholderP)
+                      : SvgPicture.asset(
+                          AppIcons.galleryPlaceholder,
+                          height: placeHolderHeight,
+                        ),
+                ),
+              );
+            }
+          : null,
       errorWidget: (context, url, error) {
         return Container(
           decoration: BoxDecoration(
@@ -105,6 +140,7 @@ class CustomImageCropper {
           AndroidUiSettings(
             toolbarTitle: 'Mapman',
             toolbarColor: AppColors.primary,
+            activeControlsWidgetColor: AppColors.primary,
             toolbarWidgetColor: AppColors.whiteText,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,

@@ -12,10 +12,13 @@ import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class Notifications extends StatefulWidget {
@@ -405,18 +408,38 @@ class TopPromoBanner extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
                 const SizedBox(height: 15),
-                Container(
-                  height: 24,
-                  width: 91,
-                  decoration: BoxDecoration(
-                    color: AppColors.darkText,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Center(
-                    child: BodyTextColors(
-                      title: 'Register Now',
-                      fontSize: 12,
-                      color: Colors.white,
+                GestureDetector(
+                  onTap: () async {
+                    final shopId = SessionManager.getShopId();
+                    final token = SessionManager.getToken();
+
+                    if (token == null) {
+                      await LoginBottomSheet.showLoginBottomSheet(context);
+                      return;
+                    }
+
+                    if (shopId == null) {
+                      await showAddShopDetail(context);
+                    } else {
+                      CustomToast.show(
+                        context,
+                        title: "You have already registered",
+                      );
+                    }
+                  },
+                  child: Container(
+                    height: 24,
+                    width: 91,
+                    decoration: BoxDecoration(
+                      color: AppColors.darkText,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Center(
+                      child: BodyTextColors(
+                        title: 'Register Now',
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/auth_controller.dart';
+import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -11,6 +13,7 @@ import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 
@@ -48,11 +51,8 @@ class _LoginProfileState extends State<LoginProfile> {
     );
 
     phoneNumberController = TextEditingController(
-      text: removeCountryCode(
-        profileController.profileData.data?.phone,
-      ),
+      text: removeCountryCode(profileController.profileData.data?.phone),
     );
-
 
     emailAddressController = TextEditingController(
       text: profileController.profileData.data?.email ?? '',
@@ -92,7 +92,6 @@ class _LoginProfileState extends State<LoginProfile> {
 
     return phone;
   }
-
 
   Future<void> loadJson() async {
     final response = await rootBundle.loadString(
@@ -148,6 +147,19 @@ class _LoginProfileState extends State<LoginProfile> {
     }
   }
 
+  Future<bool> checkEmailExists() async {
+    final response = await context.read<AuthController>().checkEmailExists(
+      email: emailAddressController.text.trim(),
+    );
+    if (!mounted) return false;
+    if (response.status == Status.COMPLETED) {
+      CustomToast.show(context, title: '${response.data}', isError: true);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
@@ -160,7 +172,11 @@ class _LoginProfileState extends State<LoginProfile> {
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
-        appBar: ActionBar(title: 'Profile Details', onTap: () {}),
+        appBar: ActionBar(
+          title: 'Profile Details',
+          isCenterTitle: true,
+          isLoginProfile: true,
+        ),
         body: Form(
           key: formKey,
           child: ListView(
@@ -201,7 +217,7 @@ class _LoginProfileState extends State<LoginProfile> {
                   if (value.text.isEmpty) return const Iterable.empty();
 
                   return stateData.keys.where(
-                        (state) =>
+                    (state) =>
                         state.toLowerCase().contains(value.text.toLowerCase()),
                   );
                 },
@@ -223,7 +239,7 @@ class _LoginProfileState extends State<LoginProfile> {
                     hintText: 'Select State',
                     onChanged: (val) => stateController.text = val as String,
                     validator: (value) =>
-                    value!.isEmpty ? "Select state" : null,
+                        value!.isEmpty ? "Select state" : null,
                   );
                 },
               ),
@@ -234,10 +250,9 @@ class _LoginProfileState extends State<LoginProfile> {
                   if (value.text.isEmpty) return const Iterable.empty();
 
                   return districts.where(
-                        (district) =>
-                        district.toLowerCase().contains(
-                          value.text.toLowerCase(),
-                        ),
+                    (district) => district.toLowerCase().contains(
+                      value.text.toLowerCase(),
+                    ),
                   );
                 },
                 onSelected: (selection) {
@@ -255,7 +270,7 @@ class _LoginProfileState extends State<LoginProfile> {
                     hintText: 'Select District',
                     onChanged: (val) => districtController.text = val as String,
                     validator: (value) =>
-                    value!.isEmpty ? "Select district" : null,
+                        value!.isEmpty ? "Select district" : null,
                   );
                 },
               ),
@@ -278,17 +293,23 @@ class _LoginProfileState extends State<LoginProfile> {
 
               const SizedBox(height: 40),
 
-              profileController.apiResponse.status == Status.LOADING
+              profileController.apiResponse.status == Status.LOADING ||
+                      context.watch<AuthController>().apiResponse.status ==
+                          Status.LOADING
                   ? const ButtonProgressBar()
                   : CustomFullButton(
-                title: 'Update Profile',
-                isDialogue: true,
-                onTap: () async {
-                  if (formKey.currentState!.validate()) {
-                    await updateProfile();
-                  }
-                },
-              ),
+                      title: 'Update Profile',
+                      isDialogue: true,
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          bool isEmailExists = await checkEmailExists();
+                          if (isEmailExists) {
+                            context.read<HomeController>().setCurrentPage = 0;
+                            await updateProfile();
+                          }
+                        }
+                      },
+                    ),
 
               const SizedBox(height: 20),
             ],

@@ -56,6 +56,9 @@ class _UploadVideoState extends State<UploadVideo> {
     'bunk',
     'spa',
     'hotel',
+    'jewellery',
+    'furniture',
+    'salons'
   ];
 
   @override

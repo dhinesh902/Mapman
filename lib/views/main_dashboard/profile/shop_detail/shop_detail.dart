@@ -621,77 +621,149 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
     }
   }
 
-  void _showImageDialog(String imageUrl) {
+  /// 🔥 Updated Dialog with Slider
+  void _showImageDialog(int initialIndex) {
+    final PageController dialogController = PageController(
+      initialPage: initialIndex,
+    );
+
+    int currentIndex = initialIndex;
+
     showDialog(
       context: context,
       barrierColor: Colors.black,
       builder: (context) {
-        return GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Stack(
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Hero(
-                      tag: imageUrl,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 130,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: Colors.black,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.6),
-                              blurRadius: 20,
-                              spreadRadius: 2,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool isFirst = currentIndex == 0;
+            bool isLast = currentIndex == widget.images.length - 1;
+
+            return GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Stack(
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 130,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.black,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.6),
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: PageView.builder(
+                              controller: dialogController,
+                              itemCount: widget.images.length,
+                              onPageChanged: (index) {
+                                setState(() => currentIndex = index);
+                              },
+                              itemBuilder: (_, index) {
+                                return InteractiveViewer(
+                                  minScale: 0.8,
+                                  maxScale: 4,
+                                  child: Hero(
+                                    tag: widget.images[index],
+                                    child: CustomNetworkImage(
+                                      imageUrl: widget.images[index],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: InteractiveViewer(
-                            minScale: 0.8,
-                            maxScale: 4,
-                            child: CustomNetworkImage(imageUrl: imageUrl),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
 
-                /// Close Button (Glass Style)
-                Positioned(
-                  top: 50,
-                  right: 20,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
+                    if (!isFirst)
+                      Positioned(
+                        left: 10,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              dialogController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            child: _arrowButton(Icons.keyboard_arrow_left),
+                          ),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 22,
+
+                    if (!isLast)
+                      Positioned(
+                        right: 10,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              dialogController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            child: _arrowButton(Icons.keyboard_arrow_right),
+                          ),
+                        ),
+                      ),
+
+                    Positioned(
+                      top: 50,
+                      right: 20,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _arrowButton(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Icon(icon, color: Colors.white, size: 26),
     );
   }
 
@@ -717,7 +789,7 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
             itemBuilder: (_, index) {
               return GestureDetector(
                 onTap: () {
-                  _showImageDialog(widget.images[index]);
+                  _showImageDialog(index);
                 },
                 child: CustomNetworkImage(imageUrl: widget.images[index]),
               );

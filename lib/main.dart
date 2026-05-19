@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -15,6 +16,7 @@ import 'package:mapman/firebase_options.dart';
 import 'package:mapman/routes/router.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -111,6 +113,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Background message: ${message.messageId}');
 }
 
+Future<void> requestTrackingPermission() async {
+  final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+
+  if (status == TrackingStatus.notDetermined) {
+    final result =
+    await AppTrackingTransparency.requestTrackingAuthorization();
+
+    if (result == TrackingStatus.authorized) {
+      debugPrint("Tracking Allowed");
+    } else {
+      debugPrint("Tracking Denied");
+    }
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -121,6 +138,9 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final sharedPrefs = await SessionManager.initialize();
+
+  // Clear app cache to start with a clean storage footprint and free previous caches
+  await VideoCacheManager.clearAppCache();
 
   runApp(
     MultiProvider(
@@ -139,7 +159,6 @@ Future<void> main() async {
 
     await requestTrackingPermission();
 
-  
     await initializeLocalNotifications();
 
     final firebaseMessaging = FirebaseMessaging.instance;

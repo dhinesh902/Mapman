@@ -128,6 +128,7 @@ class BodyTextColors extends StatelessWidget {
     this.overflow = TextOverflow.visible,
     this.textDecoration = TextDecoration.none,
     this.decorationColor,
+    this.letterSpacing,
   });
 
   final String title;
@@ -138,6 +139,7 @@ class BodyTextColors extends StatelessWidget {
   final TextOverflow overflow;
   final TextDecoration textDecoration;
   final Color? decorationColor;
+  final double? letterSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +151,7 @@ class BodyTextColors extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
+        letterSpacing: letterSpacing,
         decoration: textDecoration,
         decorationColor: decorationColor,
       ),

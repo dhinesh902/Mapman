@@ -41,12 +41,12 @@ class AppIcons {
   static const String onboardP = 'assets/images/png/onboard.png';
   static const String phoneP = 'assets/images/png/phone.png';
   static const String emailP = 'assets/images/png/email.png';
+  static const String padMailP = 'assets/images/png/padmail.png';
+  static const String padLockP = 'assets/images/png/padlock.png';
+  static const String padCallP = 'assets/images/png/padcall.png';
+  static const String checkedP = 'assets/images/png/checked.png';
   static const String bookmarkP = 'assets/images/png/bookmark.png';
-  static const String happyP = 'assets/images/png/happy.png';
-  static const String happyBgP = 'assets/images/png/happy_bg.png';
   static const String personP = 'assets/images/png/person.png';
-  static const String happyBg1P = 'assets/images/png/happy_bg1.png';
-  static const String happy1p = 'assets/images/png/happy_1.png';
   static const String shopP = 'assets/images/png/shop.png';
   static const String chatP = 'assets/images/png/chat.png';
   static const String helpP = 'assets/images/png/help.png';
@@ -125,14 +125,6 @@ class AppIcons {
   static const String login13P = 'assets/images/png/login/login_13.jpg';
   static const String login14P = 'assets/images/png/login/login_14.jpg';
   static const String login15P = 'assets/images/png/login/login_15.jpg';
-
-  ///   Home Categories
-  static const String beerManP = 'assets/images/png/home/beer_man.png';
-  static const String beerBgP = 'assets/images/png/home/beer_bg.png';
-  static const String doctorP = 'assets/images/png/home/doctor.png';
-  static const String doctorBgP = 'assets/images/png/home/doctor_bg.png';
-  static const String groceryP = 'assets/images/png/home/grocery.png';
-  static const String groceryBgP = 'assets/images/png/home/grocery_bg.png';
 
   /// Map
   static const String barsMap = 'assets/images/png/map/bars.png';

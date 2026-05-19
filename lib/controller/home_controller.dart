@@ -215,7 +215,12 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await homeService.getHome(token: token);
+      dynamic response;
+      if (token.isNotEmpty) {
+        response = await homeService.getHome(token: token);
+      } else {
+        response = await homeService.nonAuthendiCateHome();
+      }
       final data = response[Keys.data];
       if (data != null && data is Map<String, dynamic>) {
         _homeData = ApiResponse.completed(HomeData.fromJson(data));
@@ -232,6 +237,16 @@ class HomeController extends ChangeNotifier {
           .toList();
 
       _homeCategories = (_homeData.data?.category ?? [])
+        ..sort((a, b) {
+          final aIsOthers = a.categoryName?.toLowerCase() == 'others';
+          final bIsOthers = b.categoryName?.toLowerCase() == 'others';
+
+          if (aIsOthers && !bIsOthers) return 1;
+          if (!aIsOthers && bIsOthers) return -1;
+          return 0;
+        });
+
+      _homeCategories = _homeCategories
           .where(
             (item) =>
                 item.categoryType?.toLowerCase() == 'default' ||
@@ -257,6 +272,9 @@ class HomeController extends ChangeNotifier {
     'bunk',
     'spa',
     'hotel',
+    'jewellery',
+    'furniture',
+    'salons',
   ];
 
   Future<ApiResponse<List<ShopSearchData>>> getSearchShops({
@@ -267,12 +285,17 @@ class HomeController extends ChangeNotifier {
 
     try {
       final token = SessionManager.getToken() ?? '';
-
-      final response = await homeService.getSearchShops(
-        token: token,
-        input: input.toLowerCase() == "others" ? 'all' : input,
-      );
-
+      dynamic response;
+      if (token.isEmpty) {
+        response = await homeService.nonauthendicateSearch(
+          input: input.toLowerCase() == "others" ? 'all' : input,
+        );
+      } else {
+        response = await homeService.getSearchShops(
+          token: token,
+          input: input.toLowerCase() == "others" ? 'all' : input,
+        );
+      }
       final data = response[Keys.data];
 
       if (data != null && data is List) {
@@ -549,5 +572,31 @@ class HomeController extends ChangeNotifier {
     }
     notifyListeners();
     return _newCategoryResponse;
+  }
+
+  Future<ApiResponse> deleteCategory({required String categoryName}) async {
+    _newCategoryResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.deleteCategory(
+        token: token,
+        categoryName: categoryName,
+      );
+      _newCategoryResponse = ApiResponse.completed(response[Keys.data]);
+      await getHome();
+      if (_category?.toLowerCase() == categoryName.toLowerCase()) {
+        _category = null;
+      }
+    } catch (e) {
+      _newCategoryResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _newCategoryResponse;
+  }
+
+  void removeCategoryLocally(String categoryName) {
+    _categories.remove(categoryName);
+    notifyListeners();
   }
 }

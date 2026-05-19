@@ -11,12 +11,13 @@ class ActionBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.action,
     this.isCenterTitle = true,
+    this.isLoginProfile = false,
     this.onTap,
   });
 
   final String title;
   final Widget? action;
-  final bool isCenterTitle;
+  final bool isCenterTitle, isLoginProfile;
   final VoidCallback? onTap;
 
   @override
@@ -33,25 +34,31 @@ class ActionBar extends StatelessWidget implements PreferredSizeWidget {
         overflow: TextOverflow.ellipsis,
       ),
       automaticallyImplyLeading: false,
-      leading: GestureDetector(
-        onTap:
-            onTap ??
-            () {
-              context.pop();
-            },
-        child: Container(
-          height: 49,
-          width: 52,
-          margin: EdgeInsets.fromLTRB(8, 5, 0, 2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadiusGeometry.circular(3),
-            color: AppColors.scaffoldBackground,
-          ),
-          child: Center(
-            child: SvgPicture.asset(AppIcons.arrowBack, height: 30, width: 30),
-          ),
-        ),
-      ),
+      leading: isLoginProfile
+          ? null
+          : GestureDetector(
+              onTap:
+                  onTap ??
+                  () {
+                    context.pop();
+                  },
+              child: Container(
+                height: 49,
+                width: 52,
+                margin: EdgeInsets.fromLTRB(8, 5, 0, 2),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadiusGeometry.circular(3),
+                  color: AppColors.scaffoldBackground,
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    AppIcons.arrowBack,
+                    height: 30,
+                    width: 30,
+                  ),
+                ),
+              ),
+            ),
       actions: action != null ? [action!] : null,
     );
   }

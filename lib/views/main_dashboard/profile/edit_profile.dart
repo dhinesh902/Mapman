@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -467,7 +466,7 @@ class _EditProfileState extends State<EditProfile> {
                   title: 'Email Address',
                   hintText: 'Enter email address',
                   inputType: TextInputType.emailAddress,
-
+                  isReadOnly: true,
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.done,
                   validator: (value) {
