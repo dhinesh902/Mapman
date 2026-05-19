@@ -109,14 +109,11 @@ class _MainDashboardState extends State<MainDashboard> {
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: InkWell(
             onTap: () async {
-              final token = SessionManager.getToken();
-              if (token != null) {
-                int? shopId = SessionManager.getShopId();
-                if (shopId != 0) {
-                  VideoDialogues().showVideoUploadDialogue(context);
-                } else {
-                  await showAddShopDetail(context);
-                }
+              int? shopId = SessionManager.getShopId();
+              if (shopId != 0) {
+                VideoDialogues().showVideoUploadDialogue(context);
+              } else {
+                await showAddShopDetail(context);
               }
             },
 
