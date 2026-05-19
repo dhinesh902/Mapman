@@ -114,21 +114,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Background message: ${message.messageId}');
 }
 
-Future<void> requestTrackingPermission() async {
-  final status = await AppTrackingTransparency.trackingAuthorizationStatus;
-
-  if (status == TrackingStatus.notDetermined) {
-    final result =
-    await AppTrackingTransparency.requestTrackingAuthorization();
-
-    if (result == TrackingStatus.authorized) {
-      debugPrint("Tracking Allowed");
-    } else {
-      debugPrint("Tracking Denied");
-    }
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
