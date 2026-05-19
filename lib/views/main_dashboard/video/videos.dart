@@ -687,7 +687,10 @@ class AllVideosCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: CustomNetworkImage(imageUrl: data.categoryVideo ?? ''),
+              child: CustomNetworkImage(
+                imageUrl: data.categoryVideo ?? '',
+                showProgressIndicator: false,
+              ),
             ),
 
             /// GLASS TEXT

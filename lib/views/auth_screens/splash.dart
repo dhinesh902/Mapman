@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> handleNavigation() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     context.read<AuthController>().setSplashAnimation(true);
     final isFirstTime = !(SessionManager.containsKey(key: Keys.isFirstTime));

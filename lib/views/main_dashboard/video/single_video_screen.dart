@@ -20,6 +20,7 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:cached_video_player_plus/cached_video_player_plus.dart' hide VideoCacheManager;
 import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class SingleVideoScreen extends StatefulWidget {
@@ -50,7 +51,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   bool _isAdvancing = false;
   Timer? _debounceTimer;
   bool _hasShownLastVideoToast = false;
-  bool _isInitialized = false;
   double _progress = 0.0;
   final Map<int, bool> _watchedMap = {};
   final Map<int, bool> _apiCallInProgress = {};
@@ -140,13 +140,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     final videoUrl = ApiRoutes.baseUrl + (video.video ?? '');
 
     try {
-      debugPrint('🎬 Initializing video at index $index');
-      final player = VideoPlayerController.networkUrl(
+      debugPrint('🎬 Initializing progressive streaming video at index $index');
+      final player = CachedVideoPlayerPlus.networkUrl(
         Uri.parse(videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(
-          allowBackgroundPlayback: true,
-          mixWithOthers: true,
-        ),
+        invalidateCacheIfOlderThan: const Duration(days: 7),
       );
 
       await player.initialize();
@@ -163,12 +160,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         return;
       }
 
-      _controllers[index] = player;
+      _controllers[index] = player.controller;
 
       if (index == _currentIndex) {
         _playVideo(index);
       } else {
-        player
+        player.controller
           ..setLooping(false)
           ..setVolume(0.0)
           ..pause();
@@ -195,9 +192,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       ..play();
 
     if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
+      setState(() {});
     }
   }
 
@@ -262,9 +257,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         _completedVideos[videoId] = false;
       }
 
-      if (position >= duration &&
-          _currentIndex < widget.videosData.length - 1) {
-        _autoAdvanceToNext();
+      if (position >= duration) {
+        player.seekTo(Duration.zero);
+        player.play();
       }
     } catch (e) {
       debugPrint('Error in videoListener: $e');
@@ -387,7 +382,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     // Check if the controller is already preloaded and initialized to avoid loading screen flicker!
     final bool alreadyInitialized = _controllers.containsKey(index) &&
         _controllers[index]!.value.isInitialized;
-    _isInitialized = alreadyInitialized;
     _progress = alreadyInitialized
         ? (_controllers[index]!.value.position.inMilliseconds /
             _controllers[index]!.value.duration.inMilliseconds.clamp(1, double.infinity))
@@ -437,8 +431,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
           final shouldShowVideo =
               _controllers[index] != null &&
-              _controllers[index]!.value.isInitialized &&
-              _isInitialized;
+              _controllers[index]!.value.isInitialized;
 
           return Stack(
             fit: StackFit.expand,

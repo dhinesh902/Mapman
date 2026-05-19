@@ -225,7 +225,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 context.read<AuthController>().animateTo(1);
               },
             ),
-            if (Platform.isIOS) ...[
+            if (Platform.isAndroid) ...[
               const SizedBox(height: 15),
               CustomOutlineButtonWithImage(
                 title: 'Continue as Guest',

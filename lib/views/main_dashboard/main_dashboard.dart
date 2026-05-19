@@ -117,8 +117,6 @@ class _MainDashboardState extends State<MainDashboard> {
                 } else {
                   await showAddShopDetail(context);
                 }
-              } else {
-                await LoginBottomSheet.showLoginBottomSheet(context);
               }
             },
 
