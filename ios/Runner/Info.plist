@@ -17,7 +17,7 @@
    </array>
 
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>This app needs access to location when open.</string>
+    <string>This app needs location to show your position on map</string>
 
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app uses your location to provide map features and improve navigation experience, even when running in the background.</string>
@@ -93,5 +93,7 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
 </dict>
 </plist>

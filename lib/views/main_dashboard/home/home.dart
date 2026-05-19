@@ -87,25 +87,27 @@ class _HomeState extends State<Home> {
   }
 
   Future<bool> requestNotificationPermission() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      final status = await Permission.notification.status;
-      if (status.isGranted) {
-        return true;
-      }
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
-        return false;
-      }
-      final result = await Permission.notification.request();
-
-      if (result.isPermanentlyDenied) {
-        await openAppSettings();
-        return false;
-      }
-      return result.isGranted;
-    }
+  if (!Platform.isAndroid && !Platform.isIOS) {
     return false;
   }
+
+  PermissionStatus status = await Permission.notification.status;
+
+  // Already granted
+  if (status.isGranted) {
+    return true;
+  }
+
+  // Permanently denied
+  if (status.isPermanentlyDenied) {
+    return false;
+  }
+
+  // Request permission
+  status = await Permission.notification.request();
+
+  return status.isGranted;
+}
 
   @override
   Widget build(BuildContext context) {
