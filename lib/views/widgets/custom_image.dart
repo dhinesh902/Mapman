@@ -48,15 +48,6 @@ class CustomNetworkImage extends StatelessWidget {
                             AppIcons.galleryPlaceholder,
                             height: placeHolderHeight,
                           ),
-                    SizedBox(
-                      height: placeHolderHeight + 10,
-                      width: placeHolderHeight + 10,
-                      child: CircularProgressIndicator(
-                        value: downloadProgress.progress,
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    ),
                   ],
                 ),
               );

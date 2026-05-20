@@ -86,31 +86,14 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     context.read<AuthController>().setSplashAnimation(true);
-    final isFirstTime = !(SessionManager.containsKey(key: Keys.isFirstTime));
-    final hasToken = SessionManager.containsKey(key: Keys.token);
     final token = SessionManager.getToken();
     if (token != null) {
-      await context.read<ProfileController>().getProfile();
+      try {
+        await context.read<ProfileController>().getProfile();
+      } catch (_) {}
     }
     if (!mounted) return;
-    if (isFirstTime) {
-      context.go('/onboard_screen');
-    } else if (!hasToken) {
-      context.go('/login');
-    } else {
-      final profile = context.read<ProfileController>().profileData.data;
-      if (profile != null &&
-          (profile.userName == null ||
-              profile.userName!.isEmpty ||
-              profile.district == null ||
-              profile.district!.isEmpty ||
-              profile.state == null ||
-              profile.state!.isEmpty)) {
-        context.go('/login_profile');
-      } else {
-        context.go('/main_dashboard', extra: false);
-      }
-    }
+    context.go('/main_dashboard', extra: false);
   }
 
   @override

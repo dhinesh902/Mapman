@@ -47,7 +47,7 @@ class _MapsState extends State<Maps> {
   late DraggableScrollableController sheetController;
 
   double _currentZoom = 12.5;
-
+  bool isClicking = false;
   String? _mapStyle;
 
   /// Current Location notifier
@@ -69,9 +69,6 @@ class _MapsState extends State<Maps> {
     sheetController = DraggableScrollableController();
     homeController = context.read<HomeController>();
 
-    /// current location listen
-    startLocationListening();
-
     /// Map data show only streets
     rootBundle.loadString('assets/map_style.json').then((string) {
       _mapStyle = string;
@@ -79,6 +76,11 @@ class _MapsState extends State<Maps> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       homeController.setNearByShopHeight = 0.18;
+
+      /// Start location listening after the map widget is built
+      /// so _mapController is available when _animateToCurrentLocation is called.
+      startLocationListening();
+
       await Future.wait([
         LocationIconService().preloadAllIcons(),
         getSearchShops(),
@@ -167,19 +169,11 @@ class _MapsState extends State<Maps> {
     required double latitude,
     required double longitude,
   }) {
-    LatLng? location = currentLatLng;
-    if (location == null && homeController.currentPosition != null) {
-      location = LatLng(
-        homeController.currentPosition!.latitude,
-        homeController.currentPosition!.longitude,
-      );
-    }
-
-    if (location == null) return 0.0;
+    if (currentLatLng == null) return 0.0;
 
     final meters = Geolocator.distanceBetween(
-      location.latitude,
-      location.longitude,
+      currentLatLng!.latitude,
+      currentLatLng!.longitude,
       latitude,
       longitude,
     );
@@ -220,12 +214,16 @@ class _MapsState extends State<Maps> {
     }
 
     await homeController.filterNearbyShops();
-    
+
     if (currentLatLng == null && homeController.currentPosition != null) {
-      currentLatLng = LatLng(
-        homeController.currentPosition!.latitude,
-        homeController.currentPosition!.longitude,
-      );
+      if (mounted) {
+        setState(() {
+          currentLatLng = LatLng(
+            homeController.currentPosition!.latitude,
+            homeController.currentPosition!.longitude,
+          );
+        });
+      }
     }
 
     if (sheetController.isAttached) {
@@ -532,11 +530,22 @@ class _MapsState extends State<Maps> {
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
 
-              icon: _currentZoom >= 15.0
-                  ? (_customMarkers[shop.id?.toString()] ?? circularIcon)
-                  : circularIcon,
+              icon: _customMarkers[shop.id?.toString()] ?? circularIcon,
 
               onTap: () {
+                setState(() {
+                  _currentZoom = 15.5;
+                });
+                if (!isClicking) {
+                  _mapController?.animateCamera(
+                    CameraUpdate.newCameraPosition(
+                      CameraPosition(target: LatLng(lat, long), zoom: 15.5),
+                    ),
+                  );
+                }
+                if (mounted) {
+                  setState(() => isClicking = true);
+                }
                 tapNotifier.value = shop;
               },
             ),
@@ -664,11 +673,13 @@ class _MapsState extends State<Maps> {
                         bottom: 40,
                         left: 0,
                         right: 0,
-                        child: LocationShopContainer(
-                          searchData: shop,
-                          distance: distanceBetweenLatLong(
-                            latitude: double.parse(shop.lat.toString()),
-                            longitude: double.parse(shop.long.toString()),
+                        child: SafeArea(
+                          child: LocationShopContainer(
+                            searchData: shop,
+                            distance: distanceBetweenLatLong(
+                              latitude: double.parse(shop.lat.toString()),
+                              longitude: double.parse(shop.long.toString()),
+                            ),
                           ),
                         ),
                       );
@@ -690,108 +701,144 @@ class _MapsState extends State<Maps> {
                               topRight: Radius.circular(10),
                             ),
                           ),
-                          child: Consumer<HomeController>(
-                            builder: (context, controller, _) {
-                              final status = controller.shopSearchData.status;
-                              final nearByShops = controller.nearByShopData.data ?? [];
-
-                              int itemCount = 1; // Header always present
-                              if (status == Status.LOADING || status == Status.INITIAL) {
-                                itemCount = 2; // Header + Loader
-                              } else if (status == Status.ERROR) {
-                                itemCount = 2; // Header + Error
-                              } else if (nearByShops.isEmpty) {
-                                itemCount = 2; // Header + No Data
-                              } else {
-                                itemCount = nearByShops.length + 1; // Header + Shops
-                              }
-
-                              return ListView.builder(
-                                controller: scrollController,
-                                padding: EdgeInsets.zero,
-                                itemCount: itemCount,
-                                itemBuilder: (context, index) {
-                                  if (index == 0) {
-                                    return Padding(
-                                      padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
-                                      child: Row(
-                                        children: [
-                                          Image.asset(
-                                            AppIcons.nearByShopP,
-                                            height: 24,
-                                            width: 24,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: HeaderTextBlack(
-                                              title: 'Near By ${controller.searchCategory.toString().capitalize()}',
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
+                          child: SingleChildScrollView(
+                            controller: scrollController,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    15,
+                                    10,
+                                    0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        AppIcons.nearByShopP,
+                                        height: 24,
+                                        width: 24,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: HeaderTextBlack(
+                                          title:
+                                              'Near By ${homeController.searchCategory.toString().capitalize()}',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      ClearCircleContainer(
+                                        onTap: () {
+                                          tapNotifier.value = null;
+                                          if (sheetController.isAttached) {
+                                            sheetController.animateTo(
+                                              0.0,
+                                              duration: const Duration(
+                                                milliseconds: 300,
+                                              ),
+                                              curve: Curves.easeOut,
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 15),
+                                Builder(
+                                  builder: (context) {
+                                    switch (homeController
+                                        .nearByShopData
+                                        .status) {
+                                      case Status.INITIAL:
+                                      case Status.LOADING:
+                                        return SizedBox(
+                                          height: 200,
+                                          child: CustomLoadingIndicator(),
+                                        );
+                                      case Status.COMPLETED:
+                                        final nearByShops =
+                                            homeController
+                                                .nearByShopData
+                                                .data ??
+                                            [];
+                                        if (nearByShops.isEmpty) {
+                                          return SizedBox(
+                                            height: 200,
+                                            child: NoDataText(
+                                              title: Strings.noDataFound,
                                             ),
-                                          ),
-                                          ClearCircleContainer(
-                                            onTap: () {
-                                              tapNotifier.value = null;
-                                              sheetController.animateTo(
-                                                0.0,
-                                                duration: const Duration(
-                                                  milliseconds: 300,
+                                          );
+                                        }
+                                        return SizedBox(
+                                          height: 360,
+                                          child: ListView.builder(
+                                            itemCount: nearByShops.length,
+                                            itemBuilder: (context, index) {
+                                              final shop = nearByShops[index];
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  setState(
+                                                    () => _currentZoom = 15.5,
+                                                  );
+                                                  _mapController?.animateCamera(
+                                                    CameraUpdate.newCameraPosition(
+                                                      CameraPosition(
+                                                        target: LatLng(
+                                                          double.parse(
+                                                            shop.lat.toString(),
+                                                          ),
+                                                          double.parse(
+                                                            shop.long
+                                                                .toString(),
+                                                          ),
+                                                        ),
+                                                        zoom: 15.5,
+                                                      ),
+                                                    ),
+                                                  );
+                                                  tapNotifier.value = shop;
+                                                },
+                                                child: Padding(
+                                                  padding: EdgeInsets.only(
+                                                    bottom: 10,
+                                                    top: index == 0 ? 5 : 0,
+                                                  ),
+                                                  child: LocationShopContainer(
+                                                    searchData: shop,
+                                                    distance:
+                                                        distanceBetweenLatLong(
+                                                          latitude:
+                                                              double.parse(
+                                                                shop.lat
+                                                                    .toString(),
+                                                              ),
+                                                          longitude:
+                                                              double.parse(
+                                                                shop.long
+                                                                    .toString(),
+                                                              ),
+                                                        ),
+                                                  ),
                                                 ),
-                                                curve: Curves.easeOut,
                                               );
                                             },
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-
-                                  // Index > 0
-                                  if (status == Status.LOADING || status == Status.INITIAL) {
-                                    return SizedBox(
-                                      height: 200,
-                                      child: Center(
-                                        child: CustomLoadingIndicator(),
-                                      ),
-                                    );
-                                  }
-
-                                  if (status == Status.ERROR) {
-                                    return SizedBox(
-                                      height: 200,
-                                      child: Center(
-                                        child: CustomErrorTextWidget(
-                                          title: '${controller.shopSearchData.message}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-
-                                  if (nearByShops.isEmpty) {
-                                    return SizedBox(
-                                      height: 200,
-                                      child: Center(
-                                        child: NoDataText(
-                                          title: Strings.noDataFound,
-                                        ),
-                                      ),
-                                    );
-                                  }
-
-                                  final shop = nearByShops[index - 1];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: LocationShopContainer(
-                                      searchData: shop,
-                                      distance: distanceBetweenLatLong(
-                                        latitude: double.parse(shop.lat.toString()),
-                                        longitude: double.parse(shop.long.toString()),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                                        );
+                                      case Status.ERROR:
+                                        return SizedBox(
+                                          height: 200,
+                                          child: CustomErrorTextWidget(
+                                            title:
+                                                '${homeController.shopSearchData.message}',
+                                          ),
+                                        );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -847,21 +894,25 @@ class _MapsState extends State<Maps> {
                 focusNode: focusNode,
                 ontTap: () {
                   tapNotifier.value = null;
-                  sheetController.animateTo(
-                    0.0,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                  );
+                  if (sheetController.isAttached) {
+                    sheetController.animateTo(
+                      0.0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
                   setState(() {});
                 },
                 clearOnTap: () {
                   textController.clear();
                   tapNotifier.value = null;
-                  sheetController.animateTo(
-                    0.0,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                  );
+                  if (sheetController.isAttached) {
+                    sheetController.animateTo(
+                      0.0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
                   setState(() {});
                 },
               ),
@@ -964,79 +1015,77 @@ class LocationShopContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: GestureDetector(
-        onTap: () {
-          final token = SessionManager.getToken();
-          if (token == null || token.isEmpty) {
-            LoginBottomSheet.showLoginBottomSheet(context);
-          } else {
-            context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: AppColors.scaffoldBackground,
-            border: Border.all(color: AppColors.primaryBorder),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 5,
-                spreadRadius: 0,
-                offset: Offset(0, 5),
+    return GestureDetector(
+      onTap: () {
+        final token = SessionManager.getToken();
+        if (token == null || token.isEmpty) {
+          LoginBottomSheet.showLoginBottomSheet(context);
+        } else {
+          context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: AppColors.scaffoldBackground,
+          border: Border.all(color: AppColors.primaryBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 5,
+              spreadRadius: 0,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(5),
+        margin: EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: SizedBox(
+                height: 80,
+                width: 110,
+                child: CustomNetworkImage(
+                  imageUrl:
+                      searchData.shopImage ??
+                      getUnKnownShopImages(
+                        '${searchData.category?.toLowerCase()}',
+                      ),
+                ),
               ),
-            ],
-          ),
-          padding: EdgeInsets.all(5),
-          margin: EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: SizedBox(
-                  height: 80,
-                  width: 110,
-                  child: CustomNetworkImage(
-                    imageUrl:
-                        searchData.shopImage ??
-                        getUnKnownShopImages(
-                          '${searchData.category?.toLowerCase()}',
-                        ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  BodyTextColors(
+                    title: searchData.shopName?.capitalize() ?? '',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.lightDarkText,
                   ),
-                ),
+                  SizedBox(height: 10),
+                  BodyTextHint(
+                    title: searchData.address?.capitalize() ?? '',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 10),
+                  BodyTextHint(
+                    title: '${distance.toStringAsFixed(1)} km Away',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ],
               ),
-              SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    BodyTextColors(
-                      title: searchData.shopName?.capitalize() ?? '',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.lightDarkText,
-                    ),
-                    SizedBox(height: 10),
-                    BodyTextHint(
-                      title: searchData.address?.capitalize() ?? '',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 10),
-                    BodyTextHint(
-                      title: '${distance.toStringAsFixed(1)} km Away',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

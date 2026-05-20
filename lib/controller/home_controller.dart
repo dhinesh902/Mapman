@@ -12,7 +12,7 @@ import 'package:mapman/utils/storage/session_manager.dart';
 
 class HomeController extends ChangeNotifier {
   final HomeService homeService = HomeService();
-  int _currentPage = 1;
+  int _currentPage = 0;
 
   int get currentPage => _currentPage;
 
@@ -186,6 +186,10 @@ class HomeController extends ChangeNotifier {
 
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
+  set setCurrentPosition(Position? value) {
+    _currentPosition = value;
+    notifyListeners();
+  }
 
   ///Notification data
   ApiResponse<NotificationPreferenceData> _notificationPreferenceData =
@@ -325,6 +329,8 @@ class HomeController extends ChangeNotifier {
 
   Future<Position> _getCurrentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
       throw Exception('Location services are disabled');
     }
 
@@ -336,12 +342,21 @@ class HomeController extends ChangeNotifier {
 
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
       throw Exception('Location permission denied');
     }
 
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    try {
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+    } catch (_) {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
+      rethrow;
+    }
   }
 
   Future<void> filterNearbyShops() async {
@@ -349,8 +364,17 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final position = await _getCurrentLocation();
-      _currentPosition = position;
+      Position? position = _currentPosition;
+      if (position == null) {
+        try {
+          position = await _getCurrentLocation();
+          _currentPosition = position;
+        } catch (e) {
+          position = null;
+          _currentPosition = null;
+        }
+      }
+
       final List<ShopSearchData> allShops = shopSearchData.data ?? [];
 
       final List<ShopSearchData> nearbyShops = allShops.where((shop) {
@@ -359,29 +383,31 @@ class HomeController extends ChangeNotifier {
         return lat != null && lng != null;
       }).toList();
 
-      nearbyShops.sort((a, b) {
-        final double latA = double.parse(a.lat!);
-        final double lngA = double.parse(a.long!);
+      if (position != null) {
+        nearbyShops.sort((a, b) {
+          final double latA = double.parse(a.lat!);
+          final double lngA = double.parse(a.long!);
 
-        final double latB = double.parse(b.lat!);
-        final double lngB = double.parse(b.long!);
+          final double latB = double.parse(b.lat!);
+          final double lngB = double.parse(b.long!);
 
-        final double distanceA = Geolocator.distanceBetween(
-          position.latitude,
-          position.longitude,
-          latA,
-          lngA,
-        );
+          final double distanceA = Geolocator.distanceBetween(
+            position!.latitude,
+            position.longitude,
+            latA,
+            lngA,
+          );
 
-        final double distanceB = Geolocator.distanceBetween(
-          position.latitude,
-          position.longitude,
-          latB,
-          lngB,
-        );
+          final double distanceB = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            latB,
+            lngB,
+          );
 
-        return distanceA.compareTo(distanceB);
-      });
+          return distanceA.compareTo(distanceB);
+        });
+      }
 
       _nearByShopData = ApiResponse.completed(nearbyShops);
     } catch (e) {

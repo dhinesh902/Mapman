@@ -189,7 +189,9 @@ class _MainDashboardState extends State<MainDashboard> {
                 },
               ),
               Positioned(
-                bottom: MediaQuery.of(context).size.height * 0.035,
+                bottom: Platform.isIOS
+                    ? MediaQuery.of(context).size.height * 0.035
+                    : 12,
                 child: HeaderTextPrimary(
                   title: shopId != 0 ? "Upload" : "Create",
                   fontSize: 12,
