@@ -280,7 +280,7 @@ class _MapsState extends State<Maps> {
     final double labelPadding = 15.0;
     final double labelWidth = textPainter.width + (labelPadding * 2);
     final double labelHeight = textPainter.height + 10;
-
+    
     final double iconWidth = 40.0;
     final double iconHeight = 40.0;
     final double circleRadius = 20.0;
@@ -316,7 +316,7 @@ class _MapsState extends State<Maps> {
 
     // Draw the border for the combined shape
     final borderPaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFF001F54)
+      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     canvas.drawPath(path, borderPaint);
@@ -326,9 +326,9 @@ class _MapsState extends State<Maps> {
 
     // Draw round circle marker instead of icon
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ??Color(0xFF001F54)
+      ..color = _categoryColors[category] ??Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
-
+    
     canvas.drawCircle(
       Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
       circleRadius,
@@ -364,9 +364,9 @@ class _MapsState extends State<Maps> {
     final double totalSize = (circleRadius * 2) + 4;
 
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFF001F54)
+      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
-
+    
     canvas.drawCircle(
       Offset(circleRadius, circleRadius),
       circleRadius,
@@ -389,6 +389,33 @@ class _MapsState extends State<Maps> {
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
+
+  String _getIconPath(String category) {
+    switch (category.toLowerCase().trim()) {
+      case 'theater':
+        return AppIcons.theatersMap;
+      case 'restaurant':
+        return AppIcons.resortsMap;
+      case 'hospital':
+        return AppIcons.hospitalsMap;
+      case 'bars':
+        return AppIcons.barsMap;
+      case 'grocery':
+        return AppIcons.groceryMap;
+      case 'textile':
+        return AppIcons.textilesMap;
+      case 'resort':
+        return AppIcons.resortsMap;
+      case 'bunk':
+        return AppIcons.petrolBunkMap;
+      case 'spa':
+        return AppIcons.spaMap;
+      case 'hotel':
+        return AppIcons.hotelsMap;
+      default:
+        return AppIcons.othersMap;
+    }
   }
 
   final List<String> _iconMap = [
@@ -422,7 +449,7 @@ class _MapsState extends State<Maps> {
     'jewellery': Color(0xFFFF7043), // Coral
     'furniture': Color(0xFF26A69A), // Aqua Green
     'salons': Color(0xFF7CB342), // Lime Green
-    'others': Color(0xFF001F54), // Soft Brown
+    'others': Color(0xFFFF7043), // Soft Brown
   };
 
   // Set<Marker> getMarkers() {

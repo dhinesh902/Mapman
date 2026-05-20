@@ -12,7 +12,7 @@ import 'package:mapman/utils/storage/session_manager.dart';
 
 class HomeController extends ChangeNotifier {
   final HomeService homeService = HomeService();
-  int _currentPage = 0;
+  int _currentPage = 1;
 
   int get currentPage => _currentPage;
 
