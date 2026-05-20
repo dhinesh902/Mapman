@@ -37,13 +37,15 @@ class _MapsState extends State<Maps> {
 
   final ValueNotifier<ShopSearchData?> tapNotifier = ValueNotifier(null);
   final Map<String, BitmapDescriptor> _customMarkers = {};
+  final Map<String, BitmapDescriptor> _circularMarkers = {};
+  bool _markersLoaded = false;
   final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
   GoogleMapController? _mapController;
   late DraggableScrollableController sheetController;
 
-  double _currentZoom = 14.5;
+  double _currentZoom = 12.5;
 
   String? _mapStyle;
 
@@ -54,7 +56,9 @@ class _MapsState extends State<Maps> {
 
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(10.9974, 76.9589),
-    zoom: 14.5,
+    zoom: 12.5,
+    tilt: 0,
+    bearing: 0,
   );
 
   @override
@@ -151,7 +155,7 @@ class _MapsState extends State<Maps> {
     if (_mapController != null && currentLatLng != null) {
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(target: currentLatLng!, zoom: 15.5),
+          CameraPosition(target: currentLatLng!, zoom: 12.5),
         ),
       );
     }
@@ -189,6 +193,8 @@ class _MapsState extends State<Maps> {
 
   Future<void> getSearchShops() async {
     _customMarkers.clear();
+    _circularMarkers.clear();
+    _markersLoaded = false;
     final response = await homeController.getSearchShops(
       input: homeController.searchCategory ?? 'all',
     );
@@ -214,14 +220,27 @@ class _MapsState extends State<Maps> {
 
     for (var shop in response.data!) {
       final id = shop.id?.toString();
+
+      final String rawCategory =
+          shop.category?.toLowerCase().trim() ?? 'others';
+      final String category = _iconMap.contains(rawCategory)
+          ? rawCategory
+          : 'others';
+
       if (id != null && !_customMarkers.containsKey(id)) {
         final icon = await createMarkerWithLabel(
           text: shop.shopName?.capitalize() ?? '',
-          category: shop.category?.toLowerCase().trim() ?? 'others',
+          category: category,
         );
         _customMarkers[id] = icon;
       }
+
+      if (!_circularMarkers.containsKey(category)) {
+        final circIcon = await createCircularMarker(category: category);
+        _circularMarkers[category] = circIcon;
+      }
     }
+    _markersLoaded = true;
     if (mounted) setState(() {});
   }
 
@@ -231,17 +250,7 @@ class _MapsState extends State<Maps> {
   }) async {
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-
-    // Load category icon
-    final assetPath = _getIconPath(category);
-    final ByteData data = await rootBundle.load(assetPath);
-    final ui.Codec codec = await ui.instantiateImageCodec(
-      data.buffer.asUint8List(),
-      targetWidth: 60,
-      targetHeight: 70,
-    );
-    final ui.FrameInfo fi = await codec.getNextFrame();
-    final ui.Image iconImage = fi.image;
+    canvas.translate(2, 2); // Add padding for border to prevent clipping
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -271,38 +280,112 @@ class _MapsState extends State<Maps> {
     final double labelPadding = 15.0;
     final double labelWidth = textPainter.width + (labelPadding * 2);
     final double labelHeight = textPainter.height + 10;
-    final double iconWidth = iconImage.width.toDouble();
-    final double iconHeight = iconImage.height.toDouble();
+    
+    final double iconWidth = 40.0;
+    final double iconHeight = 40.0;
+    final double circleRadius = 20.0;
 
-    final double totalWidth = labelWidth > iconWidth ? labelWidth : iconWidth;
-    final double totalHeight = labelHeight + iconHeight + 5;
+    final double baseWidth = labelWidth > iconWidth ? labelWidth : iconWidth;
+    final double totalWidth = baseWidth + 4;
+    final double totalHeight = labelHeight + iconHeight + 5 + 4;
 
-    final double labelX = (totalWidth - labelWidth) / 2;
-    final double iconX = (totalWidth - iconWidth) / 2;
+    final double labelX = (baseWidth - labelWidth) / 2;
+    final double iconX = (baseWidth - iconWidth) / 2;
 
     // Draw label bubble
-    final paint = Paint()..color = Colors.white;
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(labelX, 0, labelWidth, labelHeight),
-      const Radius.circular(8),
-    );
-    canvas.drawRRect(rect, paint);
+    // Create combined path for bubble and triangle
+    final path = Path();
+    final radius = const Radius.circular(8);
+    path.moveTo(labelX + 8, 0);
+    path.lineTo(labelX + labelWidth - 8, 0);
+    path.arcToPoint(Offset(labelX + labelWidth, 8), radius: radius);
+    path.lineTo(labelX + labelWidth, labelHeight - 8);
+    path.arcToPoint(Offset(labelX + labelWidth - 8, labelHeight), radius: radius);
+    path.lineTo(totalWidth / 2 + 8, labelHeight);
+    path.lineTo(totalWidth / 2, labelHeight + 8);
+    path.lineTo(totalWidth / 2 - 8, labelHeight);
+    path.lineTo(labelX + 8, labelHeight);
+    path.arcToPoint(Offset(labelX, labelHeight - 8), radius: radius);
+    path.lineTo(labelX, 8);
+    path.arcToPoint(Offset(labelX + 8, 0), radius: radius);
+    path.close();
 
-    // Draw shadow/border for bubble
+    // Fill the combined shape with white
+    final paint = Paint()..color = Colors.white;
+    canvas.drawPath(path, paint);
+
+    // Draw the border for the combined shape
     final borderPaint = Paint()
-      ..color = Colors.black26
+      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-    canvas.drawRRect(rect, borderPaint);
+    canvas.drawPath(path, borderPaint);
 
     // Draw text
     textPainter.paint(canvas, Offset(labelX + labelPadding, 5));
 
-    // Draw icon
-    canvas.drawImage(iconImage, Offset(iconX, labelHeight + 5), Paint());
+    // Draw round circle marker instead of icon
+    final circlePaint = Paint()
+      ..color = _categoryColors[category] ??Color(0xFFFF7043)
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawCircle(
+      Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
+      circleRadius,
+      circlePaint,
+    );
+
+    // Draw white border for the circle
+    final circleBorderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(
+      Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
+      circleRadius,
+      circleBorderPaint,
+    );
 
     final picture = pictureRecorder.endRecording();
     final img = await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
+
+  Future<BitmapDescriptor> createCircularMarker({
+    required String category,
+  }) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+    canvas.translate(2, 2); // Add padding for border to prevent clipping
+
+    final double circleRadius = 20.0;
+    final double totalSize = (circleRadius * 2) + 4;
+
+    final circlePaint = Paint()
+      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawCircle(
+      Offset(circleRadius, circleRadius),
+      circleRadius,
+      circlePaint,
+    );
+
+    // Draw white border for the circle
+    final circleBorderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(
+      Offset(circleRadius, circleRadius),
+      circleRadius,
+      circleBorderPaint,
+    );
+
+    final picture = pictureRecorder.endRecording();
+    final img = await picture.toImage(totalSize.toInt(), totalSize.toInt());
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
@@ -346,8 +429,28 @@ class _MapsState extends State<Maps> {
     'bunk',
     'spa',
     'hotel',
+    'jewellery',
+    'furniture',
+    'salons',
     'others',
   ];
+
+  final Map<String, Color> _categoryColors = {
+    'theater': Color(0xFF7B1FA2), // Purple
+    'restaurant': Color(0xFFF4511E), // Orange
+    'hospital': Color(0xFFD32F2F), // Red
+    'bars': Color(0xFF8D6E63), // Brown
+    'grocery': Color(0xFF43A047), // Green
+    'textile': Color(0xFFE91E63), // Pink
+    'resort': Color(0xFF00897B), // Teal
+    'bunk': Color(0xFFFFA000), // Amber
+    'spa': Color(0xFFAD1457), // Rose Pink
+    'hotel': Color(0xFF6A1B9A), // Deep Purple
+    'jewellery': Color(0xFFFF7043), // Coral
+    'furniture': Color(0xFF26A69A), // Aqua Green
+    'salons': Color(0xFF7CB342), // Lime Green
+    'others': Color(0xFFFF7043), // Soft Brown
+  };
 
   // Set<Marker> getMarkers() {
   //   final response = homeController.shopSearchData;
@@ -397,6 +500,10 @@ class _MapsState extends State<Maps> {
       return {};
     }
 
+    if (!_markersLoaded) {
+      return {};
+    }
+
     final Set<Marker> markerSet = {};
 
     for (int i = 0; i < response.data!.length; i++) {
@@ -412,6 +519,8 @@ class _MapsState extends State<Maps> {
         category: category,
       );
 
+      final circularIcon = _circularMarkers[category] ?? baseIcon;
+
       try {
         final double? lat = double.tryParse(shop.lat.toString());
         final double? long = double.tryParse(shop.long.toString());
@@ -422,7 +531,9 @@ class _MapsState extends State<Maps> {
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
 
-              icon: _customMarkers[shop.id?.toString()] ?? baseIcon,
+              icon: _currentZoom >= 15.0
+                  ? (_customMarkers[shop.id?.toString()] ?? circularIcon)
+                  : circularIcon,
 
               onTap: () {
                 tapNotifier.value = shop;
@@ -504,11 +615,18 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
+                    myLocationButtonEnabled: true,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
                     padding: const EdgeInsets.only(top: 70, bottom: 100),
                     onMapCreated: onMapCreated,
+                    onCameraMove: (CameraPosition position) {
+                      if (_currentZoom != position.zoom) {
+                        setState(() {
+                          _currentZoom = position.zoom;
+                        });
+                      }
+                    },
                   ),
                   Positioned(
                     right: 16,
