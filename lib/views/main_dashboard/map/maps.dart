@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -144,7 +145,7 @@ class _MapsState extends State<Maps> {
 
     _positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-              (position) {
+          (position) {
             currentLatLng = LatLng(position.latitude, position.longitude);
             if (mounted) setState(() {});
           },
@@ -166,11 +167,19 @@ class _MapsState extends State<Maps> {
     required double latitude,
     required double longitude,
   }) {
-    if (currentLatLng == null) return 0.0;
+    LatLng? location = currentLatLng;
+    if (location == null && homeController.currentPosition != null) {
+      location = LatLng(
+        homeController.currentPosition!.latitude,
+        homeController.currentPosition!.longitude,
+      );
+    }
+
+    if (location == null) return 0.0;
 
     final meters = Geolocator.distanceBetween(
-      currentLatLng!.latitude,
-      currentLatLng!.longitude,
+      location.latitude,
+      location.longitude,
       latitude,
       longitude,
     );
@@ -211,6 +220,22 @@ class _MapsState extends State<Maps> {
     }
 
     await homeController.filterNearbyShops();
+    
+    if (currentLatLng == null && homeController.currentPosition != null) {
+      currentLatLng = LatLng(
+        homeController.currentPosition!.latitude,
+        homeController.currentPosition!.longitude,
+      );
+    }
+
+    if (sheetController.isAttached) {
+      sheetController.animateTo(
+        0.18,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+
     await _generateMarkers();
   }
 
@@ -280,7 +305,7 @@ class _MapsState extends State<Maps> {
     final double labelPadding = 15.0;
     final double labelWidth = textPainter.width + (labelPadding * 2);
     final double labelHeight = textPainter.height + 10;
-    
+
     final double iconWidth = 40.0;
     final double iconHeight = 40.0;
     final double circleRadius = 20.0;
@@ -300,7 +325,10 @@ class _MapsState extends State<Maps> {
     path.lineTo(labelX + labelWidth - 8, 0);
     path.arcToPoint(Offset(labelX + labelWidth, 8), radius: radius);
     path.lineTo(labelX + labelWidth, labelHeight - 8);
-    path.arcToPoint(Offset(labelX + labelWidth - 8, labelHeight), radius: radius);
+    path.arcToPoint(
+      Offset(labelX + labelWidth - 8, labelHeight),
+      radius: radius,
+    );
     path.lineTo(totalWidth / 2 + 8, labelHeight);
     path.lineTo(totalWidth / 2, labelHeight + 8);
     path.lineTo(totalWidth / 2 - 8, labelHeight);
@@ -326,9 +354,9 @@ class _MapsState extends State<Maps> {
 
     // Draw round circle marker instead of icon
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ??Color(0xFFFF7043)
+      ..color = _categoryColors[category] ?? Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
-    
+
     canvas.drawCircle(
       Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
       circleRadius,
@@ -366,7 +394,7 @@ class _MapsState extends State<Maps> {
     final circlePaint = Paint()
       ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
-    
+
     canvas.drawCircle(
       Offset(circleRadius, circleRadius),
       circleRadius,
@@ -389,33 +417,6 @@ class _MapsState extends State<Maps> {
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
-  }
-
-  String _getIconPath(String category) {
-    switch (category.toLowerCase().trim()) {
-      case 'theater':
-        return AppIcons.theatersMap;
-      case 'restaurant':
-        return AppIcons.resortsMap;
-      case 'hospital':
-        return AppIcons.hospitalsMap;
-      case 'bars':
-        return AppIcons.barsMap;
-      case 'grocery':
-        return AppIcons.groceryMap;
-      case 'textile':
-        return AppIcons.textilesMap;
-      case 'resort':
-        return AppIcons.resortsMap;
-      case 'bunk':
-        return AppIcons.petrolBunkMap;
-      case 'spa':
-        return AppIcons.spaMap;
-      case 'hotel':
-        return AppIcons.hotelsMap;
-      default:
-        return AppIcons.othersMap;
-    }
   }
 
   final List<String> _iconMap = [
@@ -615,7 +616,7 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
+                    myLocationButtonEnabled: Platform.isIOS ? false : true,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
                     padding: const EdgeInsets.only(top: 70, bottom: 100),
@@ -635,13 +636,13 @@ class _MapsState extends State<Maps> {
                       children: [
                         _zoomButton(
                           icon:
-                          "https://cdn-icons-png.flaticon.com/128/13919/13919685.png",
+                              "https://cdn-icons-png.flaticon.com/128/13919/13919685.png",
                           onTap: _zoomIn,
                         ),
                         const SizedBox(height: 10),
                         _zoomButton(
                           icon:
-                          "https://cdn-icons-png.flaticon.com/128/4674/4674428.png",
+                              "https://cdn-icons-png.flaticon.com/128/4674/4674428.png",
                           onTap: _zoomOut,
                         ),
                       ],
@@ -689,114 +690,108 @@ class _MapsState extends State<Maps> {
                               topRight: Radius.circular(10),
                             ),
                           ),
-                          child: SingleChildScrollView(
-                            controller: scrollController,
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    10,
-                                    15,
-                                    10,
-                                    0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Image.asset(
-                                        AppIcons.nearByShopP,
-                                        height: 24,
-                                        width: 24,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: HeaderTextBlack(
-                                          title:
-                                          'Near By ${homeController.searchCategory.toString().capitalize()}',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      ClearCircleContainer(
-                                        onTap: () {
-                                          tapNotifier.value = null;
-                                          sheetController.animateTo(
-                                            0.0,
-                                            duration: const Duration(
-                                              milliseconds: 300,
+                          child: Consumer<HomeController>(
+                            builder: (context, controller, _) {
+                              final status = controller.shopSearchData.status;
+                              final nearByShops = controller.nearByShopData.data ?? [];
+
+                              int itemCount = 1; // Header always present
+                              if (status == Status.LOADING || status == Status.INITIAL) {
+                                itemCount = 2; // Header + Loader
+                              } else if (status == Status.ERROR) {
+                                itemCount = 2; // Header + Error
+                              } else if (nearByShops.isEmpty) {
+                                itemCount = 2; // Header + No Data
+                              } else {
+                                itemCount = nearByShops.length + 1; // Header + Shops
+                              }
+
+                              return ListView.builder(
+                                controller: scrollController,
+                                padding: EdgeInsets.zero,
+                                itemCount: itemCount,
+                                itemBuilder: (context, index) {
+                                  if (index == 0) {
+                                    return Padding(
+                                      padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
+                                      child: Row(
+                                        children: [
+                                          Image.asset(
+                                            AppIcons.nearByShopP,
+                                            height: 24,
+                                            width: 24,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: HeaderTextBlack(
+                                              title: 'Near By ${controller.searchCategory.toString().capitalize()}',
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
                                             ),
-                                            curve: Curves.easeOut,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-                                Builder(
-                                  builder: (context) {
-                                    switch (homeController
-                                        .shopSearchData
-                                        .status) {
-                                      case Status.INITIAL:
-                                      case Status.LOADING:
-                                        return SizedBox(
-                                          height: 200,
-                                          child: CustomLoadingIndicator(),
-                                        );
-                                      case Status.COMPLETED:
-                                        final nearByShops =
-                                            homeController
-                                                .nearByShopData
-                                                .data ??
-                                                [];
-                                        if (nearByShops.isEmpty) {
-                                          return SizedBox(
-                                            height: 200,
-                                            child: NoDataText(
-                                              title: Strings.noDataFound,
-                                            ),
-                                          );
-                                        }
-                                        return SizedBox(
-                                          height: 360,
-                                          child: ListView.builder(
-                                            itemCount: nearByShops.length,
-                                            itemBuilder: (context, index) {
-                                              final shop = nearByShops[index];
-                                              return Padding(
-                                                padding: EdgeInsets.only(
-                                                  bottom: 10,
-                                                  top: index == 0 ? 5 : 0,
+                                          ),
+                                          ClearCircleContainer(
+                                            onTap: () {
+                                              tapNotifier.value = null;
+                                              sheetController.animateTo(
+                                                0.0,
+                                                duration: const Duration(
+                                                  milliseconds: 300,
                                                 ),
-                                                child: LocationShopContainer(
-                                                  searchData: shop,
-                                                  distance:
-                                                  distanceBetweenLatLong(
-                                                    latitude: double.parse(
-                                                      shop.lat.toString(),
-                                                    ),
-                                                    longitude: double.parse(
-                                                      shop.long.toString(),
-                                                    ),
-                                                  ),
-                                                ),
+                                                curve: Curves.easeOut,
                                               );
                                             },
                                           ),
-                                        );
-                                      case Status.ERROR:
-                                        return SizedBox(
-                                          height: 200,
-                                          child: CustomErrorTextWidget(
-                                            title:
-                                            '${homeController.shopSearchData.message}',
-                                          ),
-                                        );
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  // Index > 0
+                                  if (status == Status.LOADING || status == Status.INITIAL) {
+                                    return SizedBox(
+                                      height: 200,
+                                      child: Center(
+                                        child: CustomLoadingIndicator(),
+                                      ),
+                                    );
+                                  }
+
+                                  if (status == Status.ERROR) {
+                                    return SizedBox(
+                                      height: 200,
+                                      child: Center(
+                                        child: CustomErrorTextWidget(
+                                          title: '${controller.shopSearchData.message}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  if (nearByShops.isEmpty) {
+                                    return SizedBox(
+                                      height: 200,
+                                      child: Center(
+                                        child: NoDataText(
+                                          title: Strings.noDataFound,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final shop = nearByShops[index - 1];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: LocationShopContainer(
+                                      searchData: shop,
+                                      distance: distanceBetweenLatLong(
+                                        latitude: double.parse(shop.lat.toString()),
+                                        longitude: double.parse(shop.long.toString()),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           ),
                         );
                       },
@@ -1004,7 +999,7 @@ class LocationShopContainer extends StatelessWidget {
                   width: 110,
                   child: CustomNetworkImage(
                     imageUrl:
-                    searchData.shopImage ??
+                        searchData.shopImage ??
                         getUnKnownShopImages(
                           '${searchData.category?.toLowerCase()}',
                         ),
@@ -1049,25 +1044,25 @@ class LocationShopContainer extends StatelessWidget {
 
   final Map<String, String> iconImageMap = {
     "theater":
-    "https://img.freepik.com/free-photo/3d-rendering-cinema-teather_23-2151169422.jpg?semt=ais_hybrid&w=740&q=80",
+        "https://img.freepik.com/free-photo/3d-rendering-cinema-teather_23-2151169422.jpg?semt=ais_hybrid&w=740&q=80",
     "restaurant":
-    "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
+        "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
     "hospital":
-    "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
+        "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
     "bars":
-    "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
+        "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
     "grocery":
-    "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",
+        "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",
     "textile":
-    "https://thumbs.dreamstime.com/b/fashion-store-interior-counter-mannequins-fashion-store-interior-counter-mannequins-hangers-showcase-191363271.jpg",
+        "https://thumbs.dreamstime.com/b/fashion-store-interior-counter-mannequins-fashion-store-interior-counter-mannequins-hangers-showcase-191363271.jpg",
     "resort":
-    "https://img.freepik.com/free-vector/outdoor-swimming-pool-colored-background-with-chaise-lounges-umbrella-palm-trees-cartoon-vector-illustration_1284-79719.jpg?semt=ais_hybrid&w=740&q=80",
+        "https://img.freepik.com/free-vector/outdoor-swimming-pool-colored-background-with-chaise-lounges-umbrella-palm-trees-cartoon-vector-illustration_1284-79719.jpg?semt=ais_hybrid&w=740&q=80",
     "bunk":
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnf86j1Yv60Wd43cezQvFKwKABzdSvMctmig&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnf86j1Yv60Wd43cezQvFKwKABzdSvMctmig&s",
     "spa":
-    "https://img.freepik.com/premium-vector/cosmetology-salon-flat-color-illustration-spa-massage-hair-removal-sugaring-services-skincare-procedures-equipment-2d-cartoon-interior-with-furniture-background_151150-2759.jpg",
+        "https://img.freepik.com/premium-vector/cosmetology-salon-flat-color-illustration-spa-massage-hair-removal-sugaring-services-skincare-procedures-equipment-2d-cartoon-interior-with-furniture-background_151150-2759.jpg",
     "hotel":
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4DhNVE0f2RF1DAYAbz5GWoluf-fuMQ5SQUw&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4DhNVE0f2RF1DAYAbz5GWoluf-fuMQ5SQUw&s",
   };
 
   String getUnKnownShopImages(String category) {

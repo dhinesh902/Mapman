@@ -184,6 +184,9 @@ class HomeController extends ChangeNotifier {
 
   ApiResponse<List<ShopSearchData>> get nearByShopData => _nearByShopData;
 
+  Position? _currentPosition;
+  Position? get currentPosition => _currentPosition;
+
   ///Notification data
   ApiResponse<NotificationPreferenceData> _notificationPreferenceData =
       ApiResponse.initial(Strings.noDataFound);
@@ -297,7 +300,6 @@ class HomeController extends ChangeNotifier {
         );
       }
       final data = response[Keys.data];
-
       if (data != null && data is List) {
         final shopList = data
             .map((e) => ShopSearchData.fromJson(e as Map<String, dynamic>))
@@ -309,7 +311,6 @@ class HomeController extends ChangeNotifier {
                 return !_iconMap.contains(category);
               }).toList()
             : shopList;
-
         _shopSearchData = ApiResponse.completed(resultList);
       } else {
         _shopSearchData = ApiResponse.completed([]);
@@ -349,6 +350,7 @@ class HomeController extends ChangeNotifier {
 
     try {
       final position = await _getCurrentLocation();
+      _currentPosition = position;
       final List<ShopSearchData> allShops = shopSearchData.data ?? [];
 
       final List<ShopSearchData> nearbyShops = allShops.where((shop) {
