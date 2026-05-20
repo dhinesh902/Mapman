@@ -47,33 +47,6 @@ class _HomeState extends State<Home> {
     super.initState();
   }
 
-  // final List<Map<String, dynamic>> homeBanners = [
-  //   {
-  //     "banner": AppIcons.happyBgP,
-  //     "title": "Boost Your shop’s",
-  //     "body": "Best and Affordable way to get new customers",
-  //     "image": AppIcons.happyP,
-  //   },
-  //   {
-  //     "banner": AppIcons.happyBg1P,
-  //     "title": "Upload Video & Promote",
-  //     "body": "Best and Affordable way to get new customers",
-  //     "image": AppIcons.happy1p,
-  //   },
-  //   {
-  //     "banner": AppIcons.happyBg2P,
-  //     "title": "Promote Your Shop Online",
-  //     "body": "Affordable marketing solutions to boost your visibility",
-  //     "image": AppIcons.happy2p,
-  //   },
-  //   {
-  //     "banner": AppIcons.happyBg3P,
-  //     "title": "Turn Visitors Into Customers",
-  //     "body": "Smart tools to attract and engage your audience",
-  //     "image": AppIcons.happy3p,
-  //   },
-  // ];
-
   Future<void> getHome() async {
     final response = await homeController.getHome();
     if (!mounted) return;
