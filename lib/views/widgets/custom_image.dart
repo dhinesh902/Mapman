@@ -104,7 +104,12 @@ class PlaceHolderContainer extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SvgPicture.asset(AppIcons.galleryPlaceholder),
+          SvgPicture.asset(
+            AppIcons.add,
+            height: 30,
+            width: 30,
+            colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+          ),
           if (isText) ...[
             SizedBox(height: 10),
             BodyTextHint(

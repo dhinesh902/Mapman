@@ -43,6 +43,7 @@ class _ProfileState extends State<Profile> {
         homeController.getNotificationCount();
         getProfile();
       }
+      profileController.getShopDetail();
     });
     super.initState();
   }

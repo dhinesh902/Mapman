@@ -427,7 +427,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 CustomTextField(
                   controller: shopNameController,
                   title: 'Shop Name / Business Name',
-                  hintText: 'Enter shop name',
+                  hintText: 'Enter shop name / business name or service name',
                   inputAction: TextInputAction.next,
                   suffixWidget: Container(
                     height: 30,
@@ -515,7 +515,8 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 CustomTextField(
                   controller: descriptionController,
                   title: 'Description',
-                  hintText: 'Enter description',
+                  hintText:
+                      'Describe about the product you\'re selling..or the service you\'re providing',
                   inputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.isEmpty) {

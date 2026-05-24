@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mapman/controller/video_controller.dart';
@@ -17,6 +18,7 @@ import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
+import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -58,7 +60,7 @@ class _UploadVideoState extends State<UploadVideo> {
     'hotel',
     'jewellery',
     'furniture',
-    'salons'
+    'salons',
   ];
 
   @override
@@ -271,7 +273,7 @@ class _UploadVideoState extends State<UploadVideo> {
                   Align(
                     alignment: AlignmentGeometry.centerRight,
                     child: BodyTextColors(
-                      title: 'Note Video size Less than 10MB.',
+                      title: 'Note Video size Less than 30MB.',
                       fontSize: 12,
                       fontWeight: FontWeight.w300,
                       color: GenericColors.darkRed,
@@ -358,13 +360,28 @@ class _UploadVideoState extends State<UploadVideo> {
     final pickedFile = await ImagePicker().pickVideo(
       source: ImageSource.gallery,
     );
+
     if (pickedFile != null) {
       int fileSizeInBytes = await pickedFile.length();
+
+      // Real video size in MB
       double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-      if (fileSizeInMB > 10.00) {
+
+      print("Video Size: ${fileSizeInMB.toStringAsFixed(2)} MB");
+
+      // 30 MB limit
+      if (fileSizeInMB > 30.0) {
         videoController.setVideoFileSize = true;
+
+        CustomToast.show(
+          context,
+          title:
+              '"Video size is ${fileSizeInMB.toStringAsFixed(2)} MB. Maximum allowed is 30 MB",',
+          isError: true,
+        );
       } else {
         videoController.setVideoFileSize = false;
+
         videoNotifier.value = File(pickedFile.path);
         videoValidator.value = false;
       }
@@ -401,11 +418,14 @@ class EmptyVideoUploadContainer extends StatelessWidget {
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      AppIcons.videoUploadP,
-                      height: 60,
-                      width: 60,
-                      color: AppColors.darkGrey,
+                    SvgPicture.asset(
+                      AppIcons.add,
+                      height: 50,
+                      width: 50,
+                      colorFilter: ColorFilter.mode(
+                        AppColors.primary,
+                        BlendMode.srcIn,
+                      ),
                     ),
                     SizedBox(height: 15),
                     BodyTextHint(

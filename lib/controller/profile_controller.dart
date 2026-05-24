@@ -210,15 +210,15 @@ class ProfileController extends ChangeNotifier {
       final data = response[Keys.data];
       if (data != null && data is Map<String, dynamic>) {
         _shopDetailData = ApiResponse.completed(ShopDetailData.fromJson(data));
-        SessionManager.setShopId(shopId: _shopDetailData.data?.id ?? 0);
-        SessionManager.setShopName(
+        await SessionManager.setShopId(shopId: _shopDetailData.data?.id ?? 0);
+        await SessionManager.setShopName(
           shopName: _shopDetailData.data?.shopName ?? '',
         );
-        SessionManager.setShopCategory(
+        await SessionManager.setShopCategory(
           shopCategory: _shopDetailData.data?.category ?? '',
         );
       } else {
-        SessionManager.setShopId(shopId: 0);
+        await SessionManager.setShopId(shopId: 0);
         _shopDetailData = ApiResponse.completed(null);
       }
     } catch (e) {

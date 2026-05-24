@@ -7,6 +7,7 @@ class CustomTimePicker {
     TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.inputOnly,
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
@@ -31,8 +32,6 @@ class CustomTimePicker {
 
     return pickedTime;
   }
-
-
 
   static TextTheme textTheme = TextTheme(
     displayLarge: GoogleFonts.outfit(),

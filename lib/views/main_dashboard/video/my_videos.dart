@@ -496,8 +496,6 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
     _initController();
   }
 
-
-
   Future<void> _initController() async {
     if (_player != null || _error || !mounted) return;
     try {
@@ -561,7 +559,9 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           children: [
             Positioned.fill(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(widget.isAllVideos ? 0 : 11),
+                borderRadius: BorderRadius.circular(
+                  widget.isAllVideos ? 0 : 11,
+                ),
                 child: _initialized && _player != null
                     ? VideoPlayer(_player!)
                     : _error
@@ -580,10 +580,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF2A2D32),
-                              Color(0xFF131417),
-                            ],
+                            colors: [Color(0xFF2A2D32), Color(0xFF131417)],
                           ),
                         ),
                         child: const Center(
@@ -674,7 +671,7 @@ class NoVideoContainer extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 final shopId = SessionManager.getShopId();
-                if (shopId != 0) {
+                if (shopId != null && shopId != 0) {
                   context.pushNamed(AppRoutes.uploadVideo, extra: VideosData());
                 } else {
                   await showAddShopDetail(context);

@@ -217,7 +217,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               CustomTextField(
                 controller: shopNameController,
                 title: 'Shop Name / Business Name',
-                hintText: 'Enter shop name',
+                hintText: 'Enter shop name / business name or service name',
                 inputAction: TextInputAction.next,
                 validator: (value) {
                   if (value!.isEmpty) {

@@ -380,11 +380,15 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _completedVideos[newVideoId] = false;
 
     // Check if the controller is already preloaded and initialized to avoid loading screen flicker!
-    final bool alreadyInitialized = _controllers.containsKey(index) &&
+    final bool alreadyInitialized =
+        _controllers.containsKey(index) &&
         _controllers[index]!.value.isInitialized;
     _progress = alreadyInitialized
         ? (_controllers[index]!.value.position.inMilliseconds /
-            _controllers[index]!.value.duration.inMilliseconds.clamp(1, double.infinity))
+              _controllers[index]!.value.duration.inMilliseconds.clamp(
+                1,
+                double.infinity,
+              ))
         : 0;
 
     setState(() {});
@@ -468,26 +472,39 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
               if (shouldShowVideo)
                 Center(
-                  child: AnimatedOpacity(
-                    opacity: _controllers[index]!.value.isPlaying ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppColors.primaryBorder, Colors.black38],
+                  child: GestureDetector(
+                    onTap: () {
+                      final controller = _controllers[index];
+                      if (controller == null ||
+                          !controller.value.isInitialized) {
+                        return;
+                      }
+                      controller.value.isPlaying
+                          ? controller.pause()
+                          : controller.play();
+                      setState(() {});
+                    },
+                    child: AnimatedOpacity(
+                      opacity: _controllers[index]!.value.isPlaying ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [AppColors.primaryBorder, Colors.black38],
+                          ),
                         ),
-                      ),
-                      child: Icon(
-                        _controllers[index]!.value.isPlaying
-                            ? Icons.pause
-                            : Icons.play_arrow,
-                        size: 30,
-                        color: AppColors.whiteText,
+                        child: Icon(
+                          _controllers[index]!.value.isPlaying
+                              ? Icons.pause
+                              : Icons.play_arrow,
+                          size: 30,
+                          color: AppColors.whiteText,
+                        ),
                       ),
                     ),
                   ),
