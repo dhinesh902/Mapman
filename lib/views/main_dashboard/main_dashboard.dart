@@ -71,21 +71,16 @@ class _MainDashboardState extends State<MainDashboard> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-
         if (homeController.currentPage != 0) {
           homeController.setCurrentPage = 0;
           return;
         }
-
         if (Platform.isIOS) return;
-
         final bool viewedStatus = SessionManager.getRating();
-
         if (!viewedStatus) {
           CustomDialogues().showRatingDialog(context);
           return;
         }
-
         final now = DateTime.now();
         if (_lastBackPressed == null ||
             now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
@@ -108,13 +103,10 @@ class _MainDashboardState extends State<MainDashboard> {
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: InkWell(
-            onTap: () async {
-              int? shopId = SessionManager.getShopId();
-              if (shopId != 0) {
-                VideoDialogues().showVideoUploadDialogue(context);
-              } else {
-                await showAddShopDetail(context);
-              }
+            onTap: () {
+              homeController.setSearchCategory = 'all';
+              homeController.setIsShowAddNearBy = false;
+              homeController.setCurrentPage = 1;
             },
 
             child: AnimatedGradientCircle(),
@@ -123,7 +115,7 @@ class _MainDashboardState extends State<MainDashboard> {
             alignment: Alignment.center,
             children: [
               AnimatedBottomNavigationBar.builder(
-                height: 58,
+                height: 65,
                 itemCount: 4,
                 notchMargin: 8,
                 rightCornerRadius: 6,
@@ -132,41 +124,41 @@ class _MainDashboardState extends State<MainDashboard> {
                 tabBuilder: (int index, bool isActive) {
                   final List<String> labels = [
                     "Home",
-                    "Maps",
+                    (shopId != null && shopId != 0) ? "Upload" : "Register",
                     "Video",
                     "Profile",
                   ];
                   final List<String> outlineIcons = [
                     AppIcons.homeOutline,
-                    AppIcons.locationOutline,
+                    AppIcons.add,
                     AppIcons.videoOutline,
                     AppIcons.profileOutline,
                   ];
                   final List<String> fillIcons = [
                     AppIcons.homeFill,
-                    AppIcons.locationFill,
+                    AppIcons.add,
                     AppIcons.videoFill,
                     AppIcons.profileFill,
                   ];
+                  bool isTabActive = index == 1 ? false : isActive;
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 8),
                       SvgPicture.asset(
-                        isActive ? fillIcons[index] : outlineIcons[index],
+                        isTabActive ? fillIcons[index] : outlineIcons[index],
                         height: 24,
                         width: 24,
                         colorFilter: ColorFilter.mode(
-                          isActive ? AppColors.darkText : AppColors.darkGrey,
+                          isTabActive ? AppColors.darkText : AppColors.darkGrey,
                           BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       BodyTextColors(
                         title: labels[index],
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isActive
+                        color: isTabActive
                             ? AppColors.darkText
                             : AppColors.darkGrey,
                       ),
@@ -175,25 +167,35 @@ class _MainDashboardState extends State<MainDashboard> {
                 },
                 backgroundColor: AppColors.scaffoldBackground,
                 borderColor: AppColors.primaryBorder,
-                activeIndex: homeController.currentPage,
+                activeIndex: homeController.currentPage == 1
+                    ? -1
+                    : homeController.currentPage,
                 gapLocation: GapLocation.center,
                 notchSmoothness: NotchSmoothness.softEdge,
                 elevation: 0,
                 borderWidth: 1.5,
-                onTap: (index) {
+                onTap: (index) async {
                   if (index == 1) {
-                    homeController.setSearchCategory = 'all';
-                    homeController.setIsShowAddNearBy = false;
+                    final token = SessionManager.getToken();
+                    if (token != null) {
+                      int? shopId = SessionManager.getShopId();
+                      if (shopId != 0) {
+                        VideoDialogues().showVideoUploadDialogue(context);
+                      } else {
+                        await showAddShopDetail(context);
+                      }
+                    } else {
+                      await LoginBottomSheet.showLoginBottomSheet(context);
+                    }
+                  } else {
+                    homeController.setCurrentPage = index;
                   }
-                  homeController.setCurrentPage = index;
                 },
               ),
               Positioned(
-                bottom: Platform.isIOS
-                    ? MediaQuery.of(context).size.height * 0.035
-                    : 12,
+                top: 45,
                 child: HeaderTextPrimary(
-                  title: shopId != 0 ? "Upload" : "Create",
+                  title: "Maps",
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -278,7 +280,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
         return Container(
           height: 65,
           width: 65,
-          padding: const EdgeInsets.all(5),
+          padding: const EdgeInsets.all(4),
           margin: const EdgeInsets.fromLTRB(3, 2, 3, 0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -288,7 +290,7 @@ class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
               transform: GradientRotation(_controller.value * 3.14 * 2),
               colors: [
                 Color(0XFF04509B),
-                GenericColors.darkYellow.withValues(alpha: .7),
+                GenericColors.homeTopPrimary,
                 Color(0XFF0ACFFF),
                 Color(0XFF04509B),
               ],

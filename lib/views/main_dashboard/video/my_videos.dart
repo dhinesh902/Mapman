@@ -16,7 +16,6 @@ import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:video_player/video_player.dart';
-import 'package:cached_video_player_plus/cached_video_player_plus.dart' hide VideoCacheManager;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -487,7 +486,7 @@ class MyVideoContainer extends StatefulWidget {
 }
 
 class _MyVideoContainerState extends State<MyVideoContainer> {
-  CachedVideoPlayerPlus? _player;
+  VideoPlayerController? _player;
   bool _initialized = false;
   bool _error = false;
 
@@ -502,9 +501,9 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
   Future<void> _initController() async {
     if (_player != null || _error || !mounted) return;
     try {
-      _player = CachedVideoPlayerPlus.networkUrl(
+      _player = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoUrl),
-        invalidateCacheIfOlderThan: const Duration(days: 7),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
 
       await _player!.initialize();
@@ -526,7 +525,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
 
   @override
   void dispose() {
-    _player?.controller.pause();
+    _player?.pause();
     _player?.dispose();
     _player = null;
     super.dispose();
@@ -550,7 +549,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           // Do not dispose if covered by another route (like SingleVideoScreen), to avoid reloading when returning!
           final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
           if (_initialized && isCurrentRoute) {
-            _player?.controller.pause();
+            _player?.pause();
             _player?.dispose();
             _player = null;
             _initialized = false;
@@ -564,7 +563,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(widget.isAllVideos ? 0 : 11),
                 child: _initialized && _player != null
-                    ? VideoPlayer(_player!.controller)
+                    ? VideoPlayer(_player!)
                     : _error
                     ? Container(
                         color: AppColors.bgGrey,

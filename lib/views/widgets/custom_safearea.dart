@@ -52,10 +52,11 @@ class CustomContainer extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10),
-              BodyTextHint(
+              BodyTextColors(
                 title: title,
                 fontSize: 10,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w400,
+                color: Colors.grey.shade700,
               ),
             ],
           ),

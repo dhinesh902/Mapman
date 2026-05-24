@@ -273,7 +273,8 @@ class _MapsState extends State<Maps> {
   }) async {
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-    canvas.translate(2, 2); // Add padding for border to prevent clipping
+
+    canvas.translate(2, 2);
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -283,14 +284,14 @@ class _MapsState extends State<Maps> {
           TextSpan(
             text: category.capitalize(),
             style: AppTextStyle(
-              fontSize: 34,
+              fontSize: 26,
               color: Colors.black54,
               fontWeight: FontWeight.normal,
             ).textStyle,
           ),
         ],
         style: AppTextStyle(
-          fontSize: 38,
+          fontSize: 28,
           color: Colors.black,
           fontWeight: FontWeight.w600,
         ).textStyle,
@@ -300,59 +301,90 @@ class _MapsState extends State<Maps> {
 
     textPainter.layout();
 
-    final double labelPadding = 15.0;
+    final double labelPadding = 10.0;
     final double labelWidth = textPainter.width + (labelPadding * 2);
-    final double labelHeight = textPainter.height + 10;
 
-    final double iconWidth = 40.0;
-    final double iconHeight = 40.0;
-    final double circleRadius = 20.0;
+    final double labelHeight = textPainter.height + 8;
+
+    /// ICON SIZE
+    final double iconWidth = 26.0;
+    final double iconHeight = 26.0;
+    final double circleRadius = 13.0;
 
     final double baseWidth = labelWidth > iconWidth ? labelWidth : iconWidth;
+
     final double totalWidth = baseWidth + 4;
+
     final double totalHeight = labelHeight + iconHeight + 5 + 4;
 
     final double labelX = (baseWidth - labelWidth) / 2;
+
     final double iconX = (baseWidth - iconWidth) / 2;
 
-    // Draw label bubble
-    // Create combined path for bubble and triangle
+    /// MAIN BUBBLE PATH
     final path = Path();
+
     final radius = const Radius.circular(8);
+
     path.moveTo(labelX + 8, 0);
+
+    /// TOP
     path.lineTo(labelX + labelWidth - 8, 0);
+
+    /// TOP RIGHT CURVE
     path.arcToPoint(Offset(labelX + labelWidth, 8), radius: radius);
+
+    /// RIGHT
     path.lineTo(labelX + labelWidth, labelHeight - 8);
+
+    /// BOTTOM RIGHT CURVE
     path.arcToPoint(
       Offset(labelX + labelWidth - 8, labelHeight),
       radius: radius,
     );
-    path.lineTo(totalWidth / 2 + 8, labelHeight);
-    path.lineTo(totalWidth / 2, labelHeight + 8);
-    path.lineTo(totalWidth / 2 - 8, labelHeight);
+
+    /// POINTER
+    path.lineTo(totalWidth / 2 + 6, labelHeight);
+
+    path.lineTo(totalWidth / 2, labelHeight + 6);
+
+    path.lineTo(totalWidth / 2 - 6, labelHeight);
+
+    /// BOTTOM LEFT
     path.lineTo(labelX + 8, labelHeight);
+
+    /// BOTTOM LEFT CURVE
     path.arcToPoint(Offset(labelX, labelHeight - 8), radius: radius);
+
+    /// LEFT
     path.lineTo(labelX, 8);
+
+    /// TOP LEFT CURVE
     path.arcToPoint(Offset(labelX + 8, 0), radius: radius);
+
     path.close();
 
-    // Fill the combined shape with white
-    final paint = Paint()..color = Colors.white;
-    canvas.drawPath(path, paint);
+    /// BACKGROUND
+    final fillPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
 
-    // Draw the border for the combined shape
+    canvas.drawPath(path, fillPaint);
+
+    /// NORMAL BORDER
     final borderPaint = Paint()
       ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 1.5;
+
     canvas.drawPath(path, borderPaint);
 
-    // Draw text
-    textPainter.paint(canvas, Offset(labelX + labelPadding, 5));
+    /// TEXT
+    textPainter.paint(canvas, Offset(labelX + labelPadding, 4));
 
-    // Draw round circle marker instead of icon
+    /// CIRCLE FILL
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? Color(0xFFFF7043)
+      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -361,11 +393,12 @@ class _MapsState extends State<Maps> {
       circlePaint,
     );
 
-    // Draw white border for the circle
+    /// CIRCLE BORDER
     final circleBorderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
+
     canvas.drawCircle(
       Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
       circleRadius,
@@ -373,22 +406,29 @@ class _MapsState extends State<Maps> {
     );
 
     final picture = pictureRecorder.endRecording();
+
     final img = await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
+
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
+  /// ONLY SMALL ROUND MARKER
   Future<BitmapDescriptor> createCircularMarker({
     required String category,
   }) async {
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-    canvas.translate(2, 2); // Add padding for border to prevent clipping
 
-    final double circleRadius = 20.0;
+    canvas.translate(2, 2);
+
+    /// REDUCED SIZE
+    final double circleRadius = 12.0;
+
     final double totalSize = (circleRadius * 2) + 4;
 
+    /// Fill
     final circlePaint = Paint()
       ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
       ..style = PaintingStyle.fill;
@@ -399,11 +439,12 @@ class _MapsState extends State<Maps> {
       circlePaint,
     );
 
-    // Draw white border for the circle
+    /// White Border
     final circleBorderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
+
     canvas.drawCircle(
       Offset(circleRadius, circleRadius),
       circleRadius,
@@ -411,7 +452,9 @@ class _MapsState extends State<Maps> {
     );
 
     final picture = pictureRecorder.endRecording();
+
     final img = await picture.toImage(totalSize.toInt(), totalSize.toInt());
+
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
@@ -534,18 +577,16 @@ class _MapsState extends State<Maps> {
 
               onTap: () {
                 setState(() {
-                  _currentZoom = 15.5;
+                  _currentZoom = 18.5;
                 });
                 if (!isClicking) {
                   _mapController?.animateCamera(
                     CameraUpdate.newCameraPosition(
-                      CameraPosition(target: LatLng(lat, long), zoom: 15.5),
+                      CameraPosition(target: LatLng(lat, long), zoom: 18.5),
                     ),
                   );
                 }
-                if (mounted) {
-                  setState(() => isClicking = true);
-                }
+
                 tapNotifier.value = shop;
               },
             ),
@@ -780,7 +821,7 @@ class _MapsState extends State<Maps> {
                                               return GestureDetector(
                                                 onTap: () {
                                                   setState(
-                                                    () => _currentZoom = 15.5,
+                                                    () => _currentZoom = 18.5,
                                                   );
                                                   _mapController?.animateCamera(
                                                     CameraUpdate.newCameraPosition(
@@ -794,7 +835,7 @@ class _MapsState extends State<Maps> {
                                                                 .toString(),
                                                           ),
                                                         ),
-                                                        zoom: 15.5,
+                                                        zoom: 18.5,
                                                       ),
                                                     ),
                                                   );

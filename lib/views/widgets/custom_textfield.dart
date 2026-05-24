@@ -76,10 +76,11 @@ class CustomTextField extends StatelessWidget {
               ),
               if (isSameRegisterNumber) ...[
                 Spacer(),
-                BodyTextHint(
+                BodyTextColors(
                   title: 'Same as Register No',
                   fontSize: 10,
-                  fontWeight: FontWeight.w300,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade700,
                 ),
                 Checkbox(
                   value: isActive,

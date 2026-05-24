@@ -402,7 +402,7 @@ class VideoHeadingContainer extends StatelessWidget {
               title: title,
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: isActive ? AppColors.whiteText : AppColors.bgGrey,
+              color: isActive ? AppColors.whiteText : AppColors.darkText,
             ),
           ],
         ),

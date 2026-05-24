@@ -20,7 +20,7 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:cached_video_player_plus/cached_video_player_plus.dart' hide VideoCacheManager;
+
 import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class SingleVideoScreen extends StatefulWidget {
@@ -141,9 +141,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     try {
       debugPrint('🎬 Initializing progressive streaming video at index $index');
-      final player = CachedVideoPlayerPlus.networkUrl(
+      final player = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
-        invalidateCacheIfOlderThan: const Duration(days: 7),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
 
       await player.initialize();
@@ -160,12 +160,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         return;
       }
 
-      _controllers[index] = player.controller;
+      _controllers[index] = player;
 
       if (index == _currentIndex) {
         _playVideo(index);
       } else {
-        player.controller
+        player
           ..setLooping(false)
           ..setVolume(0.0)
           ..pause();

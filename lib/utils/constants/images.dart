@@ -23,6 +23,7 @@ class AppIcons {
   static const String videoShop = 'assets/images/svg/video_shop.svg';
   static const String backIcon = 'assets/images/svg/back_icon.svg';
   static const String directionLine = 'assets/images/svg/direction_line.svg';
+  static const String add = 'assets/images/svg/add.svg';
 
   /// home bottom icons
   static const String homeFill = 'assets/images/svg/home/home_fill.svg';
