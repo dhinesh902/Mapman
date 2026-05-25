@@ -170,81 +170,81 @@ class _VideosState extends State<Videos> {
                   ),
                 ),
                 Spacer(),
-                GestureDetector(
-                  onTap: () {
-                    final token = SessionManager.getToken();
-                    if (token == null || token.isEmpty) {
-                      LoginBottomSheet.showLoginBottomSheet(context);
-                    } else {
-                      VideoDialogues().showRewardsDialogue(
-                        context,
-                        isEarnCoins: true,
-                      );
-                    }
-                  },
-                  child: Container(
-                    height: 40,
-                    width: 90,
-                    margin: EdgeInsets.only(bottom: 15),
-                    decoration: BoxDecoration(
-                      color: AppColors.scaffoldBackground,
-                      border: Border.all(color: GenericColors.darkYellow),
-                      borderRadius: BorderRadiusGeometry.circular(20),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              AppIcons.rupeeCoinP,
-                              height: 34,
-                              width: 34,
-                            ),
-                            SizedBox(width: 5),
-                            Builder(
-                              builder: (context) {
-                                final token = SessionManager.getToken();
-                                if (token == null || token.isEmpty) {
-                                  return HeaderTextBlack(
-                                    title: '0',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w300,
-                                  );
-                                }
-                                if (videoController.coinResponse.status ==
-                                        Status.INITIAL ||
-                                    videoController.coinResponse.status ==
-                                        Status.LOADING) {
-                                  return HeaderTextBlack(
-                                    title: '...',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w300,
-                                  );
-                                }
-                                return HeaderTextBlack(
-                                  title:
-                                      '${videoController.coinResponse.data ?? 0}',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w300,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Lottie.asset(AppAnimations.confetti),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // GestureDetector(
+                //   onTap: () {
+                //     final token = SessionManager.getToken();
+                //     if (token == null || token.isEmpty) {
+                //       LoginBottomSheet.showLoginBottomSheet(context);
+                //     } else {
+                //       VideoDialogues().showRewardsDialogue(
+                //         context,
+                //         isEarnCoins: true,
+                //       );
+                //     }
+                //   },
+                //   child: Container(
+                //     height: 40,
+                //     width: 90,
+                //     margin: EdgeInsets.only(bottom: 15),
+                //     decoration: BoxDecoration(
+                //       color: AppColors.scaffoldBackground,
+                //       border: Border.all(color: GenericColors.darkYellow),
+                //       borderRadius: BorderRadiusGeometry.circular(20),
+                //     ),
+                //     child: Stack(
+                //       alignment: Alignment.center,
+                //       children: [
+                //         Row(
+                //           mainAxisAlignment: MainAxisAlignment.center,
+                //           children: [
+                //             Image.asset(
+                //               AppIcons.rupeeCoinP,
+                //               height: 34,
+                //               width: 34,
+                //             ),
+                //             SizedBox(width: 5),
+                //             Builder(
+                //               builder: (context) {
+                //                 final token = SessionManager.getToken();
+                //                 if (token == null || token.isEmpty) {
+                //                   return HeaderTextBlack(
+                //                     title: '0',
+                //                     fontSize: 16,
+                //                     fontWeight: FontWeight.w300,
+                //                   );
+                //                 }
+                //                 if (videoController.coinResponse.status ==
+                //                         Status.INITIAL ||
+                //                     videoController.coinResponse.status ==
+                //                         Status.LOADING) {
+                //                   return HeaderTextBlack(
+                //                     title: '...',
+                //                     fontSize: 16,
+                //                     fontWeight: FontWeight.w300,
+                //                   );
+                //                 }
+                //                 return HeaderTextBlack(
+                //                   title:
+                //                       '${videoController.coinResponse.data ?? 0}',
+                //                   fontSize: 16,
+                //                   fontWeight: FontWeight.w300,
+                //                 );
+                //               },
+                //             ),
+                //           ],
+                //         ),
+                //         Positioned(
+                //           top: 0,
+                //           left: 0,
+                //           right: 0,
+                //           child: Center(
+                //             child: Lottie.asset(AppAnimations.confetti),
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
                 SizedBox(width: 10),
               ],
             ),

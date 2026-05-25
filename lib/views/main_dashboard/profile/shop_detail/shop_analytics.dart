@@ -199,8 +199,8 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                               },
                                               child: MyVideoContainer(
                                                 videoUrl:
-                                                    ApiRoutes.baseUrl +
-                                                    (videos[index].video ?? ''),
+
+                                                    videos[index].video ?? '',
                                                 isViews: false,
                                               ),
                                             ),

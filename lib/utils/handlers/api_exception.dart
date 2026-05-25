@@ -11,8 +11,12 @@ import 'package:mapman/views/widgets/custom_snackbar.dart';
 
 class ExceptionHandler {
   static AppException handleApiException(DioException e) {
-    if (e.error.runtimeType == SocketException) {
-      throw DataFetchException('No Internet');
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      throw DataFetchException('Connection Timed Out');
+    } else if (e.type == DioExceptionType.connectionError || e.error is SocketException) {
+      throw DataFetchException(Strings.noInternet);
     } else if (e.response?.statusCode == 400) {
       String? type = e.response?.data['error']['type'];
       String? message = e.response?.data['error']['message'];
@@ -54,12 +58,18 @@ class ExceptionHandler {
           isError: true,
         );
         context.goNamed(AppRoutes.login);
-      } else if (message == Strings.noInternet) {
+      } else if (message?.contains(Strings.noInternet) ?? false) {
         //TODO: Design No internet page
         // context.goNamed(noInternetRoute);
         CustomToast.show(
           context,
-          title: message ?? 'No Internet',
+          title: 'No Internet Connection',
+          isError: true,
+        );
+      } else if (message?.contains('Connection Timed Out') ?? false) {
+        CustomToast.show(
+          context,
+          title: 'Connection Timed Out. Server might be busy.',
           isError: true,
         );
       } else if (showDataNotFound ?? true) {

@@ -137,7 +137,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _initializingIndices.add(index);
 
     final video = widget.videosData[index];
-    final videoUrl = ApiRoutes.baseUrl + (video.video ?? '');
+    final videoUrl = video.video ?? '';
 
     try {
       debugPrint('🎬 Initializing progressive streaming video at index $index');
@@ -535,17 +535,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           );
                         },
                       ),
-                      if (!widget.isMyVideos) ...[
-                        SizedBox(width: 15),
-                        RewardContainer(
-                          onTap: () {
-                            VideoDialogues().showRewardsDialogue(
-                              context,
-                              isEarnCoins: true,
-                            );
-                          },
-                        ),
-                      ],
+                      // if (!widget.isMyVideos) ...[
+                      //   SizedBox(width: 15),
+                      //   RewardContainer(
+                      //     onTap: () {
+                      //       VideoDialogues().showRewardsDialogue(
+                      //         context,
+                      //         isEarnCoins: true,
+                      //       );
+                      //     },
+                      //   ),
+                      // ],
                     ],
                   ),
                 ),

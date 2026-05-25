@@ -91,63 +91,63 @@ class _AllVideosState extends State<AllVideos> {
             fontWeight: FontWeight.w600,
           ),
           actions: [
-            GestureDetector(
-              onTap: () {
-                VideoDialogues().showRewardsDialogue(
-                  context,
-                  isEarnCoins: true,
-                );
-              },
-              child: Container(
-                height: 40,
-                width: 90,
-                decoration: BoxDecoration(
-                  color: AppColors.scaffoldBackground,
-                  border: Border.all(color: GenericColors.darkYellow),
-                  borderRadius: BorderRadiusGeometry.circular(20),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(AppIcons.rupeeCoinP, height: 34, width: 34),
-                        SizedBox(width: 5),
-                        Builder(
-                          builder: (context) {
-                            if (videoController.coinResponse.status ==
-                                    Status.INITIAL ||
-                                videoController.coinResponse.status ==
-                                    Status.LOADING) {
-                              return HeaderTextBlack(
-                                title: '...',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w300,
-                              );
-                            }
-                            return HeaderTextBlack(
-                              title:
-                                  '${videoController.coinResponse.data ?? 0}',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w300,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Lottie.asset(AppAnimations.confetti),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // GestureDetector(
+            //   onTap: () {
+            //     VideoDialogues().showRewardsDialogue(
+            //       context,
+            //       isEarnCoins: true,
+            //     );
+            //   },
+            //   child: Container(
+            //     height: 40,
+            //     width: 90,
+            //     decoration: BoxDecoration(
+            //       color: AppColors.scaffoldBackground,
+            //       border: Border.all(color: GenericColors.darkYellow),
+            //       borderRadius: BorderRadiusGeometry.circular(20),
+            //     ),
+            //     child: Stack(
+            //       alignment: Alignment.center,
+            //       children: [
+            //         Row(
+            //           mainAxisAlignment: MainAxisAlignment.center,
+            //           children: [
+            //             Image.asset(AppIcons.rupeeCoinP, height: 34, width: 34),
+            //             SizedBox(width: 5),
+            //             Builder(
+            //               builder: (context) {
+            //                 if (videoController.coinResponse.status ==
+            //                         Status.INITIAL ||
+            //                     videoController.coinResponse.status ==
+            //                         Status.LOADING) {
+            //                   return HeaderTextBlack(
+            //                     title: '...',
+            //                     fontSize: 16,
+            //                     fontWeight: FontWeight.w300,
+            //                   );
+            //                 }
+            //                 return HeaderTextBlack(
+            //                   title:
+            //                       '${videoController.coinResponse.data ?? 0}',
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w300,
+            //                 );
+            //               },
+            //             ),
+            //           ],
+            //         ),
+            //         Positioned(
+            //           top: 0,
+            //           left: 0,
+            //           right: 0,
+            //           child: Center(
+            //             child: Lottie.asset(AppAnimations.confetti),
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
             SizedBox(width: 10),
           ],
         ),

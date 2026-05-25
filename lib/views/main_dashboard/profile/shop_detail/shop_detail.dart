@@ -551,7 +551,7 @@ class ShopVideosList extends StatelessWidget {
                   },
                   child: MyVideoContainer(
                     videoUrl:
-                        ApiRoutes.baseUrl + (shopVideos[index].video ?? ''),
+                        shopVideos[index].video ?? '',
                     views: '${shopVideos[index].views ?? 0}',
                   ),
                 ),

@@ -7,7 +7,6 @@ import 'package:lottie/lottie.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/video_model.dart';
-import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -15,7 +14,6 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
@@ -136,7 +134,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     if (videoUrl == null || videoUrl.isEmpty) return;
 
     _player = VideoPlayerController.networkUrl(
-      Uri.parse(ApiRoutes.baseUrl + videoUrl),
+      Uri.parse(videoUrl),
       videoPlayerOptions: VideoPlayerOptions(
         allowBackgroundPlayback: false,
         mixWithOthers: false,
@@ -328,17 +326,17 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                               );
                             },
                           ),
-                          if (!isMyVideos) ...[
-                            SizedBox(width: 15),
-                            RewardContainer(
-                              onTap: () {
-                                VideoDialogues().showRewardsDialogue(
-                                  context,
-                                  isEarnCoins: true,
-                                );
-                              },
-                            ),
-                          ],
+                          // if (!isMyVideos) ...[
+                          //   SizedBox(width: 15),
+                          //   RewardContainer(
+                          //     onTap: () {
+                          //       VideoDialogues().showRewardsDialogue(
+                          //         context,
+                          //         isEarnCoins: true,
+                          //       );
+                          //     },
+                          //   ),
+                          // ],
                         ],
                       ),
                     ),
