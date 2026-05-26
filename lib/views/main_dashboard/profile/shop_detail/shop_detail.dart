@@ -451,9 +451,19 @@ class ShopDetailContainer extends StatelessWidget {
                     child: CustomTextFieldContainer(
                       title: 'Get Direction',
                       onTap: () async {
+                        final double? lat = double.tryParse(shop.lat ?? '');
+                        final double? long = double.tryParse(shop.long ?? '');
+                        if (lat == null || long == null) {
+                          CustomToast.show(
+                            context,
+                            title: 'Invalid coordinates for directions',
+                            isError: true,
+                          );
+                          return;
+                        }
                         await CustomLaunchers.openGoogleMaps(
-                          latitude: double.parse(shop.lat ?? '0.0'),
-                          longitude: double.parse(shop.long ?? '0.0'),
+                          latitude: lat,
+                          longitude: long,
                         );
                       },
                       child: Center(

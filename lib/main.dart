@@ -16,7 +16,6 @@ import 'package:mapman/firebase_options.dart';
 import 'package:mapman/routes/router.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
-import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -124,8 +123,6 @@ Future<void> main() async {
 
   final sharedPrefs = await SessionManager.initialize();
 
-  // Clear app cache to start with a clean storage footprint and free previous caches
-  await VideoCacheManager.clearAppCache();
 
   runApp(
     MultiProvider(

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
@@ -99,15 +98,6 @@ class VideoController extends ChangeNotifier {
   }
 
   int coinsCount = 0;
-
-  Future<void> clearVideoCache() async {
-    try {
-      await DefaultCacheManager().emptyCache();
-      debugPrint('✅ Cache cleared successfully');
-    } catch (e) {
-      debugPrint('❌ Failed to clear cache: $e');
-    }
-  }
 
   /// -------------------------- API FUNCTIONS --------------------------
   static const int _batchSize = 30;
@@ -310,21 +300,18 @@ class VideoController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse> addViewedVideos({required int videoId}) async {
-    _apiResponse = ApiResponse.loading(Strings.loading);
-    notifyListeners();
+  /// Fire-and-forget: records that the user watched a video.
+  /// Does NOT touch [_apiResponse] or call [notifyListeners] to avoid
+  /// triggering unnecessary full-tree rebuilds across all VideoController
+  /// listeners every time a video completes.
+  Future<void> addViewedVideos({required int videoId}) async {
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await videoService.addViewedVideos(
-        token: token,
-        videoId: videoId,
-      );
-      _apiResponse = ApiResponse.completed(response[Keys.data]);
+      await videoService.addViewedVideos(token: token, videoId: videoId);
+      debugPrint('✅ addViewedVideos success: $videoId');
     } catch (e) {
-      _apiResponse = ApiResponse.error(e.toString());
+      debugPrint('❌ addViewedVideos error ($videoId): $e');
     }
-    notifyListeners();
-    return _apiResponse;
   }
 
   Future<ApiResponse<List<VideosData>>> getMyViewedVideos({

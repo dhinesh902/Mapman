@@ -20,8 +20,8 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
-import 'package:mapman/utils/storage/video_cache_manager.dart';
+import 'package:better_player_plus/better_player_plus.dart';
+import 'package:mapman/routes/api_routes.dart';
 
 class NotificationVideoScreen extends StatefulWidget {
   const NotificationVideoScreen({
@@ -42,13 +42,14 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
 
-  VideoPlayerController? _player;
+  BetterPlayerController? _player;
   late final ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
   bool _isCompleted = false;
   bool _hasBeenFullyWatched = false;
   late final bool isMyVideos;
+  bool _isDisposed = false;
 
   double _progress = 0.0;
 
@@ -73,29 +74,41 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_isInitialized || _player == null) return;
+    if (_isDisposed || !_isInitialized || _player == null) return;
 
     final controller = _player!;
 
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      controller.pause();
-    } else if (state == AppLifecycleState.resumed) {
-      controller.play();
-    }
+    try {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.inactive) {
+        controller.pause();
+      } else if (state == AppLifecycleState.resumed) {
+        controller.play();
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
 
     if (_player != null) {
-      _player!.removeListener(_videoListener);
-      _player!.dispose();
+      final p = _player;
+      _player = null;
+      try {
+        p!.videoPlayerController?.removeListener(_videoListener);
+      } catch (_) {}
+      try {
+        p!.pause();
+      } catch (_) {}
+      try {
+        p!.dispose(forceDispose: true);
+      } catch (_) {}
     }
 
     bookMarkNotifier.dispose();
-    VideoCacheManager.clearAppCache();
+    // Do NOT call clearAppCache here — it forces all videos to re-buffer
     super.dispose();
   }
 
@@ -121,8 +134,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
   Future<void> _initializeVideo() async {
     if (_player != null) {
-      _player!.removeListener(_videoListener);
-      await _player!.dispose();
+      _player!.dispose();
     }
 
     _isInitialized = false;
@@ -130,28 +142,64 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     _hasBeenFullyWatched = false;
     _progress = 0.0;
 
-    final videoUrl = videosData.video;
-    if (videoUrl == null || videoUrl.isEmpty) return;
-
-    _player = VideoPlayerController.networkUrl(
-      Uri.parse(videoUrl),
-      videoPlayerOptions: VideoPlayerOptions(
-        allowBackgroundPlayback: false,
-        mixWithOthers: false,
-      ),
-    );
+    final videoPath = videosData.video;
+    if (videoPath == null || videoPath.isEmpty) return;
+    
+    final String videoUrl = videoPath.startsWith('http')
+        ? videoPath
+        : '${ApiRoutes.baseUrl}$videoPath';
 
     try {
-      await _player!.initialize();
-      if (!mounted) return;
+      final dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        videoUrl,
+        cacheConfiguration: const BetterPlayerCacheConfiguration(
+          useCache: true,
+          maxCacheSize: 50 * 1024 * 1024,
+          maxCacheFileSize: 10 * 1024 * 1024,
+        ),
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 10000,
+          bufferForPlaybackMs: 1000,
+          bufferForPlaybackAfterRebufferMs: 2000,
+        ),
+      );
 
-      _player!
-        ..addListener(_videoListener)
-        ..setVolume(1.0)
-        ..play();
+      _player = BetterPlayerController(
+        const BetterPlayerConfiguration(
+          autoPlay: true,
+          looping: true,
+          fit: BoxFit.cover,
+          expandToFill: true,
+          aspectRatio: 9 / 16,
+          handleLifecycle: false,
+          autoDispose: false,
+          allowedScreenSleep: false,
+          controlsConfiguration: BetterPlayerControlsConfiguration(
+            showControls: false,
+          ),
+        ),
+        betterPlayerDataSource: dataSource,
+      );
 
-      setState(() {
-        _isInitialized = true;
+      _player!.addEventsListener((event) {
+        if (!mounted || _isDisposed) return;
+        if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
+          if (!_isInitialized) {
+            final videoPlayerController = _player?.videoPlayerController;
+            if (videoPlayerController != null) {
+              try {
+                videoPlayerController.addListener(_videoListener);
+              } catch (_) {}
+            }
+            if (mounted && !_isDisposed) {
+              setState(() {
+                _isInitialized = true;
+              });
+            }
+          }
+        }
       });
     } catch (e) {
       debugPrint('Video init error: $e');
@@ -159,42 +207,51 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   }
 
   void _videoListener() {
-    if (!mounted || !_isInitialized || _player == null) return;
+    if (!mounted || _isDisposed || !_isInitialized || _player == null) return;
+    
+    final videoPlayerController = _player?.videoPlayerController;
+    if (videoPlayerController == null) return;
 
-    final value = _player!.value;
-    if (!value.isInitialized) return;
+    try {
+      if (!videoPlayerController.value.initialized) return;
 
-    final duration = value.duration;
-    final position = value.position;
+      final value = videoPlayerController.value;
 
-    if (duration.inMilliseconds > 0) {
-      final newProgress = position.inMilliseconds / duration.inMilliseconds;
+      final duration = value.duration;
+      final position = value.position;
 
-      if ((newProgress - _progress).abs() > 0.005) {
-        setState(() {
-          _progress = newProgress.clamp(0.0, 1.0);
-        });
-      }
-    }
+      if (duration != null && duration.inMilliseconds > 0) {
+        final newProgress = position.inMilliseconds / duration.inMilliseconds;
 
-    if (!_isCompleted &&
-        duration != Duration.zero &&
-        position >= duration - const Duration(milliseconds: 300)) {
-      _isCompleted = true;
-
-      if (!_hasBeenFullyWatched) {
-        _hasBeenFullyWatched = true;
-
-        if (!isMyVideos && videoController.isViewedVideo == 1) {
-          addViewedVideos();
+        if ((newProgress - _progress).abs() > 0.005) {
+          if (mounted && !_isDisposed) {
+            setState(() {
+              _progress = newProgress.clamp(0.0, 1.0);
+            });
+          }
         }
-        getVideoPoints();
       }
-    }
 
-    if (position <= const Duration(milliseconds: 200)) {
-      _isCompleted = false;
-    }
+      if (!_isCompleted &&
+          duration != null &&
+          duration != Duration.zero &&
+          position >= duration - const Duration(milliseconds: 300)) {
+        _isCompleted = true;
+
+        if (!_hasBeenFullyWatched) {
+          _hasBeenFullyWatched = true;
+
+          if (!isMyVideos && videoController.isViewedVideo == 1) {
+            addViewedVideos();
+          }
+          getVideoPoints();
+        }
+      }
+
+      if (position <= const Duration(milliseconds: 200)) {
+        _isCompleted = false;
+      }
+    } catch (_) {}
   }
 
   Future<void> addViewedVideos() async {
@@ -248,21 +305,24 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     onTap: () {
                       if (_player == null || !_isInitialized) return;
                       final controller = _player!;
-                      controller.value.isPlaying
-                          ? controller.pause()
-                          : controller.play();
+                      final videoPlayerController = controller.videoPlayerController;
+                      if (videoPlayerController == null) return;
+                      try {
+                        videoPlayerController.value.isPlaying
+                            ? controller.pause()
+                            : controller.play();
+                      } catch (_) {}
                       setState(() {});
                     },
                     child:
-                        _player != null &&
-                            _player!.value.isInitialized
+                        _player != null && _isInitialized
                         ? FittedBox(
                             fit: BoxFit.cover,
                             child: SizedBox(
-                              width: _player!.value.size.width,
-                              height: _player!.value.size.height,
+                              width: _player!.videoPlayerController?.value.size?.width ?? 1080,
+                              height: _player!.videoPlayerController?.value.size?.height ?? 1920,
                               child: RepaintBoundary(
-                                child: VideoPlayer(_player!),
+                                child: BetterPlayer(controller: _player!),
                               ),
                             ),
                           )
@@ -276,7 +336,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                   if (_player != null && _isInitialized) ...[
                     Center(
                       child: AnimatedOpacity(
-                        opacity: _player!.value.isPlaying
+                        opacity: (_player!.videoPlayerController?.value.isPlaying ?? false)
                             ? 0.0
                             : 1.0,
                         duration: const Duration(milliseconds: 200),
@@ -292,7 +352,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                             ),
                           ),
                           child: Icon(
-                            _player!.value.isPlaying
+                            (_player!.videoPlayerController?.value.isPlaying ?? false)
                                 ? Icons.pause
                                 : Icons.play_arrow,
                             size: 30,
@@ -484,6 +544,8 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                                               bookMarkNotifier.value =
                                                   updatedStatus;
 
+                                              final profileController = context.read<ProfileController>();
+
                                               try {
                                                 await videoController
                                                     .addSavedVideos(
@@ -494,8 +556,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                                                           : 'inactive',
                                                     );
 
-                                                await context
-                                                    .read<ProfileController>()
+                                                await profileController
                                                     .saveShop(
                                                       shopId:
                                                           videosData.shopId ??

@@ -75,6 +75,8 @@ dependencies:
   smart_auth: ^3.2.0
   app_tracking_transparency: ^2.0.6+1
   country_code_picker: ^3.4.1
+  better_player_plus: ^1.2.1
+  get_thumbnail_video: ^0.7.3
 
 flutter_launcher_icons:
   android: "launcher_icon"

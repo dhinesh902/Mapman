@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -14,14 +15,10 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
-import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_shop_dialogue.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
-
-import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class SingleVideoScreen extends StatefulWidget {
   const SingleVideoScreen({
@@ -42,21 +39,34 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-  final Map<int, VideoPlayerController> _controllers = {};
+  final Map<int, BetterPlayerController> _controllers = {};
+  final Map<int, VoidCallback> _activeListeners = {};
+  final Set<BetterPlayerController> _disposedControllers = {};
 
   // State variables
   int _currentIndex = 0;
   late PageController _pageController;
   bool _isDisposed = false;
-  bool _isAdvancing = false;
   Timer? _debounceTimer;
   bool _hasShownLastVideoToast = false;
-  double _progress = 0.0;
+
+  // ValueNotifiers — no full-screen setState for progress or play state
+  final ValueNotifier<double> _progressNotifier = ValueNotifier(0.0);
+  final ValueNotifier<bool> _isPlayingNotifier = ValueNotifier(false);
+
+  // Per-index readiness notifier: flips true when the controller at that index
+  // becomes initialized. Drives a cell-only rebuild so the video surface
+  // appears without a full-screen setState.
+  final Map<int, ValueNotifier<bool>> _readyMap = {};
+
   final Map<int, bool> _watchedMap = {};
   final Map<int, bool> _apiCallInProgress = {};
   final Map<int, bool> _completedVideos = {};
   final Map<int, ValueNotifier<bool>> _bookmarkMap = {};
   final Set<int> _initializingIndices = {};
+
+  // Session token — incremented on every page change to cancel stale async ops
+  int _sessionToken = 0;
 
   @override
   void initState() {
@@ -91,18 +101,49 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     WidgetsBinding.instance.removeObserver(this);
     _disposeAllControllers();
     _pageController.dispose();
+    _progressNotifier.dispose();
+    _isPlayingNotifier.dispose();
     for (final notifier in _bookmarkMap.values) {
       notifier.dispose();
     }
-    VideoCacheManager.clearAppCache();
+    for (final notifier in _readyMap.values) {
+      notifier.dispose();
+    }
+    // Do NOT clear cache here — it forces all videos to re-download
     super.dispose();
   }
 
+  void _removeVideoListener(int index) {
+    final listener = _activeListeners.remove(index);
+    if (listener != null) {
+      final player = _controllers[index];
+      if (player != null && !_disposedControllers.contains(player)) {
+        final videoPlayerController = player.videoPlayerController;
+        if (videoPlayerController != null) {
+          try {
+            videoPlayerController.removeListener(listener);
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
   Future<void> _disposeAllControllers() async {
-    for (final controller in _controllers.values) {
-      await controller.dispose();
+    for (final index in _controllers.keys.toList()) {
+      _removeVideoListener(index);
+      final controller = _controllers[index];
+      if (controller != null) {
+        _disposedControllers.add(controller);
+        try {
+          controller.pause();
+        } catch (_) {}
+        try {
+          controller.dispose(forceDispose: true);
+        } catch (_) {}
+      }
     }
     _controllers.clear();
+    _activeListeners.clear();
   }
 
   @override
@@ -110,13 +151,16 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (_isDisposed || !mounted) return;
 
     final controller = _controllers[_currentIndex];
-    if (controller == null || !controller.value.isInitialized) {
-      return;
-    }
+    if (controller == null || _disposedControllers.contains(controller)) return;
+
+    final videoPlayerController = controller.videoPlayerController;
+    if (videoPlayerController == null) return;
 
     try {
+      if (!videoPlayerController.value.initialized) return;
+
       if (state == AppLifecycleState.resumed) {
-        if (!controller.value.isPlaying) {
+        if (!videoPlayerController.value.isPlaying) {
           controller.play();
         }
       }
@@ -136,39 +180,116 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     _initializingIndices.add(index);
 
+    // Capture the session token at the moment we start init.
+    // If the user scrolls away, _sessionToken is incremented and we bail out.
+    final mySession = _sessionToken;
+
     final video = widget.videosData[index];
-    final videoUrl = video.video ?? '';
+    final String videoPath = video.video ?? '';
+    final String videoUrl = videoPath.startsWith('http')
+        ? videoPath
+        : '${ApiRoutes.baseUrl}$videoPath';
 
     try {
-      debugPrint('🎬 Initializing progressive streaming video at index $index');
-      final player = VideoPlayerController.networkUrl(
-        Uri.parse(videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      debugPrint(
+        '🎬 Initializing progressive streaming video at index $index with URL: $videoUrl',
       );
 
-      await player.initialize();
+      final dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        videoUrl,
+        cacheConfiguration: const BetterPlayerCacheConfiguration(
+          useCache: true,
+          maxCacheSize: 50 * 1024 * 1024,
+          maxCacheFileSize: 10 * 1024 * 1024,
+        ),
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 10000,
+          bufferForPlaybackMs: 1000,
+          bufferForPlaybackAfterRebufferMs: 2000,
+        ),
+      );
 
-      if (_isDisposed) {
-        await player.dispose();
+      final player = BetterPlayerController(
+        BetterPlayerConfiguration(
+          autoPlay: false,
+          looping: true,
+          fit: BoxFit.cover,
+          expandToFill: true,
+          aspectRatio: 9 / 16,
+          handleLifecycle: false,
+          autoDispose: false,
+          allowedScreenSleep: false,
+          controlsConfiguration: const BetterPlayerControlsConfiguration(
+            showControls: false,
+          ),
+        ),
+        betterPlayerDataSource: dataSource,
+      );
+
+      // Bail out if user scrolled away before controller was even created
+      if (mySession != _sessionToken || _isDisposed) {
+        _disposedControllers.add(player);
+        try {
+          player.pause();
+        } catch (_) {}
+        try {
+          player.dispose(forceDispose: true);
+        } catch (_) {}
+        return;
+      }
+
+      _controllers[index] = player;
+
+      // Listen to events
+      player.addEventsListener((event) {
+        if (_isDisposed || !mounted || _disposedControllers.contains(player)) {
+          return;
+        }
+
+        // Only guard against controller replacement for THIS index.
+        // Do NOT check _sessionToken here — preloaded neighbor controllers
+        // survive session bumps from later page changes and must still
+        // auto-play when the user scrolls back to them.
+        if (_controllers[index] != player) return;
+
+        if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
+          if (index == _currentIndex) {
+            _playVideo(index);
+          } else {
+            try {
+              player.pause();
+            } catch (_) {}
+          }
+        }
+      });
+
+      // Post-async guard: session changed while awaiting
+      if (mySession != _sessionToken || _isDisposed) {
+        _disposedControllers.add(player);
+        _controllers.remove(index);
+        try {
+          player.pause();
+        } catch (_) {}
+        try {
+          player.dispose(forceDispose: true);
+        } catch (_) {}
         return;
       }
 
       // If video is no longer needed (scrolled away), dispose it immediately
       if ((index - _currentIndex).abs() > 1) {
         debugPrint('⚠️ Video at index $index no longer needed, disposing...');
-        await player.dispose();
+        _disposedControllers.add(player);
+        _controllers.remove(index);
+        try {
+          player.pause();
+        } catch (_) {}
+        try {
+          player.dispose(forceDispose: true);
+        } catch (_) {}
         return;
-      }
-
-      _controllers[index] = player;
-
-      if (index == _currentIndex) {
-        _playVideo(index);
-      } else {
-        player
-          ..setLooping(false)
-          ..setVolume(0.0)
-          ..pause();
       }
     } catch (e) {
       debugPrint('❌ Init failed for index $index: $e');
@@ -177,47 +298,94 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
-  void _playVideo(int index) {
+  Future<void> _playVideo(int index) async {
     final controller = _controllers[index];
-    if (controller == null) return;
+    if (controller == null || _disposedControllers.contains(controller)) return;
 
-    // Ensure we don't have duplicate listeners
-    controller.removeListener(_videoListener);
+    final videoPlayerController = controller.videoPlayerController;
+    if (videoPlayerController == null) return;
+    if (!videoPlayerController.value.initialized) return;
 
-    controller
-      ..setLooping(false)
-      ..setVolume(1.0)
-      ..seekTo(Duration.zero)
-      ..addListener(_videoListener)
-      ..play();
+    _removeVideoListener(index);
 
-    if (mounted) {
-      setState(() {});
+    void listener() => _videoListener(index);
+    _activeListeners[index] = listener;
+
+    try {
+      videoPlayerController.addListener(listener);
+    } catch (e) {
+      debugPrint('Controller $index addListener failed: $e. Reinitializing...');
+      _controllers.remove(index);
+      _initController(index);
+      return;
     }
+
+    try {
+      controller.setVolume(1.0);
+    } catch (_) {}
+    try {
+      controller.play();
+    } catch (_) {}
+
+    // Signal readiness so the cell rebuilds and shows the video surface.
+    _readyMap[index] ??= ValueNotifier(false);
+    _readyMap[index]!.value = true;
+
+    _isPlayingNotifier.value = true;
   }
 
   Future<void> _disposeController(int index) async {
     if (_controllers.containsKey(index)) {
       debugPrint('🗑️ Disposing video at index $index');
+      _removeVideoListener(index);
       final player = _controllers.remove(index);
       if (player != null) {
-        player.removeListener(_videoListener);
-        await player.dispose();
+        _disposedControllers.add(player);
+        try {
+          player.pause();
+        } catch (_) {}
+        try {
+          player.dispose(forceDispose: true);
+        } catch (_) {}
       }
     }
   }
 
   Future<void> _manageControllers(int index) async {
-    // Start preloading the next video asynchronously before awaiting the current video initialization.
-    // This allows both videos to establish network handshakes and buffer in parallel!
-    if (index + 1 < widget.videosData.length) {
-      _initController(index + 1); // Preload next
-    }
+    if (index != _currentIndex || _isDisposed) return;
 
-    // Initialize current video
+    // ── Current video FIRST ─────────────────────────────────────────────
+    // Always initialize the current index before preloading neighbors so
+    // the tapped/landed video starts buffering immediately without competing
+    // with neighbor network requests.
     await _initController(index);
 
-    // Dispose others
+    if (index != _currentIndex || _isDisposed) return;
+
+    // Safety net: already initialized but not playing (preloaded controller
+    // that fired its initialized event before the user landed here).
+    final currentController = _controllers[index];
+    if (currentController != null &&
+        !_disposedControllers.contains(currentController)) {
+      final vpc = currentController.videoPlayerController;
+      if (vpc != null && vpc.value.initialized && !vpc.value.isPlaying) {
+        _playVideo(index);
+      }
+    }
+
+    if (index != _currentIndex || _isDisposed) return;
+
+    // ── Preload neighbors AFTER current has started buffering ───────────
+    if (index + 1 < widget.videosData.length) {
+      _initController(index + 1);
+    }
+    if (index - 1 >= 0) {
+      _initController(index - 1);
+    }
+
+    if (index != _currentIndex || _isDisposed) return;
+
+    // ── Dispose far controllers (distance > 1) ──────────────────────────
     final keysToRemove = _controllers.keys
         .where((key) => (key - index).abs() > 1)
         .toList();
@@ -226,41 +394,50 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
-  void _videoListener() {
+  void _videoListener(int index) {
     if (_isDisposed || !mounted) return;
+    if (index != _currentIndex) return;
 
-    final player = _controllers[_currentIndex];
-    if (player == null || !player.value.isInitialized) return;
+    final player = _controllers[index];
+    if (player == null || _disposedControllers.contains(player)) return;
+
+    final videoPlayerController = player.videoPlayerController;
+    if (videoPlayerController == null) {
+      return;
+    }
 
     try {
-      final value = player.value;
+      if (!videoPlayerController.value.initialized) {
+        return;
+      }
+      final value = videoPlayerController.value;
       final position = value.position;
       final duration = value.duration;
 
-      if (duration.inMilliseconds > 0) {
-        if (mounted && !_isDisposed) {
-          setState(() {
-            _progress = position.inMilliseconds / duration.inMilliseconds;
-          });
-        }
+      // Update progress via ValueNotifier — no setState, no tree rebuild
+      if (duration != null && duration.inMilliseconds > 0) {
+        _progressNotifier.value =
+            position.inMilliseconds / duration.inMilliseconds;
       }
+
+      // Update play state notifier
+      _isPlayingNotifier.value = value.isPlaying;
 
       final videoId = widget.videosData[_currentIndex].id ?? 0;
 
-      if ((_completedVideos[videoId] == false) &&
+      if (duration != null &&
+          (_completedVideos[videoId] == false) &&
           position.inMilliseconds >= duration.inMilliseconds) {
         _completedVideos[videoId] = true;
         _handleVideoCompletion();
       }
 
-      if (position.inMilliseconds < duration.inMilliseconds * 0.1) {
+      if (duration != null &&
+          position.inMilliseconds < duration.inMilliseconds * 0.1) {
         _completedVideos[videoId] = false;
       }
 
-      if (position >= duration) {
-        player.seekTo(Duration.zero);
-        player.play();
-      }
+      // Removed manual seekTo+play loop: looping:true already handles this
     } catch (e) {
       debugPrint('Error in videoListener: $e');
     }
@@ -297,8 +474,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     _watchedMap[videoId] = true;
     _apiCallInProgress[videoId] = true;
-
-    if (mounted) setState(() {});
+    // No setState needed — watched badge re-reads _watchedMap on next build
 
     try {
       debugPrint('Video $videoId FULLY COMPLETED - Calling APIs...');
@@ -307,15 +483,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         await videoController.addViewedVideos(videoId: videoId);
         debugPrint('addViewedVideos SUCCESS');
       }
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      await videoController.addVideoPoints();
-      await videoController.getVideoPoints();
-      debugPrint('addVideoPoints SUCCESS');
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      await videoController.getVideoPoints();
-      debugPrint('getVideoPoints SUCCESS');
     } catch (e) {
       debugPrint('API Error video $videoId: $e');
     } finally {
@@ -325,78 +492,65 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     }
   }
 
-  void _autoAdvanceToNext() {
-    if (_isDisposed ||
-        _isAdvancing ||
-        _currentIndex >= widget.videosData.length - 1) {
-      if (!_hasShownLastVideoToast &&
-          mounted &&
-          _currentIndex >= widget.videosData.length - 1) {
-        _hasShownLastVideoToast = true;
-        CustomToast.show(
-          context,
-          title: 'Here the videos are over.',
-          isError: false,
-        );
-      }
-      return;
-    }
-
-    _isAdvancing = true;
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (!_isDisposed && _pageController.hasClients) {
-        _pageController
-            .nextPage(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-            )
-            .then((_) {
-              if (mounted) {
-                _isAdvancing = false;
-              }
-            });
-      } else {
-        _isAdvancing = false;
-      }
-    });
-  }
-
   void _onPageChanged(int index) {
     if (_isDisposed) return;
+
+    // Invalidate all pending async inits started for the old page
+    _sessionToken++;
 
     // Stop previous video
     if (_controllers.containsKey(_currentIndex)) {
       final oldController = _controllers[_currentIndex];
-      if (oldController != null) {
-        oldController.pause();
-        oldController.setVolume(0.0);
-        oldController.removeListener(_videoListener);
+      if (oldController != null &&
+          !_disposedControllers.contains(oldController)) {
+        try {
+          oldController.pause();
+          oldController.setVolume(0.0);
+        } catch (_) {}
+        _removeVideoListener(_currentIndex);
       }
     }
 
     _currentIndex = index;
-    _isAdvancing = false;
     final newVideoId = widget.videosData[index].id ?? 0;
     _completedVideos[newVideoId] = false;
 
-    // Check if the controller is already preloaded and initialized to avoid loading screen flicker!
-    final bool alreadyInitialized =
-        _controllers.containsKey(index) &&
-        _controllers[index]!.value.isInitialized;
-    _progress = alreadyInitialized
-        ? (_controllers[index]!.value.position.inMilliseconds /
-              _controllers[index]!.value.duration.inMilliseconds.clamp(
-                1,
-                double.infinity,
-              ))
-        : 0;
+    // Reset notifiers for new page
+    _progressNotifier.value = 0.0;
+    _isPlayingNotifier.value = false;
+    // Reset readiness so the loading indicator shows while the new page
+    // initializes (unless it is already preloaded).
+    _readyMap[index] ??= ValueNotifier(false);
+    _readyMap[index]!.value = false;
 
-    setState(() {});
+    // Safely check if the controller is already preloaded and initialized
+    bool alreadyInitialized = false;
+
+    try {
+      final controller = _controllers[index];
+      if (controller != null &&
+          !_disposedControllers.contains(controller) &&
+          controller.videoPlayerController != null) {
+        final videoPlayerController = controller.videoPlayerController!;
+        alreadyInitialized = videoPlayerController.value.initialized;
+        if (alreadyInitialized) {
+          final duration = videoPlayerController.value.duration;
+          final position = videoPlayerController.value.position;
+          if (duration != null && duration.inMilliseconds > 0) {
+            _progressNotifier.value =
+                position.inMilliseconds / duration.inMilliseconds;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking initialization in _onPageChanged: $e');
+      alreadyInitialized = false;
+    }
 
     _manageControllers(index);
 
     // If controller is already initialized (preloaded), play it immediately
-    if (_controllers.containsKey(index)) {
+    if (alreadyInitialized) {
       _playVideo(index);
     }
 
@@ -433,320 +587,399 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           }
           final bookmarkNotifier = _bookmarkMap[videoId]!;
 
-          final shouldShowVideo =
-              _controllers[index] != null &&
-              _controllers[index]!.value.isInitialized;
+          // _readyMap drives a per-cell rebuild when the controller becomes
+          // initialized — avoids a full-screen setState.
+          _readyMap[index] ??= ValueNotifier(false);
+          final readyNotifier = _readyMap[index]!;
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  final controller = _controllers[index];
-                  if (controller == null || !controller.value.isInitialized) {
-                    return;
+          return ValueListenableBuilder<bool>(
+            valueListenable: readyNotifier,
+            builder: (context, isReady, _) {
+              final controller = _controllers[index];
+              final bool isControllerValid = controller != null &&
+                  !_disposedControllers.contains(controller);
+
+              // Check if controller is already initialized.
+              final bool initiallyReady = isControllerValid &&
+                  controller.videoPlayerController != null &&
+                  controller.videoPlayerController!.value.initialized;
+
+              final effectivelyReady = isReady || initiallyReady;
+              bool shouldShowVideo = false;
+              double videoWidth = 1080;
+              double videoHeight = 1920;
+
+              try {
+                if (effectivelyReady &&
+                    isControllerValid &&
+                    controller.videoPlayerController != null) {
+                  final vpc = controller.videoPlayerController!;
+                  shouldShowVideo = vpc.value.initialized;
+                  if (shouldShowVideo) {
+                    videoWidth = vpc.value.size?.width ?? 1080;
+                    videoHeight = vpc.value.size?.height ?? 1920;
                   }
+                }
+              } catch (_) {
+                shouldShowVideo = false;
+              }
 
-                  controller.value.isPlaying
-                      ? controller.pause()
-                      : controller.play();
-                  setState(() {});
-                },
-                child: shouldShowVideo
-                    ? FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controllers[index]!.value.size.width,
-                          height: _controllers[index]!.value.size.height,
-                          child: RepaintBoundary(
-                            child: VideoPlayer(_controllers[index]!),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        color: AppColors.scaffoldBackgroundDark,
-                        child: const Center(child: CustomLoadingIndicator()),
-                      ),
-              ),
-
-              if (shouldShowVideo)
-                Center(
-                  child: GestureDetector(
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () {
-                      final controller = _controllers[index];
-                      if (controller == null ||
-                          !controller.value.isInitialized) {
+                      if (!isControllerValid) return;
+                      final videoPlayerController =
+                          controller.videoPlayerController;
+                      if (videoPlayerController == null ||
+                          !videoPlayerController.value.initialized) {
                         return;
                       }
-                      controller.value.isPlaying
-                          ? controller.pause()
-                          : controller.play();
-                      setState(() {});
+                      try {
+                        if (videoPlayerController.value.isPlaying) {
+                          controller.pause();
+                          _isPlayingNotifier.value = false;
+                        } else {
+                          controller.play();
+                          _isPlayingNotifier.value = true;
+                        }
+                      } catch (_) {}
                     },
-                    child: AnimatedOpacity(
-                      opacity: _controllers[index]!.value.isPlaying ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.primaryBorder, Colors.black38],
+                    child: shouldShowVideo
+                        ? FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: videoWidth,
+                              height: videoHeight,
+                              child: RepaintBoundary(
+                                child: BetterPlayer(controller: controller!),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: AppColors.scaffoldBackgroundDark,
+                            child: const Center(
+                              child: CustomLoadingIndicator(),
+                            ),
                           ),
-                        ),
-                        child: Icon(
-                          _controllers[index]!.value.isPlaying
-                              ? Icons.pause
-                              : Icons.play_arrow,
-                          size: 30,
-                          color: AppColors.whiteText,
-                        ),
-                      ),
-                    ),
                   ),
-                ),
-              Positioned(
-                top: 0,
-                left: 10,
-                right: 10,
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      BlurBackButton(onTap: () => context.pop()),
-                      const Spacer(),
-                      ShopDetailsButton(
-                        onTap: () {
-                          try {
-                            final controller = _controllers[index];
-                            if (controller != null &&
-                                controller.value.isInitialized) {
-                              controller.pause();
-                            }
-                          } catch (e) {
-                            debugPrint('Error pausing player: $e');
-                          }
-                          context.pushNamed(
-                            AppRoutes.shopDetail,
-                            extra: video.shopId,
+
+                  if (shouldShowVideo)
+                    Center(
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: _isPlayingNotifier,
+                        builder: (_, isPlaying, __) {
+                          return GestureDetector(
+                            onTap: () {
+                              if (!isControllerValid) return;
+                              final videoPlayerController =
+                                  controller.videoPlayerController;
+                              if (videoPlayerController == null ||
+                                  !videoPlayerController.value.initialized) {
+                                return;
+                              }
+                              try {
+                                if (isPlaying) {
+                                  controller.pause();
+                                  _isPlayingNotifier.value = false;
+                                } else {
+                                  controller.play();
+                                  _isPlayingNotifier.value = true;
+                                }
+                              } catch (_) {}
+                            },
+                            child: AnimatedOpacity(
+                              opacity: isPlaying ? 0.0 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                height: 50,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.primaryBorder,
+                                      Colors.black38,
+                                    ],
+                                  ),
+                                ),
+                                child: Icon(
+                                  isPlaying ? Icons.pause : Icons.play_arrow,
+                                  size: 30,
+                                  color: AppColors.whiteText,
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),
-                      // if (!widget.isMyVideos) ...[
-                      //   SizedBox(width: 15),
-                      //   RewardContainer(
-                      //     onTap: () {
-                      //       VideoDialogues().showRewardsDialogue(
-                      //         context,
-                      //         isEarnCoins: true,
-                      //       );
-                      //     },
-                      //   ),
-                      // ],
-                    ],
-                  ),
-                ),
-              ),
-
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: BottomBar(
-                  child: Column(
-                    children: [
-                      LinearProgressIndicator(
-                        value: _progress.clamp(0.0, 1.0),
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: AlwaysStoppedAnimation(
-                          GenericColors.darkGreen,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.whiteText,
-                              GenericColors.lightPrimary,
-                            ],
+                    ),
+                  Positioned(
+                    top: 0,
+                    left: 10,
+                    right: 10,
+                    child: SafeArea(
+                      child: Row(
+                        children: [
+                          BlurBackButton(onTap: () => context.pop()),
+                          const Spacer(),
+                          ShopDetailsButton(
+                            onTap: () {
+                              try {
+                                if (isControllerValid &&
+                                    controller.videoPlayerController != null &&
+                                    controller
+                                        .videoPlayerController!
+                                        .value
+                                        .initialized) {
+                                  controller.pause();
+                                }
+                              } catch (e) {
+                                debugPrint('Error pausing player: $e');
+                              }
+                              context.pushNamed(
+                                AppRoutes.shopDetail,
+                                extra: video.shopId,
+                              );
+                            },
                           ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Flexible(
-                                        child: InkWell(
-                                          onTap: () {
-                                            try {
-                                              final controller =
-                                                  _controllers[index];
-                                              if (controller != null &&
-                                                  controller
-                                                      .value
-                                                      .isInitialized) {
-                                                controller.pause();
-                                              }
-                                            } catch (e) {
-                                              debugPrint(
-                                                'Error pausing player: $e',
-                                              );
-                                            }
-                                            context.pushNamed(
-                                              AppRoutes.shopDetail,
-                                              extra: video.shopId,
-                                            );
-                                          },
-                                          child: HeaderTextBlack(
-                                            title:
-                                                video.shopName?.capitalize() ??
-                                                '',
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
-                                            textDecoration:
-                                                TextDecoration.underline,
-                                            decorationColor: AppColors.darkText,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.visible,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      if (_watchedMap[videoId] == true &&
-                                          !widget.isMyVideos)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: BodyTextColors(
-                                              title: 'Watched',
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
-                                              color: AppColors.whiteText,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                          // if (!widget.isMyVideos) ...[
+                          //   SizedBox(width: 15),
+                          //   RewardContainer(
+                          //     onTap: () {
+                          //       VideoDialogues().showRewardsDialogue(
+                          //         context,
+                          //         isEarnCoins: true,
+                          //       );
+                          //     },
+                          //   ),
+                          // ],
+                        ],
+                      ),
+                    ),
+                  ),
 
-                                  SizedBox(height: 8),
-                                  BodyTextHint(
-                                    title:
-                                        video.description?.capitalize() ?? '',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  // SizedBox(height: 8),
-                                  // BodyTextHint(
-                                  //   title: '+91 ${video.whatsappNumber}',
-                                  //   fontSize: 12,
-                                  //   fontWeight: FontWeight.w400,
-                                  // ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: BottomBar(
+                      child: Column(
+                        children: [
+                          ValueListenableBuilder<double>(
+                            valueListenable: _progressNotifier,
+                            builder: (_, progress, __) {
+                              return LinearProgressIndicator(
+                                value: progress.clamp(0.0, 1.0),
+                                backgroundColor: Colors.grey.shade300,
+                                valueColor: AlwaysStoppedAnimation(
+                                  GenericColors.darkGreen,
+                                ),
+                              );
+                            },
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.whiteText,
+                                  GenericColors.lightPrimary,
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            if (!widget.isMyVideos) ...[
-                              Row(
-                                children: [
-                                  CircleContainer(
-                                    onTap: () async {
-                                      await CustomLaunchers.openWhatsApp(
-                                        phoneNumber: '${video.whatsappNumber}',
-                                      );
-                                    },
-                                    child: Image.asset(
-                                      AppIcons.whatsappP,
-                                      height: 30,
-                                      width: 30,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-
-                                  ValueListenableBuilder<bool>(
-                                    valueListenable: bookmarkNotifier,
-                                    builder: (_, isActive, __) {
-                                      return CircleContainer(
-                                        onTap: () async {
-                                          VideoShopDialogue()
-                                              .showSaveOrRemoveVideoDialogue(
-                                                context,
-                                                isRemoveShop: isActive,
-                                                onTap: () async {
-                                                  final newVal = !isActive;
-                                                  bookmarkNotifier.value =
-                                                      newVal;
-                                                  await videoController
-                                                      .addSavedVideos(
-                                                        videoId: video.id ?? 0,
-                                                        status: newVal
-                                                            ? 'active'
-                                                            : 'inactive',
-                                                      );
-                                                  await context
-                                                      .read<ProfileController>()
-                                                      .saveShop(
-                                                        shopId:
-                                                            video.shopId ?? 0,
-                                                        status: newVal
-                                                            ? 'active'
-                                                            : 'inactive',
-                                                      );
-                                                },
-                                              );
-                                        },
-                                        child: isActive
-                                            ? Image.asset(
-                                                AppIcons.bookmarkP,
-                                                height: 30,
-                                              )
-                                            : const Icon(
-                                                Icons.bookmark_border,
-                                                size: 30,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Flexible(
+                                            child: InkWell(
+                                              onTap: () {
+                                                try {
+                                                  final controller =
+                                                      _controllers[index];
+                                                  if (controller != null &&
+                                                      controller
+                                                              .videoPlayerController !=
+                                                          null &&
+                                                      controller
+                                                          .videoPlayerController!
+                                                          .value
+                                                          .initialized) {
+                                                    controller.pause();
+                                                  }
+                                                } catch (e) {
+                                                  debugPrint(
+                                                    'Error pausing player: $e',
+                                                  );
+                                                }
+                                                context.pushNamed(
+                                                  AppRoutes.shopDetail,
+                                                  extra: video.shopId,
+                                                );
+                                              },
+                                              child: HeaderTextBlack(
+                                                title:
+                                                    video.shopName
+                                                        ?.capitalize() ??
+                                                    '',
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w400,
+                                                textDecoration:
+                                                    TextDecoration.underline,
+                                                decorationColor:
+                                                    AppColors.darkText,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.visible,
                                               ),
-                                      );
-                                    },
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          if (_watchedMap[videoId] == true &&
+                                              !widget.isMyVideos)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Center(
+                                                child: BodyTextColors(
+                                                  title: 'Watched',
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w400,
+                                                  color: AppColors.whiteText,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+
+                                      SizedBox(height: 8),
+                                      BodyTextHint(
+                                        title:
+                                            video.description?.capitalize() ??
+                                            '',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      // SizedBox(height: 8),
+                                      // BodyTextHint(
+                                      //   title: '+91 ${video.whatsappNumber}',
+                                      //   fontSize: 12,
+                                      //   fontWeight: FontWeight.w400,
+                                      // ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                if (!widget.isMyVideos) ...[
+                                  Row(
+                                    children: [
+                                      CircleContainer(
+                                        onTap: () async {
+                                          await CustomLaunchers.openWhatsApp(
+                                            phoneNumber:
+                                                '${video.whatsappNumber}',
+                                          );
+                                        },
+                                        child: Image.asset(
+                                          AppIcons.whatsappP,
+                                          height: 30,
+                                          width: 30,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+
+                                      ValueListenableBuilder<bool>(
+                                        valueListenable: bookmarkNotifier,
+                                        builder: (_, isActive, __) {
+                                          return CircleContainer(
+                                            onTap: () async {
+                                              VideoShopDialogue()
+                                                  .showSaveOrRemoveVideoDialogue(
+                                                    context,
+                                                    isRemoveShop: isActive,
+                                                    onTap: () async {
+                                                      final profileController =
+                                                          context
+                                                              .read<
+                                                                ProfileController
+                                                              >();
+                                                      final newVal = !isActive;
+                                                      bookmarkNotifier.value =
+                                                          newVal;
+                                                      await videoController
+                                                          .addSavedVideos(
+                                                            videoId:
+                                                                video.id ?? 0,
+                                                            status: newVal
+                                                                ? 'active'
+                                                                : 'inactive',
+                                                          );
+                                                      await profileController
+                                                          .saveShop(
+                                                            shopId:
+                                                                video.shopId ??
+                                                                0,
+                                                            status: newVal
+                                                                ? 'active'
+                                                                : 'inactive',
+                                                          );
+                                                    },
+                                                  );
+                                            },
+                                            child: isActive
+                                                ? Image.asset(
+                                                    AppIcons.bookmarkP,
+                                                    height: 30,
+                                                  )
+                                                : const Icon(
+                                                    Icons.bookmark_border,
+                                                    size: 30,
+                                                  ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ],
-                          ],
-                        ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
+                ],
+              ); // closes Stack
+            }, // closes ValueListenableBuilder builder
+          ); // closes ValueListenableBuilder
         },
       ),
     );
-  }
-}
+  } // end build()
+} // end _SingleVideoScreenState
 
 class BottomBar extends StatelessWidget {
   const BottomBar({super.key, required this.child});

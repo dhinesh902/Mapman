@@ -1029,13 +1029,20 @@ class _MapsState extends State<Maps> {
   }
 
   void _animateToShop(ShopSearchData shop) {
+    final double? lat = double.tryParse(shop.lat.toString());
+    final double? long = double.tryParse(shop.long.toString());
+    if (lat == null || long == null) {
+      CustomToast.show(
+        context,
+        title: 'Invalid shop location coordinates',
+        isError: true,
+      );
+      return;
+    }
     _mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
-          target: LatLng(
-            double.parse(shop.lat.toString()),
-            double.parse(shop.long.toString()),
-          ),
+          target: LatLng(lat, long),
           zoom: 17,
           tilt: 45,
         ),

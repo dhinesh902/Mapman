@@ -151,7 +151,7 @@ class _AllVideosState extends State<AllVideos> {
             SizedBox(width: 10),
           ],
         ),
-        body:Builder(
+        body: Builder(
           builder: (context) {
             switch (videoController.allVideosData.status) {
               case Status.INITIAL:
@@ -260,116 +260,113 @@ class ParticularShopVideoList extends StatelessWidget {
                 mainAxisSpacing: 2,
                 childAspectRatio: 0.7,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final video = videosData[index];
-                  return GestureDetector(
-                    onTap: () {
-                      context.pushNamed(
-                        AppRoutes.singleVideoScreen,
-                        extra: {
-                          Keys.videosData: videosData,
-                          Keys.isMyVideos: false,
-                          Keys.initialIndex: index,
-                        },
-                      );
-                    },
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        MyVideoContainer(
-                          videoUrl: ApiRoutes.baseUrl + (video.video ?? ''),
-                          isViews: false,
-                          isShowPlayButton: false,
-                          isAllVideos: true,
-                        ),
-                        Center(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.4),
-                                      Colors.white.withValues(alpha: 0.1),
-                                    ],
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.play_arrow,
-                                  size: 26,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (video.watched ?? false)
-                          Positioned(
-                            top: 10,
-                            right: 8,
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final video = videosData[index];
+                return GestureDetector(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRoutes.singleVideoScreen,
+                      extra: {
+                        Keys.videosData: videosData,
+                        Keys.isMyVideos: false,
+                        Keys.initialIndex: index,
+                      },
+                    );
+                  },
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      MyVideoContainer(
+                        videoUrl: (video.video ?? ''),
+                        isViews: false,
+                        isShowPlayButton: false,
+                        isAllVideos: true,
+                      ),
+                      Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1DB954),
-                                borderRadius: BorderRadius.circular(20),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.4),
+                                    Colors.white.withValues(alpha: 0.1),
+                                  ],
+                                ),
                               ),
-                              child: const BodyTextColors(
-                                title: "Watched",
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.play_arrow,
+                                size: 26,
                                 color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
+                        ),
+                      ),
+                      if (video.watched ?? false)
                         Positioned(
-                          bottom: 8,
-                          left: 8,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                AppIcons.eye,
-                                height: 12,
-                                width: 12,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              BodyTextColors(
-                                title: formatViewCount(
-                                  video.viewCount ?? video.views ?? 0,
-                                ),
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ],
+                          top: 10,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const BodyTextColors(
+                              title: "Watched",
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-                childCount: videosData.length,
-              ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              AppIcons.eye,
+                              height: 12,
+                              width: 12,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            BodyTextColors(
+                              title: formatViewCount(
+                                video.viewCount ?? video.views ?? 0,
+                              ),
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }, childCount: videosData.length),
             ),
           ),
           if (videoController.isFetchingMoreAllVideos)
@@ -385,277 +382,3 @@ class ParticularShopVideoList extends StatelessWidget {
   }
 }
 
-// class ParticularShopVideoList extends StatelessWidget {
-//   const ParticularShopVideoList({
-//     super.key,
-//     required this.videosData,
-//     required this.videoController,
-//     required this.scrollController,
-//   });
-//
-//   final List<VideosData> videosData;
-//   final VideoController videoController;
-//   final ScrollController scrollController;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return NotificationListener<ScrollNotification>(
-//       onNotification: (ScrollNotification scrollInfo) {
-//         if (videoController.isFetchingMoreAllVideos ||
-//             !videoController.hasMoreAllVideos) {
-//           return false;
-//         }
-//
-//         final bool isAtBottom =
-//             scrollInfo.metrics.pixels >=
-//             scrollInfo.metrics.maxScrollExtent - 150;
-//
-//         if (scrollInfo is ScrollEndNotification && isAtBottom) {
-//           videoController.loadMoreAllVideos(
-//             category: videoController.selectedCategory.toLowerCase(),
-//           );
-//         }
-//
-//         return false;
-//       },
-//       child: SingleChildScrollView(
-//         controller: scrollController,
-//         physics: const AlwaysScrollableScrollPhysics(),
-//         padding: const EdgeInsets.all(10),
-//         child: StaggeredGrid.count(
-//           crossAxisCount: 4,
-//           mainAxisSpacing: 8,
-//           crossAxisSpacing: 8,
-//           children: [
-//             ...List.generate(videosData.length, (index) {
-//               final video = videosData[index];
-//
-//               final pattern = index % 4;
-//
-//               int crossAxis = 2;
-//               double mainAxis = 2;
-//
-//               switch (pattern) {
-//                 case 0:
-//
-//                   /// big left (tall)
-//                   crossAxis = 2;
-//                   mainAxis = 3;
-//                   break;
-//
-//                 case 1:
-//
-//                   /// top right small
-//                   crossAxis = 2;
-//                   mainAxis = 2.2;
-//                   break;
-//
-//                 case 2:
-//
-//                   /// bottom right tall
-//                   crossAxis = 2;
-//                   mainAxis = 3;
-//                   break;
-//
-//                 case 3:
-//
-//                   /// next row left medium
-//                   crossAxis = 2;
-//                   mainAxis = 2.2;
-//                   break;
-//               }
-//
-//               return StaggeredGridTile.count(
-//                 crossAxisCellCount: crossAxis,
-//                 mainAxisCellCount: mainAxis,
-//                 child: GestureDetector(
-//                   onTap: () {
-//                     context.pushNamed(
-//                       AppRoutes.singleVideoScreen,
-//                       extra: {
-//                         Keys.videosData: videosData,
-//                         Keys.isMyVideos: false,
-//                         Keys.initialIndex: index,
-//                       },
-//                     );
-//                   },
-//                   child: ClipRRect(
-//                     borderRadius: BorderRadius.circular(8),
-//                     child: Stack(
-//                       children: [
-//                         MyVideoContainer(
-//                           videoUrl: ApiRoutes.baseUrl + (video.video ?? ''),
-//                           isViews: false,
-//                         ),
-//                         Positioned(
-//                           bottom: 0,
-//                           left: 0,
-//                           right: 0,
-//                           child: VideoTitleBlurContainer(
-//                             isWatched: video.watched ?? false,
-//                             videosData: video,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               );
-//             }),
-//
-//             /// Loader at bottom
-//             if (videoController.isFetchingMoreAllVideos)
-//               const StaggeredGridTile.count(
-//                 crossAxisCellCount: 4,
-//                 mainAxisCellCount: 1,
-//                 child: MoreLoadingContainer(),
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class ParticularShopVideoList extends StatelessWidget {
-//   const ParticularShopVideoList({
-//     super.key,
-//     required this.videosData,
-//     required this.videoController,
-//     required this.scrollController,
-//   });
-//
-//   final List<VideosData> videosData;
-//   final VideoController videoController;
-//   final ScrollController scrollController;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return NotificationListener<ScrollNotification>(
-//       onNotification: (ScrollNotification scrollInfo) {
-//         if (videoController.isFetchingMoreAllVideos ||
-//             !videoController.hasMoreAllVideos) {
-//           return false;
-//         }
-//
-//         final bool isAtBottom =
-//             scrollInfo.metrics.pixels >=
-//             scrollInfo.metrics.maxScrollExtent - 150;
-//
-//         if (scrollInfo is ScrollEndNotification && isAtBottom) {
-//           videoController.loadMoreAllVideos(
-//             category: videoController.selectedCategory.toLowerCase(),
-//           );
-//         }
-//
-//         return false;
-//       },
-//       child: ListView.builder(
-//         controller: scrollController,
-//         physics: const AlwaysScrollableScrollPhysics(),
-//         padding: const EdgeInsets.only(top: 20, bottom: 20),
-//         itemCount:
-//             videosData.length +
-//             (videoController.isFetchingMoreAllVideos ? 1 : 0),
-//         itemBuilder: (context, index) {
-//           if (index == videosData.length) {
-//             return const MoreLoadingContainer();
-//           }
-//
-//           return Container(
-//             height: 174,
-//             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-//             clipBehavior: Clip.antiAlias,
-//             decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-//             child: Stack(
-//               children: [
-//                 InkWell(
-//                   onTap: () {
-//                     context.pushNamed(
-//                       AppRoutes.singleVideoScreen,
-//                       extra: {
-//                         Keys.videosData: videosData,
-//                         Keys.isMyVideos: false,
-//                         Keys.initialIndex: index,
-//                       },
-//                     );
-//                   },
-//                   child: MyVideoContainer(
-//                     videoUrl:
-//                         ApiRoutes.baseUrl + (videosData[index].video ?? ''),
-//                     isViews: false,
-//                   ),
-//                 ),
-//                 Positioned(
-//                   bottom: 0,
-//                   left: 0,
-//                   right: 0,
-//                   child: VideoTitleBlurContainer(
-//                     isWatched: videosData[index].watched ?? false,
-//                     videosData: videosData[index],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
-//class VideoContainer extends StatefulWidget {
-//   const VideoContainer({super.key, required this.videoUrl});
-//
-//   final String videoUrl;
-//
-//   @override
-//   State<VideoContainer> createState() => _VideoContainerState();
-// }
-//
-// class _VideoContainerState extends State<VideoContainer> {
-//   late VideoPlayerController _controller;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//
-//     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-//       ..initialize().then((_) {
-//         if (!mounted) return;
-//         _controller
-//           ..setLooping(true)
-//           ..setVolume(0)
-//           ..play();
-//         setState(() {});
-//       });
-//   }
-//
-//   @override
-//   void dispose() {
-//     _controller.dispose();
-//     super.dispose();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return SizedBox(
-//       height: 163,
-//       child: Stack(
-//         children: [
-//           Positioned.fill(
-//             child: _controller.value.isInitialized
-//                 ? ClipRRect(child: VideoPlayer(_controller))
-//                 : Container(color: AppColors.bgGrey),
-//           ),
-//
-//           Positioned.fill(
-//             child: Center(
-//               child: VideoPausePlayCircleContainer(icon: Icons.play_arrow),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

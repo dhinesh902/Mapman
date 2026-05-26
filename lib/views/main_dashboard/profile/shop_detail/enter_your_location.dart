@@ -238,9 +238,21 @@ class _EnterYourLocationState extends State<EnterYourLocation> {
       return;
     }
 
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    Position? position;
+    try {
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
+      );
+    }
 
     final latLng = LatLng(position.latitude, position.longitude);
 
@@ -343,7 +355,7 @@ class LocationPickContainerDrag extends StatelessWidget {
                 CustomFullButton(
                   title: 'Confirm & Proceed',
                   onTap: () async {
-                    print('-------------------------------------$latLng');
+                    debugPrint('-------------------------------------$latLng');
                     final placeController = context.read<PlaceController>();
                     placeController.setShopAddress = {
                       'address': address,

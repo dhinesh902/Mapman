@@ -20,8 +20,11 @@ import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
-import 'package:visibility_detector/visibility_detector.dart';
+import 'dart:io';
+import 'package:get_thumbnail_video/video_thumbnail.dart';
+import 'package:get_thumbnail_video/index.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class ViewedVideos extends StatefulWidget {
   const ViewedVideos({super.key});
@@ -313,153 +316,195 @@ class ViewedVideoCard extends StatefulWidget {
 }
 
 class _ViewedVideoCardState extends State<ViewedVideoCard> {
-  VideoPlayerController? _player;
-  bool _initialized = false;
-  bool _error = false;
-  bool _isVisible = false;
+  String? _thumbnailPath;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Lazy init via VisibilityDetector
+    _loadThumbnail();
   }
 
-  Future<void> _initController() async {
-    if (_player != null || _error || !mounted) return;
-    try {
-      _player = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(
-          mixWithOthers: true,
-          allowBackgroundPlayback: false,
-        ),
-      );
-      
-      await _player!.initialize();
-      
-      if (mounted) {
-        setState(() {
-          _initialized = true;
-        });
+  @override
+  void didUpdateWidget(covariant ViewedVideoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl != widget.videoUrl) {
+      _loadThumbnail();
+    }
+  }
 
-      }
-    } catch (e) {
-      debugPrint('Viewed video init error: $e');
+  Future<void> _loadThumbnail() async {
+    if (widget.videoUrl.isEmpty) return;
+
+    final cached = VideoCacheManager.getCachedThumbnail(widget.videoUrl);
+    if (cached != null) {
       if (mounted) {
         setState(() {
-          _error = true;
+          _thumbnailPath = cached;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _thumbnailPath = null;
+      });
+    }
+
+    try {
+      final String fullUrl = widget.videoUrl.startsWith('http')
+          ? widget.videoUrl
+          : '${ApiRoutes.baseUrl}${widget.videoUrl}';
+
+      final tempDir = await getTemporaryDirectory();
+      final path = await VideoThumbnail.thumbnailFile(
+        video: fullUrl,
+        thumbnailPath: tempDir.path,
+        imageFormat: ImageFormat.WEBP,
+        maxHeight: 250,
+        quality: 100,
+        timeMs: 0,
+      );
+
+        VideoCacheManager.cacheThumbnail(widget.videoUrl, path.path);
+        if (mounted) {
+          setState(() {
+            _thumbnailPath = path.path;
+            _isLoading = false;
+          });
+        }
+    } catch (e) {
+      debugPrint('Error generating thumbnail: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
   }
 
   @override
-  void dispose() {
-    _player?.dispose();
-    _player = null;
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: Key('viewed_video_${widget.videoUrl}'),
-      onVisibilityChanged: (visibilityInfo) {
-        if (!mounted) return;
-        
-        final bool isVisible = visibilityInfo.visibleFraction > 0.1;
-        _isVisible = isVisible;
-
-        if (isVisible) {
-          if (!_initialized && !_error) {
-            _initController();
-          }
-        } else {
-          // Only dispose if the current route is still active (meaning the video scrolled off-screen).
-          // Do not dispose if covered by another route (like SingleVideoScreen), to avoid reloading when returning!
-          final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
-          if (_initialized && isCurrentRoute) {
-            _player?.pause();
-            _player?.dispose();
-            _player = null;
-            _initialized = false;
-          }
-        }
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: SizedBox(
-          height: 174,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: _initialized && _player != null
-                      ? VideoPlayer(_player!)
-                      : _error
-                          ? Container(
-                              color: AppColors.bgGrey,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.error_outline,
-                                  color: Colors.white24,
-                                  size: 30,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: AppColors.bgGrey,
-                              child: const Center(
-                                child: SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white24,
-                                  ),
-                                ),
-                              ),
-                            ),
-                ),
-              ),
-              Positioned(
-                top: 45,
-                left: 0,
-                right: 0,
-                child: Center(child: VideoPausePlayGradientCircleContainer()),
-              ),
-              if (widget.isViews) ...[
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: GestureDetector(
-                    onTap: widget.bookMarkOnTap,
-                    child: Container(
-                      height: 30,
-                      width: 30,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.scaffoldBackground,
-                      ),
-                      child: Center(
-                        child: widget.isBookMark
-                            ? Image.asset(
-                                AppIcons.bookmarkP,
-                                height: 20,
-                                width: 20,
-                              )
-                            : const Icon(
-                                CupertinoIcons.bookmark,
-                                size: 20,
-                                color: AppColors.darkGrey,
-                              ),
-                      ),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: SizedBox(
+        height: 174,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF2A2D32),
+                Color(0xFF131417),
+              ],
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Static background linear gradient with watermark
+                Center(
+                  child: Opacity(
+                    opacity: 0.12,
+                    child: Image.asset(
+                      AppIcons.videoClipP,
+                      height: 80,
+                      width: 80,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
+
+                // Video Thumbnail
+                if (_thumbnailPath != null)
+                  Positioned.fill(
+                    child: Image.file(
+                      File(_thumbnailPath!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+
+                // Gradient glow overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.15),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.35),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Loading state indicator
+                if (_isLoading)
+                  const Center(
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white24,
+                      ),
+                    ),
+                  ),
+
+                // Play circle button icon
+                const Center(
+                  child: VideoPausePlayGradientCircleContainer(),
+                ),
+
+                // Bookmark icon on top-right
+                if (widget.isViews)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: GestureDetector(
+                      onTap: widget.bookMarkOnTap,
+                      child: Container(
+                        height: 30,
+                        width: 30,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.scaffoldBackground.withValues(alpha: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: widget.isBookMark
+                              ? Image.asset(
+                                  AppIcons.bookmarkP,
+                                  height: 20,
+                                  width: 20,
+                                )
+                              : const Icon(
+                                  CupertinoIcons.bookmark,
+                                  size: 20,
+                                  color: AppColors.darkGrey,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
-            ],
+            ),
           ),
         ),
       ),

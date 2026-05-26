@@ -653,12 +653,24 @@ class SavedShopCard extends StatelessWidget {
                   bottom: 5,
                   right: 5,
                   child: InkWell(
-                    onTap: () {
-                      CustomLaunchers.openGoogleMaps(
-                        latitude: double.parse(shopDetailData.lat ?? ''),
-                        longitude: double.parse(shopDetailData.lat ?? ''),
+                  onTap: () {
+                    final double? lat =
+                        double.tryParse(shopDetailData.lat ?? '');
+                    final double? long =
+                        double.tryParse(shopDetailData.long ?? '');
+                    if (lat == null || long == null) {
+                      CustomToast.show(
+                        context,
+                        title: 'Invalid coordinates for directions',
+                        isError: true,
                       );
-                    },
+                      return;
+                    }
+                    CustomLaunchers.openGoogleMaps(
+                      latitude: lat,
+                      longitude: long,
+                    );
+                  },
                     child: Container(
                       height: 24,
                       width: 24,

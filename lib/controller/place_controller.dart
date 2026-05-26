@@ -127,9 +127,23 @@ class PlaceController extends ChangeNotifier {
         );
         notifyListeners();
       }
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      Position? position = await Geolocator.getLastKnownPosition();
+      if (position == null) {
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+        } catch (_) {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+            ),
+          );
+        }
+      }
       final latLng = LatLng(position.latitude, position.longitude);
       _currentLocationLatLng = ApiResponse.completed(latLng);
       notifyListeners();

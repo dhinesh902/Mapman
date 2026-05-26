@@ -5,13 +5,20 @@ abstract class ApiRoutes {
   static final BaseOptions options = BaseOptions(
     baseUrl: baseUrl,
     contentType: 'application/json',
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   );
 
   final Dio dio;
 
   ApiRoutes()
     : dio = Dio(
-        BaseOptions(baseUrl: baseUrl, contentType: 'application/json'),
+        BaseOptions(
+          baseUrl: baseUrl,
+          contentType: 'application/json',
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
       ) {
     dio.interceptors.add(
       LogInterceptor(requestBody: true, responseBody: true, error: true),
@@ -23,7 +30,8 @@ abstract class ApiRoutes {
   }
 
   static const String baseUrl = 'https://mapman-production.up.railway.app';
-  // static const String baseUrl = 'https://7h4brdq2-3007.inc1.devtunnels.ms';
+
+  // static const String baseUrl = 'https://2nb22tn8-3007.inc1.devtunnels.ms';
 
   static const String sendOTP = '/shop/auth/sendOtp';
   static const String sendMailOTP = '/shop/auth/sendEmailOtp';
