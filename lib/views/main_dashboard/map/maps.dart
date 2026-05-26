@@ -649,6 +649,11 @@ class _MapsState extends State<Maps> {
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
+    if (homeController.currentPage != 1) {
+      if (_searchFocusNode.hasFocus) {
+        _searchFocusNode.unfocus();
+      }
+    }
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Builder(
@@ -669,7 +674,14 @@ class _MapsState extends State<Maps> {
                     myLocationButtonEnabled: Platform.isIOS ? false : true,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
-                    padding: const EdgeInsets.only(top: 70, bottom: 100),
+                    padding: EdgeInsets.only(
+                      top:
+                          (homeController.searchCategory == null ||
+                              homeController.searchCategory == 'all')
+                          ? 70
+                          : 0,
+                      bottom: 100,
+                    ),
                     onMapCreated: onMapCreated,
                     onCameraMove: (CameraPosition position) {
                       if (_currentZoom != position.zoom) {
@@ -699,12 +711,41 @@ class _MapsState extends State<Maps> {
                     ),
                   ),
 
-                  Positioned(
-                    top: 15,
-                    left: 5,
-                    right: 5,
-                    child: shopAutoComplete(),
-                  ),
+                  if (homeController.searchCategory == null ||
+                      homeController.searchCategory == 'all') ...[
+                    Positioned(
+                      top: 15,
+                      left: 5,
+                      right: 5,
+                      child: shopAutoComplete(),
+                    ),
+                  ] else ...[
+                    Positioned(
+                      top: 15,
+                      left: 5,
+                      child: GestureDetector(
+                        onTap: () {
+                          homeController.setCurrentPage = 0;
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              AppIcons.arrowBack,
+                              height: 20,
+                              width: 20,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
 
                   ValueListenableBuilder<ShopSearchData?>(
                     valueListenable: tapNotifier,
@@ -772,6 +813,10 @@ class _MapsState extends State<Maps> {
                                       ClearCircleContainer(
                                         onTap: () {
                                           tapNotifier.value = null;
+                                          homeController.setSearchCategory =
+                                              'all';
+                                          homeController.setIsShowAddNearBy =
+                                              false;
                                           if (sheetController.isAttached) {
                                             sheetController.animateTo(
                                               0.0,
@@ -927,6 +972,16 @@ class _MapsState extends State<Maps> {
           },
 
           fieldViewBuilder: (context, textController, focusNode, _) {
+            if (controller.focusSearchOnMap) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  if (focusNode.canRequestFocus) {
+                    focusNode.requestFocus();
+                    controller.setFocusSearchOnMap = false;
+                  }
+                });
+              });
+            }
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: CustomSearchField(
@@ -1041,11 +1096,7 @@ class _MapsState extends State<Maps> {
     }
     _mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(lat, long),
-          zoom: 17,
-          tilt: 45,
-        ),
+        CameraPosition(target: LatLng(lat, long), zoom: 17, tilt: 45),
       ),
     );
   }

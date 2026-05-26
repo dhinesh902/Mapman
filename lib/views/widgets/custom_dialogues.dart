@@ -348,6 +348,95 @@ class CustomDialogues {
     );
   }
 
+  static Future showReportSuccessConfirmDialog(BuildContext context) {
+    Future.delayed(const Duration(milliseconds: 1550), () {
+      if (context.mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
+    });
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: context,
+        builder: (ctx) {
+          return CupertinoAlertDialog(
+            content: Column(
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(
+                    AppIcons.checkSuccessP,
+                    height: 70,
+                    width: 70,
+                  ),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Your report will be submitted',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'We review all reports within 24–48 hours.',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: AppColors.scaffoldBackground,
+          child: Container(
+            width: double.maxFinite,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 10),
+                Center(
+                  child: Image.asset(
+                    AppIcons.checkSuccessP,
+                    height: 90,
+                    width: 90,
+                  ),
+                ),
+                SizedBox(height: 20),
+                HeaderTextBlack(
+                  title: 'Your report will be submitted',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: 'We review all reports within 24–48 hours.',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   static Future showSuccessDialog(
     BuildContext context, {
     required String title,

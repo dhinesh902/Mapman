@@ -17,6 +17,7 @@ import 'package:mapman/views/main_dashboard/notification/notifications.dart';
 import 'package:mapman/views/main_dashboard/notification/viewed_videos.dart';
 import 'package:mapman/views/main_dashboard/profile/edit_profile.dart';
 import 'package:mapman/views/main_dashboard/profile/help_and_support.dart';
+import 'package:mapman/views/main_dashboard/profile/report_issue.dart';
 import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/profile/privacy_policy.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/enter_location.dart';
@@ -201,6 +202,11 @@ class AppRouter {
             path: '/help_and_support',
             name: AppRoutes.helpAndSupport,
             builder: (context, state) => HelpAndSupport(),
+          ),
+          GoRoute(
+            path: '/report_issue',
+            name: AppRoutes.reportIssue,
+            builder: (context, state) => const ReportIssue(),
           ),
           GoRoute(
             path: '/add_shop_detail',

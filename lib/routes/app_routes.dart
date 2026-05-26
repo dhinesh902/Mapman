@@ -27,4 +27,5 @@ class AppRoutes {
   static String allVideos = 'all_videos';
   static String privacyPolicy = 'privacy_policy';
   static String termsAndConditions = 'terms_and_conditions';
+  static String reportIssue = 'report_issue';
 }

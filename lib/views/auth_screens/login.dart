@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -226,7 +227,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
               },
             ),
             if (Platform.isIOS) ...[
-              const SizedBox(height: 15),
+              const SizedBox(height: 10),
               CustomOutlineButtonWithImage(
                 title: 'Continue as Guest',
                 isGoogle: false,
@@ -237,6 +238,31 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
                 },
               ),
             ],
+            SizedBox(height: 10),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  context.pushNamed(AppRoutes.reportIssue);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.exclamationmark_circle,
+                      color: GenericColors.darkRed,
+                      size: 18,
+                    ),
+                    SizedBox(width: 10),
+                    BodyTextColors(
+                      title: 'Report an Issue',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.darkGrey,
+                    ),
+                  ],
+                ),
+              ),
+            ),
             // Row(
             //   children: [
             //     Expanded(child: Divider(color: GenericColors.borderGrey)),
@@ -263,7 +289,7 @@ class _MobileOrGoogleSignInState extends State<MobileOrGoogleSignIn> {
             //     );
             //   },
             // ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
             BodyTextHint(
               title: 'By Continuing you agree to Mapman',
               fontSize: 12,

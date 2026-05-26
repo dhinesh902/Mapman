@@ -21,6 +21,15 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _focusSearchOnMap = false;
+
+  bool get focusSearchOnMap => _focusSearchOnMap;
+
+  set setFocusSearchOnMap(bool value) {
+    _focusSearchOnMap = value;
+    notifyListeners();
+  }
+
   String? _searchCategory;
 
   String? get searchCategory => _searchCategory;

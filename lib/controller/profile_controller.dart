@@ -138,6 +138,31 @@ class ProfileController extends ChangeNotifier {
     return _apiResponse;
   }
 
+  Future<ApiResponse> reportIssue({
+    required String issueType,
+    required String description,
+    required dynamic image,
+    required String email,
+  }) async {
+    _apiResponse = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.reportIssue(
+        token: token,
+        issueType: issueType,
+        description: description,
+        image: image,
+        email: email,
+      );
+      _apiResponse = ApiResponse.completed(response[Keys.data]);
+    } catch (e) {
+      _apiResponse = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _apiResponse;
+  }
+
   Future<ApiResponse> registerShop({
     required ShopDetailImages shopImages,
     required ShopDetailData shopDetail,

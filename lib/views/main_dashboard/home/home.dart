@@ -60,27 +60,27 @@ class _HomeState extends State<Home> {
   }
 
   Future<bool> requestNotificationPermission() async {
-  if (!Platform.isAndroid && !Platform.isIOS) {
-    return false;
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return false;
+    }
+
+    PermissionStatus status = await Permission.notification.status;
+
+    // Already granted
+    if (status.isGranted) {
+      return true;
+    }
+
+    // Permanently denied
+    if (status.isPermanentlyDenied) {
+      return false;
+    }
+
+    // Request permission
+    status = await Permission.notification.request();
+
+    return status.isGranted;
   }
-
-  PermissionStatus status = await Permission.notification.status;
-
-  // Already granted
-  if (status.isGranted) {
-    return true;
-  }
-
-  // Permanently denied
-  if (status.isPermanentlyDenied) {
-    return false;
-  }
-
-  // Request permission
-  status = await Permission.notification.request();
-
-  return status.isGranted;
-}
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +105,56 @@ class _HomeState extends State<Home> {
                     homeData: homeController.homeData.data ?? HomeData(),
                   ),
                   SizedBox(height: 5),
+                  GestureDetector(
+                    onTap: () {
+                      homeController.setFocusSearchOnMap = true;
+                      homeController.setSearchCategory = 'all';
+                      homeController.setIsShowAddNearBy = false;
+                      homeController.setCurrentPage = 1;
+                    },
+                    child: Container(
+                      height: 48,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      decoration: BoxDecoration(
+                        color: AppColors.scaffoldBackground,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: AppColors.primaryBorder.withValues(alpha: .2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .04),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            AppIcons.search,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.primary,
+                              BlendMode.srcIn,
+                            ),
+                            height: 18,
+                            width: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: BodyTextColors(
+                              title: 'Search business / shop',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.lightGreyHint,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: ListView(
                       children: [

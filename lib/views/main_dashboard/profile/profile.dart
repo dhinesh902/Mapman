@@ -132,6 +132,15 @@ class _ProfileState extends State<Profile> {
                           context.pushNamed(AppRoutes.helpAndSupport);
                         },
                       ),
+                      const SizedBox(height: 15),
+                      ProfileListTile(
+                        image: AppIcons.alertP,
+                        title: 'Report an Issue',
+                        body: 'Report bugs or submit feedback',
+                        onTap: () {
+                          context.pushNamed(AppRoutes.reportIssue);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -203,6 +212,15 @@ class _ProfileState extends State<Profile> {
                           body: '24×7 Customer Support',
                           onTap: () {
                             context.pushNamed(AppRoutes.helpAndSupport);
+                          },
+                        ),
+                        SizedBox(height: 15),
+                        ProfileListTile(
+                          image: AppIcons.alertP,
+                          title: 'Report an Issue',
+                          body: 'Report bugs or submit feedback',
+                          onTap: () {
+                            context.pushNamed(AppRoutes.reportIssue);
                           },
                         ),
                         SizedBox(height: 15),

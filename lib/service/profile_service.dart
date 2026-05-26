@@ -51,6 +51,37 @@ class ProfileService extends ApiRoutes {
     }
   }
 
+  Future<Map<String, dynamic>> reportIssue({
+    required String token,
+    required String issueType,
+    required String description,
+    required dynamic image,
+    required String email,
+  }) async {
+    try {
+      FormData formData = FormData.fromMap({
+        'image': (image is File)
+            ? await MultipartFile.fromFile(
+                image.path,
+                filename: image.path.split('/').last,
+              )
+            : null,
+        'issueType': issueType,
+        'description': description,
+        'email': email,
+      });
+
+      final response = await dio.post(
+        ApiRoutes.reportIssue,
+        options: headerWithToken(token),
+        data: formData,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
   Future<MultipartFile> _fileFromPath(String path) async {
     return MultipartFile.fromFile(path, filename: path.split('/').last);
   }
