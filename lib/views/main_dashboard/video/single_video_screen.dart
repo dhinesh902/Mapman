@@ -681,14 +681,24 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                       } catch (_) {}
                     },
                     child: shouldShowVideo
-                        ? FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: videoWidth,
-                              height: videoHeight,
-                              child: BetterPlayer(controller: controller!),
-                            ),
-                          )
+                        ? Platform.isIOS
+                            // On iOS, FittedBox+SizedBox with raw pixel
+                            // dimensions breaks AVPlayerLayer attachment
+                            // (audio plays but video stays black).
+                            // AspectRatio lets the native layer render
+                            // correctly without fighting Flutter's layout.
+                            ? AspectRatio(
+                                aspectRatio: videoWidth / videoHeight,
+                                child: BetterPlayer(controller: controller!),
+                              )
+                            : FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: videoWidth,
+                                  height: videoHeight,
+                                  child: BetterPlayer(controller: controller!),
+                                ),
+                              )
                         : Container(
                             color: AppColors.scaffoldBackgroundDark,
                             child: const Center(
