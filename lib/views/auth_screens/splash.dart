@@ -168,7 +168,7 @@ class _SplashScreenState extends State<SplashScreen>
                           SizedBox(width: 18),
                           const BodyTextColors(
                             title: "MAPMAN",
-                            fontSize: 34,
+                            fontSize: 32,
                             letterSpacing: 2,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0D1025),

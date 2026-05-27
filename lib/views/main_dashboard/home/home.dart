@@ -120,7 +120,7 @@ class _HomeState extends State<Home> {
                         color: AppColors.scaffoldBackground,
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(
-                          color: AppColors.primaryBorder.withValues(alpha: .2),
+                          color: AppColors.primaryBorder.withValues(alpha: .5),
                         ),
                         boxShadow: [
                           BoxShadow(

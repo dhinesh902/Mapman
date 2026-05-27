@@ -159,9 +159,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     try {
       if (!videoPlayerController.value.initialized) return;
 
-      if (state == AppLifecycleState.resumed) {
-        if (!videoPlayerController.value.isPlaying) {
-          controller.play();
+      if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+        if (videoPlayerController.value.isPlaying) {
+          controller.pause();
+          _isPlayingNotifier.value = false;
         }
       }
     } catch (e) {
@@ -198,16 +199,18 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       final dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         videoUrl,
-        cacheConfiguration: const BetterPlayerCacheConfiguration(
+        cacheConfiguration: BetterPlayerCacheConfiguration(
           useCache: true,
-          maxCacheSize: 50 * 1024 * 1024,
-          maxCacheFileSize: 10 * 1024 * 1024,
+          preCacheSize: 3 * 1024 * 1024, // Pre-cache 3MB for instant start
+          maxCacheSize: 100 * 1024 * 1024, // Increase total cache size to 100MB
+          maxCacheFileSize: 15 * 1024 * 1024, // Increase file limit to 15MB
+          key: videoUrl, // Persist cache across sessions using the URL as key
         ),
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 2000,
-          maxBufferMs: 10000,
-          bufferForPlaybackMs: 1000,
-          bufferForPlaybackAfterRebufferMs: 2000,
+          minBufferMs: 1500, // Reduced minimum buffer for faster startup
+          maxBufferMs: 8000,
+          bufferForPlaybackMs: 500, // Play instantly with 500ms buffer (Instagram Reels style)
+          bufferForPlaybackAfterRebufferMs: 1500,
         ),
       );
 
@@ -224,6 +227,36 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           controlsConfiguration: const BetterPlayerControlsConfiguration(
             showControls: false,
           ),
+          errorBuilder: (context, errorMessage) {
+            return Container(
+              color: AppColors.scaffoldBackgroundDark,
+              child: const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.redAccent,
+                        size: 40,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Video resolution exceeds device capabilities or format not supported.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.lightGreyHint,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         betterPlayerDataSource: dataSource,
       );
@@ -653,9 +686,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             child: SizedBox(
                               width: videoWidth,
                               height: videoHeight,
-                              child: RepaintBoundary(
-                                child: BetterPlayer(controller: controller!),
-                              ),
+                              child: BetterPlayer(controller: controller!),
                             ),
                           )
                         : Container(

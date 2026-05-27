@@ -363,8 +363,8 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
         video: fullUrl,
         thumbnailPath: tempDir.path,
         imageFormat: ImageFormat.WEBP,
-        maxHeight: 250,
-        quality: 100,
+        maxHeight: 150,
+        quality: 50,
         timeMs: 0,
       );
 

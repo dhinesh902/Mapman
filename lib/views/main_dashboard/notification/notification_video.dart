@@ -321,9 +321,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                             child: SizedBox(
                               width: _player!.videoPlayerController?.value.size?.width ?? 1080,
                               height: _player!.videoPlayerController?.value.size?.height ?? 1920,
-                              child: RepaintBoundary(
-                                child: BetterPlayer(controller: _player!),
-                              ),
+                              child: BetterPlayer(controller: _player!),
                             ),
                           )
                         : Container(

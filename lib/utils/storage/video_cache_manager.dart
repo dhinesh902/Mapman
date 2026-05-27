@@ -1,46 +1,98 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VideoCacheManager {
-  // ── Thumbnail in-memory LRU cache ──────────────────────────────────────
-  // Capped at [_maxThumbnailEntries] to prevent unbounded memory growth when
-  // a user has hundreds of videos. When the cap is reached the oldest entry
-  // is evicted (LinkedHashMap insertion-order trick).
   static const int _maxThumbnailEntries = 100;
-  static final Map<String, String> _thumbnailPathCache =
-      <String, String>{};
+  static final Map<String, String> _thumbnailPathCache = <String, String>{};
+  static SharedPreferences? _prefs;
 
-  static String? getCachedThumbnail(String videoUrl) {
-    final path = _thumbnailPathCache[videoUrl];
-    if (path != null) {
-      // Re-insert to mark as recently used (LRU)
-      _thumbnailPathCache.remove(videoUrl);
-      _thumbnailPathCache[videoUrl] = path;
+  // ── Initialization of SharedPreferences ───────────────────────────────
+  static Future<void> init() async {
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      final keys = _prefs!.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('thumb_path_')) {
+          final videoUrl = key.replaceFirst('thumb_path_', '');
+          final path = _prefs!.getString(key);
+          if (path != null && File(path).existsSync()) {
+            _thumbnailPathCache[videoUrl] = path;
+          } else {
+            _prefs!.remove(key); // Clean up invalid/stale entries
+          }
+        }
+      }
+      debugPrint('🎬 Persistent video thumbnails loaded: ${_thumbnailPathCache.length}');
+    } catch (e) {
+      debugPrint('VideoCacheManager.init error: $e');
     }
-    return path;
   }
 
-  static void cacheThumbnail(String videoUrl, String path) {
-    // Evict oldest entry when at capacity
+  // ── Thumbnail in-memory & persistent cache getters ───────────────────────
+  static String? getCachedThumbnail(String videoUrl) {
+    // 1. Check in-memory cache first (extremely fast)
+    var path = _thumbnailPathCache[videoUrl];
+    if (path != null) {
+      if (File(path).existsSync()) {
+        // Move to end to mark as recently used (LRU)
+        _thumbnailPathCache.remove(videoUrl);
+        _thumbnailPathCache[videoUrl] = path;
+        return path;
+      } else {
+        _thumbnailPathCache.remove(videoUrl);
+        if (_prefs != null) {
+          _prefs!.remove('thumb_path_$videoUrl');
+        }
+      }
+    }
+
+    // 2. Check SharedPreferences if in-memory cache missed (safety fallback)
+    if (_prefs != null) {
+      path = _prefs!.getString('thumb_path_$videoUrl');
+      if (path != null) {
+        if (File(path).existsSync()) {
+          _thumbnailPathCache[videoUrl] = path;
+          return path;
+        } else {
+          _prefs!.remove('thumb_path_$videoUrl');
+        }
+      }
+    }
+    return null;
+  }
+
+  static Future<void> cacheThumbnail(String videoUrl, String path) async {
+    // Evict oldest entry in memory when at capacity (LRU)
     if (_thumbnailPathCache.length >= _maxThumbnailEntries) {
       final oldestKey = _thumbnailPathCache.keys.first;
       _thumbnailPathCache.remove(oldestKey);
     }
     _thumbnailPathCache[videoUrl] = path;
+
+    // Persist to disk metadata via SharedPreferences asynchronously
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      if (_prefs != null) {
+        await _prefs!.setString('thumb_path_$videoUrl', path);
+      }
+    } catch (e) {
+      debugPrint('cacheThumbnail write error: $e');
+    }
   }
 
-  /// Removes a single entry from the in-memory cache (e.g. after a video is
-  /// deleted by the user).
+  /// Removes a single entry from the cache
   static void evictThumbnail(String videoUrl) {
     _thumbnailPathCache.remove(videoUrl);
+    if (_prefs != null) {
+      _prefs!.remove('thumb_path_$videoUrl');
+    }
   }
 
   // ── Stale-thumbnail disk cleanup ───────────────────────────────────────
   /// Deletes .webp thumbnail files in the system temp directory that are
-  /// older than [maxAgeHours] hours.  Safe to call periodically (e.g. on
-  /// app resume or after navigating away from the video feed).
-  /// Does NOT touch HLS/ExoPlayer segment caches.
+  /// older than [maxAgeHours] hours.
   static Future<void> cleanStaleThumbnails({int maxAgeHours = 24}) async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -67,9 +119,7 @@ class VideoCacheManager {
     }
   }
 
-  // ── Legacy API (kept for compatibility, no longer wipes everything) ─────
-  /// Prefer [cleanStaleThumbnails] instead.  This method now only removes
-  /// stale .webp thumbnails to avoid wiping ExoPlayer streaming cache.
+  // ── Legacy API ──────────────────────────────────────────────────────────
   static Future<void> clearAppCache() async {
     await cleanStaleThumbnails(maxAgeHours: 0); // wipe all webp thumbnails
   }

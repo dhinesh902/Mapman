@@ -372,8 +372,8 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
         thumbnailPath: tempDir.path,
         /// Fast and High Quality Settings
         imageFormat: ImageFormat.WEBP,
-        maxHeight: 250,
-        quality: 100,
+        maxHeight: 150,
+        quality: 50,
 
         /// Fast generation by skipping seek
         timeMs: 0,

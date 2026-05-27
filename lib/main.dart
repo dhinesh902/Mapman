@@ -16,7 +16,9 @@ import 'package:mapman/firebase_options.dart';
 import 'package:mapman/routes/router.dart';
 import 'package:mapman/utils/constants/keys.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -122,6 +124,7 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final sharedPrefs = await SessionManager.initialize();
+  await VideoCacheManager.init();
 
 
   runApp(
@@ -240,13 +243,44 @@ Future<void> main() async {
   };
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
     analytics: analytics,
   );
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Keep the screen awake when the app starts in the foreground
+    WakelockPlus.enable();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      WakelockPlus.enable();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      WakelockPlus.disable();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
