@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -721,8 +722,8 @@ class _MapsState extends State<Maps> {
                     ),
                   ] else ...[
                     Positioned(
-                      top: 15,
-                      left: 5,
+                      top: 10,
+                      left: 10,
                       child: GestureDetector(
                         onTap: () {
                           homeController.setCurrentPage = 0;
@@ -735,10 +736,10 @@ class _MapsState extends State<Maps> {
                             shape: BoxShape.circle,
                           ),
                           child: Center(
-                            child: Image.asset(
+                            child: SvgPicture.asset(
                               AppIcons.arrowBack,
-                              height: 20,
-                              width: 20,
+                              height: 24,
+                              width: 24,
                               color: AppColors.primary,
                             ),
                           ),

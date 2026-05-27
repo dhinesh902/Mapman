@@ -390,7 +390,7 @@ class VideoDialogues {
               padding: const EdgeInsets.only(top: 10),
               child: Center(
                 child: BodyTextHint(
-                  title: 'Please ensure the file size does not exceed 10MB',
+                  title: 'Please ensure the file size does not exceed 30MB',
                   fontSize: 12,
                   fontWeight: FontWeight.w300,
                   textAlign: TextAlign.center,
@@ -467,7 +467,7 @@ class VideoDialogues {
                   ),
                   SizedBox(height: 10),
                   BodyTextHint(
-                    title: 'Please ensure the file size does not exceed 10MB',
+                    title: 'Please ensure the file size does not exceed 30MB',
                     fontSize: 14,
                     fontWeight: FontWeight.w300,
                     textAlign: TextAlign.center,
