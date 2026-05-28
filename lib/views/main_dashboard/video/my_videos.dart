@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -300,11 +301,12 @@ class MyVideoContainer extends StatefulWidget {
 }
 
 class _MyVideoContainerState extends State<MyVideoContainer> {
-  String? _thumbnailPath;
+  Uint8List? _thumbnailData;
+  bool _isLoading = false;
 
   // Static map deduplicates concurrent thumbnail requests for the same URL.
   // Entries are pruned as soon as the future resolves to prevent accumulation.
-  static final Map<String, Future<String?>> _thumbnailFutures = {};
+  static final Map<String, Future<Uint8List?>> _thumbnailFutures = {};
 
   @override
   void initState() {
@@ -317,7 +319,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.videoUrl != widget.videoUrl) {
-      _thumbnailPath = null;
+      _thumbnailData = null;
       _loadThumbnail();
     }
   }
@@ -328,13 +330,19 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
     /// Already cached in memory
     final cached = VideoCacheManager.getCachedThumbnail(widget.videoUrl);
 
-    if (cached != null && File(cached).existsSync()) {
+    if (cached != null) {
       if (mounted) {
         setState(() {
-          _thumbnailPath = cached;
+          _thumbnailData = cached;
         });
       }
       return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
     }
 
     final url = widget.videoUrl;
@@ -345,41 +353,44 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
         _thumbnailFutures.remove(url);
       });
 
-      final path = await _thumbnailFutures[url];
+      final data = await _thumbnailFutures[url];
 
       if (!mounted) return;
 
-      if (path != null && File(path).existsSync()) {
-        VideoCacheManager.cacheThumbnail(url, path);
+      if (data != null) {
+        VideoCacheManager.cacheThumbnail(url, data);
         setState(() {
-          _thumbnailPath = path;
+          _thumbnailData = data;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Thumbnail Error => $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<String?> _generateThumbnail(String videoUrl) async {
+  Future<Uint8List?> _generateThumbnail(String videoUrl) async {
     try {
       final String fullUrl = videoUrl;
 
-      final tempDir = await getTemporaryDirectory();
-
-      final thumbPath = await VideoThumbnail.thumbnailFile(
+      final data = await VideoThumbnail.thumbnailData(
         video: fullUrl,
-
-        thumbnailPath: tempDir.path,
-        /// Fast and High Quality Settings
         imageFormat: ImageFormat.WEBP,
         maxHeight: 150,
         quality: 50,
-
-        /// Fast generation by skipping seek
         timeMs: 0,
       );
 
-      return thumbPath.path;
+      return data;
     } catch (e) {
       debugPrint('Generate Thumbnail Failed => $e');
       return null;
@@ -427,16 +438,11 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
               ),
 
               /// Thumbnail
-              if (_thumbnailPath != null)
+              if (_thumbnailData != null)
                 Positioned.fill(
-                  child: Image.file(
-                    File(_thumbnailPath!),
+                  child: Image.memory(
+                    _thumbnailData!,
                     fit: BoxFit.cover,
-
-                    /// MEMORY OPTIMIZATION
-                    cacheWidth: 300,
-                    filterQuality: FilterQuality.low,
-
                     errorBuilder: (_, __, ___) {
                       return const SizedBox.shrink();
                     },
@@ -459,6 +465,19 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
                   ),
                 ),
               ),
+
+              /// Loading indicator
+              if (_isLoading)
+                const Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white24,
+                    ),
+                  ),
+                ),
 
               /// Play button
               if (widget.isShowPlayButton)

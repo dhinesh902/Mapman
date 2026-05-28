@@ -199,12 +199,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       final dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         videoUrl,
-        cacheConfiguration: BetterPlayerCacheConfiguration(
-          useCache: true,
-          preCacheSize: 3 * 1024 * 1024, // Pre-cache 3MB for instant start
-          maxCacheSize: 100 * 1024 * 1024, // Increase total cache size to 100MB
-          maxCacheFileSize: 15 * 1024 * 1024, // Increase file limit to 15MB
-          key: videoUrl, // Persist cache across sessions using the URL as key
+        cacheConfiguration: const BetterPlayerCacheConfiguration(
+          useCache: false,
         ),
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
           minBufferMs: 1500, // Reduced minimum buffer for faster startup

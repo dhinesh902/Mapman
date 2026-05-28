@@ -154,9 +154,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
         BetterPlayerDataSourceType.network,
         videoUrl,
         cacheConfiguration: const BetterPlayerCacheConfiguration(
-          useCache: true,
-          maxCacheSize: 50 * 1024 * 1024,
-          maxCacheFileSize: 10 * 1024 * 1024,
+          useCache: false,
         ),
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
           minBufferMs: 2000,

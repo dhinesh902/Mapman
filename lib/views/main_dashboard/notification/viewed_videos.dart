@@ -21,6 +21,7 @@ import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:path_provider/path_provider.dart';
@@ -316,7 +317,7 @@ class ViewedVideoCard extends StatefulWidget {
 }
 
 class _ViewedVideoCardState extends State<ViewedVideoCard> {
-  String? _thumbnailPath;
+  Uint8List? _thumbnailData;
   bool _isLoading = false;
 
   @override
@@ -340,7 +341,7 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
     if (cached != null) {
       if (mounted) {
         setState(() {
-          _thumbnailPath = cached;
+          _thumbnailData = cached;
         });
       }
       return;
@@ -349,7 +350,7 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
     if (mounted) {
       setState(() {
         _isLoading = true;
-        _thumbnailPath = null;
+        _thumbnailData = null;
       });
     }
 
@@ -358,23 +359,29 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
           ? widget.videoUrl
           : '${ApiRoutes.baseUrl}${widget.videoUrl}';
 
-      final tempDir = await getTemporaryDirectory();
-      final path = await VideoThumbnail.thumbnailFile(
+      final data = await VideoThumbnail.thumbnailData(
         video: fullUrl,
-        thumbnailPath: tempDir.path,
         imageFormat: ImageFormat.WEBP,
         maxHeight: 150,
         quality: 50,
         timeMs: 0,
       );
 
-        VideoCacheManager.cacheThumbnail(widget.videoUrl, path.path);
+      if (data != null) {
+        VideoCacheManager.cacheThumbnail(widget.videoUrl, data);
         if (mounted) {
           setState(() {
-            _thumbnailPath = path.path;
+            _thumbnailData = data;
             _isLoading = false;
           });
         }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     } catch (e) {
       debugPrint('Error generating thumbnail: $e');
       if (mounted) {
@@ -422,10 +429,10 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
                 ),
 
                 // Video Thumbnail
-                if (_thumbnailPath != null)
+                if (_thumbnailData != null)
                   Positioned.fill(
-                    child: Image.file(
-                      File(_thumbnailPath!),
+                    child: Image.memory(
+                      _thumbnailData!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return const SizedBox.shrink();
