@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:animated_hint_textfield/animated_hint_textfield.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -105,53 +106,86 @@ class _HomeState extends State<Home> {
                     homeData: homeController.homeData.data ?? HomeData(),
                   ),
                   SizedBox(height: 5),
-                  GestureDetector(
-                    onTap: () {
-                      homeController.setFocusSearchOnMap = true;
-                      homeController.setSearchCategory = 'all';
-                      homeController.setIsShowAddNearBy = false;
-                      homeController.setCurrentPage = 1;
-                    },
-                    child: Container(
-                      height: 48,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      decoration: BoxDecoration(
-                        color: AppColors.scaffoldBackground,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: AppColors.primaryBorder.withValues(alpha: .5),
+                  Container(
+                    height: 55,
+                    margin: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      gradient: LinearGradient(
+                        colors: [Colors.white, const Color(0xFFF4FFF5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF4CAF50).withValues(alpha: .18),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4CAF50).withValues(alpha: .10),
+                          blurRadius: 15,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 6),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: .04),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          SvgPicture.asset(
-                            AppIcons.search,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.primary,
-                              BlendMode.srcIn,
+                      ],
+                    ),
+                    child: AnimatedTextField(
+                      animationType: Animationtype.typer,
+                      readOnly: true,
+                      onTap: () {
+                        homeController.setFocusSearchOnMap = true;
+                        homeController.setSearchCategory = 'all';
+                        homeController.setIsShowAddNearBy = false;
+                        homeController.setCurrentPage = 1;
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 16,
+                        ),
+
+                        prefixIcon: Container(
+                          margin: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: GenericColors.darkGreen.withValues(
+                              alpha: .12,
                             ),
-                            height: 18,
-                            width: 18,
                           ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: BodyTextColors(
-                              title: 'Search business / shop',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.lightGreyHint,
-                            ),
+                          child: const Icon(
+                            Icons.search_rounded,
+                            color: GenericColors.darkGreen,
+                            size: 18,
                           ),
-                        ],
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+
+                      hintTextStyle: AppTextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkText.withValues(alpha: .7),
+                      ).textStyle,
+
+                      hintTexts: const [
+                        'Search for " restaurants "',
+                        'Search for " mechanic shops "',
+                        'Search for " grocery stores "',
+                        'Search for " electricians "',
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),

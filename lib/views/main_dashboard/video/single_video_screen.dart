@@ -18,6 +18,7 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_shop_dialogue.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:provider/provider.dart';
 
 class SingleVideoScreen extends StatefulWidget {
@@ -203,10 +204,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           useCache: false,
         ),
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 1500, // Reduced minimum buffer for faster startup
-          maxBufferMs: 8000,
-          bufferForPlaybackMs: 500, // Play instantly with 500ms buffer (Instagram Reels style)
-          bufferForPlaybackAfterRebufferMs: 1500,
+          minBufferMs: 1000, // Very low minimum buffer for fast startup
+          maxBufferMs: 5000, // Reduced max buffer to optimize RAM usage
+          bufferForPlaybackMs: 200, // Tiny buffer to play instantly (Shorts/Reels style)
+          bufferForPlaybackAfterRebufferMs: 1000,
         ),
       );
 
@@ -307,8 +308,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         return;
       }
 
-      // If video is no longer needed (scrolled away), dispose it immediately
-      if ((index - _currentIndex).abs() > 1) {
+      // If video is no longer needed (scrolled away), dispose it immediately.
+      // We keep a sliding window of [currentIndex - 1, currentIndex + 2].
+      if (index < _currentIndex - 1 || index > _currentIndex + 2) {
         debugPrint('⚠️ Video at index $index no longer needed, disposing...');
         _disposedControllers.add(player);
         _controllers.remove(index);
@@ -405,18 +407,23 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (index != _currentIndex || _isDisposed) return;
 
     // ── Preload neighbors AFTER current has started buffering ───────────
+    // Preload only the next 1-2 upcoming videos to enable instant swiping forward
     if (index + 1 < widget.videosData.length) {
       _initController(index + 1);
     }
+    if (index + 2 < widget.videosData.length) {
+      _initController(index + 2);
+    }
+    // Preload previous video for instant swiping back
     if (index - 1 >= 0) {
       _initController(index - 1);
     }
 
     if (index != _currentIndex || _isDisposed) return;
 
-    // ── Dispose far controllers (distance > 1) ──────────────────────────
+    // ── Dispose far controllers (outside the active window [index - 1, index + 2]) ──
     final keysToRemove = _controllers.keys
-        .where((key) => (key - index).abs() > 1)
+        .where((key) => key < index - 1 || key > index + 2)
         .toList();
     for (final key in keysToRemove) {
       await _disposeController(key);
@@ -610,6 +617,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         itemBuilder: (context, index) {
           final video = widget.videosData[index];
           final videoId = video.id ?? index;
+          final String videoPath = video.video ?? '';
+          final String videoUrl = videoPath.startsWith('http')
+              ? videoPath
+              : '${ApiRoutes.baseUrl}$videoPath';
+          final cachedThumbnail = VideoCacheManager.getCachedThumbnail(videoUrl);
 
           if (!_bookmarkMap.containsKey(videoId)) {
             _bookmarkMap[videoId] = ValueNotifier(video.savedAlready ?? false);
@@ -697,8 +709,18 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                               )
                         : Container(
                             color: AppColors.scaffoldBackgroundDark,
-                            child: const Center(
-                              child: CustomLoadingIndicator(),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (cachedThumbnail != null)
+                                  Image.memory(
+                                    cachedThumbnail,
+                                    fit: BoxFit.cover,
+                                  ),
+                                const Center(
+                                  child: CustomLoadingIndicator(),
+                                ),
+                              ],
                             ),
                           ),
                   ),

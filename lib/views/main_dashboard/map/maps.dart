@@ -19,6 +19,7 @@ import 'package:mapman/utils/constants/strings.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/utils/handlers/api_response.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
@@ -50,6 +51,8 @@ class _MapsState extends State<Maps> {
   double _currentZoom = 12.5;
   bool isClicking = false;
   String? _mapStyle;
+  
+  ApiResponse<List<ShopSearchData>>? _lastShopSearchData;
 
   /// Current Location notifier
 
@@ -245,11 +248,7 @@ class _MapsState extends State<Maps> {
     for (var shop in response.data!) {
       final id = shop.id?.toString();
 
-      final String rawCategory =
-          shop.category?.toLowerCase().trim() ?? 'others';
-      final String category = _iconMap.contains(rawCategory)
-          ? rawCategory
-          : 'others';
+      final String category = shop.category?.toLowerCase().trim() ?? 'others';
 
       if (id != null && !_customMarkers.containsKey(id)) {
         final icon = await createMarkerWithLabel(
@@ -580,6 +579,13 @@ class _MapsState extends State<Maps> {
                 setState(() {
                   _currentZoom = 18.5;
                 });
+                if (sheetController.isAttached) {
+                  sheetController.animateTo(
+                    0.0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                }
                 if (!isClicking) {
                   _mapController?.animateCamera(
                     CameraUpdate.newCameraPosition(
@@ -628,20 +634,50 @@ class _MapsState extends State<Maps> {
 
   Widget _zoomButton({required String icon, required VoidCallback onTap}) {
     return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(10),
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
-          width: 40,
-          height: 40,
-          padding: EdgeInsets.all(10),
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [Colors.white, const Color(0xFFF5F7FA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: .8),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .08),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: .10),
+                blurRadius: 18,
+                spreadRadius: 1,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: Image.network(icon, height: 20, color: Colors.black54),
+          child: Center(
+            child: Container(
+              height: 30,
+              width: 30,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: .10),
+              ),
+              child: Image.network(icon, color: AppColors.primary),
+            ),
+          ),
         ),
       ),
     );
@@ -650,6 +686,18 @@ class _MapsState extends State<Maps> {
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
+    
+    if (_lastShopSearchData != homeController.shopSearchData) {
+      _lastShopSearchData = homeController.shopSearchData;
+      if (homeController.shopSearchData.status == Status.COMPLETED) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _generateMarkers();
+          }
+        });
+      }
+    }
+
     if (homeController.currentPage != 1) {
       if (_searchFocusNode.hasFocus) {
         _searchFocusNode.unfocus();
@@ -672,7 +720,7 @@ class _MapsState extends State<Maps> {
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: Platform.isIOS ? false : true,
+                    myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     buildingsEnabled: true,
                     padding: EdgeInsets.only(
@@ -693,8 +741,12 @@ class _MapsState extends State<Maps> {
                     },
                   ),
                   Positioned(
-                    right: 16,
-                    bottom: 100,
+                    right: 10,
+                    top:
+                        (homeController.searchCategory == null ||
+                            homeController.searchCategory == 'all')
+                        ? 80
+                        : 10,
                     child: Column(
                       children: [
                         _zoomButton(
@@ -707,6 +759,77 @@ class _MapsState extends State<Maps> {
                           icon:
                               "https://cdn-icons-png.flaticon.com/128/4674/4674428.png",
                           onTap: _zoomOut,
+                        ),
+                        SizedBox(height: 10),
+                        GestureDetector(
+                          onTap: () async {
+                            Position position =
+                                await Geolocator.getCurrentPosition(
+                                  desiredAccuracy: LocationAccuracy.high,
+                                );
+
+                            _mapController?.animateCamera(
+                              CameraUpdate.newCameraPosition(
+                                CameraPosition(
+                                  target: LatLng(
+                                    position.latitude,
+                                    position.longitude,
+                                  ),
+                                  zoom: 18,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: [Colors.white, const Color(0xFFF5F7FA)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: .9),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: .08),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 5),
+                                ),
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: .10,
+                                  ),
+                                  blurRadius: 18,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Container(
+                                height: 34,
+                                width: 34,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColors.primary.withValues(alpha: .18),
+                                      AppColors.primary.withValues(alpha: .08),
+                                    ],
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.my_location_rounded,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -757,11 +880,24 @@ class _MapsState extends State<Maps> {
                         left: 0,
                         right: 0,
                         child: SafeArea(
-                          child: LocationShopContainer(
-                            searchData: shop,
-                            distance: distanceBetweenLatLong(
-                              latitude: double.parse(shop.lat.toString()),
-                              longitude: double.parse(shop.long.toString()),
+                          child: GestureDetector(
+                            onTap: () {
+                              final token = SessionManager.getToken();
+                              if (token == null || token.isEmpty) {
+                                LoginBottomSheet.showLoginBottomSheet(context);
+                              } else {
+                                context.pushNamed(
+                                  AppRoutes.shopDetail,
+                                  extra: shop.id,
+                                );
+                              }
+                            },
+                            child: LocationShopContainer(
+                              searchData: shop,
+                              distance: distanceBetweenLatLong(
+                                latitude: double.parse(shop.lat.toString()),
+                                longitude: double.parse(shop.long.toString()),
+                              ),
                             ),
                           ),
                         ),
@@ -812,6 +948,7 @@ class _MapsState extends State<Maps> {
                                         ),
                                       ),
                                       ClearCircleContainer(
+                                        height: 24,
                                         onTap: () {
                                           tapNotifier.value = null;
                                           homeController.setSearchCategory =
@@ -1115,78 +1252,68 @@ class LocationShopContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        final token = SessionManager.getToken();
-        if (token == null || token.isEmpty) {
-          LoginBottomSheet.showLoginBottomSheet(context);
-        } else {
-          context.pushNamed(AppRoutes.shopDetail, extra: searchData.id);
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: AppColors.scaffoldBackground,
-          border: Border.all(color: AppColors.primaryBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              spreadRadius: 0,
-              offset: Offset(0, 5),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: AppColors.scaffoldBackground,
+        border: Border.all(color: AppColors.primaryBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            spreadRadius: 0,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(5),
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              height: 80,
+              width: 110,
+              child: CustomNetworkImage(
+                imageUrl:
+                    searchData.shopImage ??
+                    getUnKnownShopImages(
+                      '${searchData.category?.toLowerCase()}',
+                    ),
+              ),
             ),
-          ],
-        ),
-        padding: EdgeInsets.all(5),
-        margin: EdgeInsets.symmetric(horizontal: 10),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: SizedBox(
-                height: 80,
-                width: 110,
-                child: CustomNetworkImage(
-                  imageUrl:
-                      searchData.shopImage ??
-                      getUnKnownShopImages(
-                        '${searchData.category?.toLowerCase()}',
-                      ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                BodyTextColors(
+                  title: searchData.shopName?.capitalize() ?? '',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.lightDarkText,
                 ),
-              ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: searchData.address?.capitalize() ?? '',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w300,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 10),
+                BodyTextHint(
+                  title: '${distance.toStringAsFixed(1)} km Away',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w300,
+                ),
+              ],
             ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  BodyTextColors(
-                    title: searchData.shopName?.capitalize() ?? '',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.lightDarkText,
-                  ),
-                  SizedBox(height: 10),
-                  BodyTextHint(
-                    title: searchData.address?.capitalize() ?? '',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w300,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 10),
-                  BodyTextHint(
-                    title: '${distance.toStringAsFixed(1)} km Away',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

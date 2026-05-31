@@ -479,28 +479,22 @@ class _EditProfileState extends State<EditProfile> {
                     return null;
                   },
                 ),
-                SizedBox(height: 50),
-              ],
-            ),
-          ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (profileController.apiResponse.status == Status.LOADING)
-                ButtonProgressBar()
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: CustomFullButton(
+                SizedBox(height: 30),
+                if (profileController.apiResponse.status == Status.LOADING)
+                  ButtonProgressBar()
+                else
+                  CustomFullButton(
                     title: 'Update Profile',
+                    isDialogue: true,
                     onTap: () async {
                       if (formKey.currentState!.validate()) {
                         await updateProfile();
                       }
                     },
                   ),
-                ),
-            ],
+                SizedBox(height: 30),
+              ],
+            ),
           ),
         ),
       ),

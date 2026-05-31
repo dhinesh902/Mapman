@@ -323,33 +323,31 @@ class _UploadVideoState extends State<UploadVideo> {
                   inputAction: TextInputAction.done,
                   isReadOnly: true,
                 ),
+                SizedBox(height: 30),
+                if (videoController.response.status == Status.LOADING)
+                  ButtonProgressBar()
+                else
+                  CustomFullButton(
+                    title: 'Upload Video',
+                    isDialogue: true,
+                    onTap: () async {
+                      if (widget.videosData.videoTitle != null) {
+                        await updateMyVideoDetail();
+                        return;
+                      } else {
+                        final bool isFormValid =
+                            formKey.currentState?.validate() ?? false;
+                        final bool hasVideo = videoNotifier.value != null;
+                        videoValidator.value = !hasVideo;
+                        if (isFormValid && hasVideo) {
+                          await uploadVideo();
+                        }
+                      }
+                    },
+                  ),
+                SizedBox(height: 30),
               ],
             ),
-          ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (videoController.response.status == Status.LOADING)
-                ButtonProgressBar()
-              else
-                CustomFullButton(
-                  title: 'Upload Video',
-                  onTap: () async {
-                    if (widget.videosData.videoTitle != null) {
-                      await updateMyVideoDetail();
-                      return;
-                    } else {
-                      final bool isFormValid =
-                          formKey.currentState?.validate() ?? false;
-                      final bool hasVideo = videoNotifier.value != null;
-                      videoValidator.value = !hasVideo;
-                      if (isFormValid && hasVideo) {
-                        await uploadVideo();
-                      }
-                    }
-                  },
-                ),
-            ],
           ),
         ),
       ),
@@ -432,6 +430,12 @@ class EmptyVideoUploadContainer extends StatelessWidget {
                       title: 'Upload Video for your shop',
                       fontSize: 12,
                       fontWeight: FontWeight.w300,
+                    ),
+                    BodyTextHint(
+                      title: 'Please wait while your video uploads...',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),

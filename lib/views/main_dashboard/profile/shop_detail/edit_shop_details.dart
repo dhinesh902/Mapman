@@ -819,30 +819,28 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     ),
                   ),
                 ),
+                SizedBox(height: 30),
+                profileController.apiResponse.status == Status.LOADING
+                    ? ButtonProgressBar()
+                    : CustomFullButton(
+                        title: 'Update Shop details',
+                        isDialogue: true,
+                        onTap: () async {
+                          if (formKey.currentState!.validate()) {
+                            if (homeController.category == null) {
+                              CustomToast.show(
+                                context,
+                                title: 'Please select category',
+                              );
+                              return;
+                            }
+                            await updateShopDetail();
+                          }
+                        },
+                      ),
+                SizedBox(height: 30),
               ],
             ),
-          ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              profileController.apiResponse.status == Status.LOADING
-                  ? ButtonProgressBar()
-                  : CustomFullButton(
-                      title: 'Update Shop details',
-                      onTap: () async {
-                        if (formKey.currentState!.validate()) {
-                          if (homeController.category == null) {
-                            CustomToast.show(
-                              context,
-                              title: 'Please select category',
-                            );
-                            return;
-                          }
-                          await updateShopDetail();
-                        }
-                      },
-                    ),
-            ],
           ),
         ),
       ),

@@ -1,7 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
-
 
 class CustomSafeArea extends StatelessWidget {
   const CustomSafeArea({
@@ -17,9 +18,7 @@ class CustomSafeArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: color,
-      child: SafeArea(
-        bottom: false,
-        child: child),
+      child: SafeArea(bottom: Platform.isIOS ? false : true, child: child),
     );
   }
 }

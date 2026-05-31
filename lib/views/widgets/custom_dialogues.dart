@@ -1204,9 +1204,11 @@ class CategoryDialogue {
                                           );
 
                                       if (response.status == Status.COMPLETED) {
+                                        final addedCategory =
+                                            addNewCategoryController.text.trim();
                                         addNewCategoryController.clear();
                                         homeController.setSelectedCategory =
-                                            null;
+                                            addedCategory;
                                         if (!context.mounted) return;
                                         Navigator.pop(dialogContext);
 

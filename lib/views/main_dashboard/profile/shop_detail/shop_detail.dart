@@ -401,6 +401,15 @@ class ShopDetailContainer extends StatelessWidget {
               ),
               SizedBox(height: 15),
               CustomTextFieldContainer(
+                title: 'Category',
+                child: HeaderTextBlack(
+                  title: shop.category?.capitalize() ?? '',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 15),
+              CustomTextFieldContainer(
                 title: 'Address',
                 child: HeaderTextBlack(
                   title: shop.address ?? '',

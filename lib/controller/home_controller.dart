@@ -604,6 +604,7 @@ class HomeController extends ChangeNotifier {
       );
       _newCategoryResponse = ApiResponse.completed(response[Keys.data]);
       await getHome();
+      setSelectedCategory = categoryName;
     } catch (e) {
       _newCategoryResponse = ApiResponse.error(e.toString());
     }

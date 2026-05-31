@@ -61,17 +61,22 @@ class CustomTextFieldContainer extends StatelessWidget {
 }
 
 class ClearCircleContainer extends StatelessWidget {
-  const ClearCircleContainer({super.key, required this.onTap});
+  const ClearCircleContainer({
+    super.key,
+    required this.onTap,
+    this.height = 16,
+  });
 
   final VoidCallback onTap;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 16,
-        width: 16,
+        height: height,
+        width: height,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: GenericColors.darkRed,

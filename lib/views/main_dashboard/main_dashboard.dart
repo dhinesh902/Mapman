@@ -106,6 +106,7 @@ class _MainDashboardState extends State<MainDashboard> {
             onTap: () {
               homeController.setSearchCategory = 'all';
               homeController.setIsShowAddNearBy = false;
+              homeController.getSearchShops(input: 'all');
               homeController.setCurrentPage = 1;
             },
 
