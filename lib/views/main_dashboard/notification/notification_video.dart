@@ -1,5 +1,6 @@
-import 'dart:ui';
+import 'dart:io';
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,7 @@ import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:better_player_plus/better_player_plus.dart';
+import 'package:video_player/video_player.dart' as vp;
 import 'package:mapman/routes/api_routes.dart';
 
 class NotificationVideoScreen extends StatefulWidget {
@@ -42,7 +44,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
 
-  BetterPlayerController? _player;
+  dynamic _player; // BetterPlayerController on Android, vp.VideoPlayerController on iOS
   late final ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
@@ -76,14 +78,20 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_isDisposed || !_isInitialized || _player == null) return;
 
-    final controller = _player!;
-
     try {
       if (state == AppLifecycleState.paused ||
           state == AppLifecycleState.inactive) {
-        controller.pause();
+        if (Platform.isAndroid) {
+          (_player as BetterPlayerController).pause();
+        } else {
+          (_player as vp.VideoPlayerController).pause();
+        }
       } else if (state == AppLifecycleState.resumed) {
-        controller.play();
+        if (Platform.isAndroid) {
+          (_player as BetterPlayerController).play();
+        } else {
+          (_player as vp.VideoPlayerController).play();
+        }
       }
     } catch (_) {}
   }
@@ -97,13 +105,25 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
       final p = _player;
       _player = null;
       try {
-        p!.videoPlayerController?.removeListener(_videoListener);
+        if (Platform.isAndroid) {
+          (p as BetterPlayerController).videoPlayerController?.removeListener(_videoListener);
+        } else {
+          (p as vp.VideoPlayerController).removeListener(_videoListener);
+        }
       } catch (_) {}
       try {
-        p!.pause();
+        if (Platform.isAndroid) {
+          (p as BetterPlayerController).pause();
+        } else {
+          (p as vp.VideoPlayerController).pause();
+        }
       } catch (_) {}
       try {
-        p!.dispose(forceDispose: true);
+        if (Platform.isAndroid) {
+          (p as BetterPlayerController).dispose(forceDispose: true);
+        } else {
+          (p as vp.VideoPlayerController).dispose();
+        }
       } catch (_) {}
     }
 
@@ -134,7 +154,11 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
   Future<void> _initializeVideo() async {
     if (_player != null) {
-      _player!.dispose();
+      if (Platform.isAndroid) {
+        (_player as BetterPlayerController).dispose();
+      } else {
+        (_player as vp.VideoPlayerController).dispose();
+      }
     }
 
     _isInitialized = false;
@@ -150,55 +174,76 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
         : '${ApiRoutes.baseUrl}$videoPath';
 
     try {
-      final dataSource = BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        videoUrl,
-        cacheConfiguration: const BetterPlayerCacheConfiguration(
-          useCache: false,
-        ),
-        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 2000,
-          maxBufferMs: 10000,
-          bufferForPlaybackMs: 1000,
-          bufferForPlaybackAfterRebufferMs: 2000,
-        ),
-      );
-
-      _player = BetterPlayerController(
-        const BetterPlayerConfiguration(
-          autoPlay: true,
-          looping: true,
-          fit: BoxFit.cover,
-          expandToFill: true,
-          aspectRatio: 9 / 16,
-          handleLifecycle: false,
-          autoDispose: false,
-          allowedScreenSleep: false,
-          controlsConfiguration: BetterPlayerControlsConfiguration(
-            showControls: false,
+      if (Platform.isAndroid) {
+        final dataSource = BetterPlayerDataSource(
+          BetterPlayerDataSourceType.network,
+          videoUrl,
+          cacheConfiguration: const BetterPlayerCacheConfiguration(
+            useCache: false,
           ),
-        ),
-        betterPlayerDataSource: dataSource,
-      );
+          bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+            minBufferMs: 2000,
+            maxBufferMs: 10000,
+            bufferForPlaybackMs: 1000,
+            bufferForPlaybackAfterRebufferMs: 2000,
+          ),
+        );
 
-      _player!.addEventsListener((event) {
-        if (!mounted || _isDisposed) return;
-        if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
-          if (!_isInitialized) {
-            final videoPlayerController = _player?.videoPlayerController;
-            if (videoPlayerController != null) {
-              try {
-                videoPlayerController.addListener(_videoListener);
-              } catch (_) {}
-            }
-            if (mounted && !_isDisposed) {
-              setState(() {
-                _isInitialized = true;
-              });
+        _player = BetterPlayerController(
+          const BetterPlayerConfiguration(
+            autoPlay: true,
+            looping: true,
+            fit: BoxFit.cover,
+            expandToFill: true,
+            aspectRatio: 9 / 16,
+            handleLifecycle: false,
+            autoDispose: false,
+            allowedScreenSleep: false,
+            controlsConfiguration: BetterPlayerControlsConfiguration(
+              showControls: false,
+            ),
+          ),
+          betterPlayerDataSource: dataSource,
+        );
+
+        (_player as BetterPlayerController).addEventsListener((event) {
+          if (!mounted || _isDisposed) return;
+          if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
+            if (!_isInitialized) {
+              final videoPlayerController = (_player as BetterPlayerController).videoPlayerController;
+              if (videoPlayerController != null) {
+                try {
+                  videoPlayerController.addListener(_videoListener);
+                } catch (_) {}
+              }
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  _isInitialized = true;
+                });
+              }
             }
           }
+        });
+      } else {
+        // iOS: use standard VideoPlayerController
+        final vpController = vp.VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+        _player = vpController;
+
+        await vpController.initialize();
+
+        if (!mounted || _isDisposed) {
+          vpController.dispose();
+          return;
         }
-      });
+
+        vpController.setLooping(true);
+        vpController.addListener(_videoListener);
+        vpController.play();
+
+        setState(() {
+          _isInitialized = true;
+        });
+      }
     } catch (e) {
       debugPrint('Video init error: $e');
     }
@@ -206,48 +251,79 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
   void _videoListener() {
     if (!mounted || _isDisposed || !_isInitialized || _player == null) return;
-    
-    final videoPlayerController = _player?.videoPlayerController;
-    if (videoPlayerController == null) return;
 
     try {
-      if (!videoPlayerController.value.initialized) return;
+      if (Platform.isAndroid) {
+        final videoPlayerController = (_player as BetterPlayerController).videoPlayerController;
+        if (videoPlayerController == null || !videoPlayerController.value.initialized) return;
 
-      final value = videoPlayerController.value;
+        final value = videoPlayerController.value;
+        final duration = value.duration;
+        final position = value.position;
 
-      final duration = value.duration;
-      final position = value.position;
-
-      if (duration != null && duration.inMilliseconds > 0) {
-        final newProgress = position.inMilliseconds / duration.inMilliseconds;
-
-        if ((newProgress - _progress).abs() > 0.005) {
-          if (mounted && !_isDisposed) {
-            setState(() {
-              _progress = newProgress.clamp(0.0, 1.0);
-            });
+        if (duration != null && duration.inMilliseconds > 0) {
+          final newProgress = position.inMilliseconds / duration.inMilliseconds;
+          if ((newProgress - _progress).abs() > 0.005) {
+            if (mounted && !_isDisposed) {
+              setState(() {
+                _progress = newProgress.clamp(0.0, 1.0);
+              });
+            }
           }
         }
-      }
 
-      if (!_isCompleted &&
-          duration != null &&
-          duration != Duration.zero &&
-          position >= duration - const Duration(milliseconds: 300)) {
-        _isCompleted = true;
-
-        if (!_hasBeenFullyWatched) {
-          _hasBeenFullyWatched = true;
-
-          if (!isMyVideos && videoController.isViewedVideo == 1) {
-            addViewedVideos();
+        if (!_isCompleted &&
+            duration != null &&
+            duration != Duration.zero &&
+            position >= duration - const Duration(milliseconds: 300)) {
+          _isCompleted = true;
+          if (!_hasBeenFullyWatched) {
+            _hasBeenFullyWatched = true;
+            if (!isMyVideos && videoController.isViewedVideo == 1) {
+              addViewedVideos();
+            }
+            getVideoPoints();
           }
-          getVideoPoints();
         }
-      }
 
-      if (position <= const Duration(milliseconds: 200)) {
-        _isCompleted = false;
+        if (position <= const Duration(milliseconds: 200)) {
+          _isCompleted = false;
+        }
+      } else {
+        final vpController = _player as vp.VideoPlayerController;
+        if (!vpController.value.isInitialized) return;
+
+        final value = vpController.value;
+        final duration = value.duration;
+        final position = value.position;
+
+        if (duration.inMilliseconds > 0) {
+          final newProgress = position.inMilliseconds / duration.inMilliseconds;
+          if ((newProgress - _progress).abs() > 0.005) {
+            if (mounted && !_isDisposed) {
+              setState(() {
+                _progress = newProgress.clamp(0.0, 1.0);
+              });
+            }
+          }
+        }
+
+        if (!_isCompleted &&
+            duration != Duration.zero &&
+            position >= duration - const Duration(milliseconds: 300)) {
+          _isCompleted = true;
+          if (!_hasBeenFullyWatched) {
+            _hasBeenFullyWatched = true;
+            if (!isMyVideos && videoController.isViewedVideo == 1) {
+              addViewedVideos();
+            }
+            getVideoPoints();
+          }
+        }
+
+        if (position <= const Duration(milliseconds: 200)) {
+          _isCompleted = false;
+        }
       }
     } catch (_) {}
   }
@@ -302,26 +378,40 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
                       if (_player == null || !_isInitialized) return;
-                      final controller = _player!;
-                      final videoPlayerController = controller.videoPlayerController;
-                      if (videoPlayerController == null) return;
                       try {
-                        videoPlayerController.value.isPlaying
-                            ? controller.pause()
-                            : controller.play();
+                        if (Platform.isAndroid) {
+                          final bpController = _player as BetterPlayerController;
+                          final vpc = bpController.videoPlayerController;
+                          if (vpc == null) return;
+                          vpc.value.isPlaying ? bpController.pause() : bpController.play();
+                        } else {
+                          final vpController = _player as vp.VideoPlayerController;
+                          vpController.value.isPlaying ? vpController.pause() : vpController.play();
+                        }
                       } catch (_) {}
                       setState(() {});
                     },
                     child:
                         _player != null && _isInitialized
-                        ? FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: _player!.videoPlayerController?.value.size?.width ?? 1080,
-                              height: _player!.videoPlayerController?.value.size?.height ?? 1920,
-                              child: BetterPlayer(controller: _player!),
-                            ),
-                          )
+                        ? Platform.isIOS
+                            ? AspectRatio(
+                                aspectRatio: (() {
+                                  final vpController = _player as vp.VideoPlayerController;
+                                  final size = vpController.value.size;
+                                  return (size.width > 0 && size.height > 0)
+                                      ? size.width / size.height
+                                      : 9 / 16;
+                                })(),
+                                child: vp.VideoPlayer(_player as vp.VideoPlayerController),
+                              )
+                            : FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: (_player as BetterPlayerController).videoPlayerController?.value.size?.width ?? 1080,
+                                  height: (_player as BetterPlayerController).videoPlayerController?.value.size?.height ?? 1920,
+                                  child: BetterPlayer(controller: _player as BetterPlayerController),
+                                ),
+                              )
                         : Container(
                             color: AppColors.scaffoldBackgroundDark,
                             child: const Center(
@@ -332,9 +422,13 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                   if (_player != null && _isInitialized) ...[
                     Center(
                       child: AnimatedOpacity(
-                        opacity: (_player!.videoPlayerController?.value.isPlaying ?? false)
-                            ? 0.0
-                            : 1.0,
+                        opacity: (() {
+                          if (Platform.isAndroid) {
+                            return ((_player as BetterPlayerController).videoPlayerController?.value.isPlaying ?? false) ? 0.0 : 1.0;
+                          } else {
+                            return (_player as vp.VideoPlayerController).value.isPlaying ? 0.0 : 1.0;
+                          }
+                        })(),
                         duration: const Duration(milliseconds: 200),
                         child: Container(
                           height: 50,
@@ -348,9 +442,17 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                             ),
                           ),
                           child: Icon(
-                            (_player!.videoPlayerController?.value.isPlaying ?? false)
-                                ? Icons.pause
-                                : Icons.play_arrow,
+                            (() {
+                              if (Platform.isAndroid) {
+                                return ((_player as BetterPlayerController).videoPlayerController?.value.isPlaying ?? false)
+                                    ? Icons.pause
+                                    : Icons.play_arrow;
+                              } else {
+                                return (_player as vp.VideoPlayerController).value.isPlaying
+                                    ? Icons.pause
+                                    : Icons.play_arrow;
+                              }
+                            })(),
                             size: 30,
                             color: AppColors.whiteText,
                           ),
