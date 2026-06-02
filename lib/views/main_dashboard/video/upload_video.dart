@@ -5,15 +5,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
-import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
@@ -22,6 +21,8 @@ import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mapman/views/widgets/custom_drop_downs.dart';
+import 'package:mapman/controller/profile_controller.dart';
 
 class UploadVideo extends StatefulWidget {
   const UploadVideo({super.key, required this.videosData});
@@ -41,8 +42,8 @@ class _UploadVideoState extends State<UploadVideo> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController videoTitleController,
       videoDescriptionController,
-      categoryController,
-      shopNameController;
+      categoryController;
+  ShopDetailData? shopDetailData;
 
   String _initialVideoTitle = '';
   String _initialDescription = '';
@@ -70,16 +71,9 @@ class _UploadVideoState extends State<UploadVideo> {
     videoController = context.read<VideoController>();
     videoTitleController = TextEditingController();
     videoDescriptionController = TextEditingController();
-
-    final shopCategory = SessionManager.getShopCategory()?.toLowerCase() ?? '';
-    final shopName = SessionManager.getShopName()?.capitalize() ?? '';
-
     categoryController = TextEditingController(
-      text: _iconMap.contains(shopCategory) ? shopCategory : "others",
+      // text: _iconMap.contains(shopCategory) ? shopCategory : "others",
     );
-
-    shopNameController = TextEditingController(text: shopName);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       videoController.setVideoFileSize = false;
       getVideoDetails();
@@ -93,7 +87,6 @@ class _UploadVideoState extends State<UploadVideo> {
     videoValidator.dispose();
     videoTitleController.dispose();
     videoDescriptionController.dispose();
-    shopNameController.dispose();
     categoryController.dispose();
     super.dispose();
   }
@@ -113,7 +106,7 @@ class _UploadVideoState extends State<UploadVideo> {
   Future<void> uploadVideo() async {
     final VideosData videosData = VideosData(
       videoTitle: videoTitleController.text.trim(),
-      shopName: shopNameController.text.trim(),
+      shopName: shopDetailData?.shopName,
       category: categoryController.text.trim().toLowerCase(),
       description: videoDescriptionController.text.trim(),
     );
@@ -146,7 +139,7 @@ class _UploadVideoState extends State<UploadVideo> {
       id: widget.videosData.id,
       shopId: widget.videosData.shopId,
       videoTitle: videoTitleController.text.trim(),
-      shopName: shopNameController.text.trim(),
+      shopName: shopDetailData?.shopName,
       category: categoryController.text.trim(),
       description: videoDescriptionController.text.trim(),
     );
@@ -307,21 +300,47 @@ class _UploadVideoState extends State<UploadVideo> {
                   },
                 ),
                 SizedBox(height: 15),
-                CustomTextField(
-                  title: 'Shop Name',
-                  controller: shopNameController,
-                  hintText: "Enter shop name",
-                  inputAction: TextInputAction.done,
-                  isReadOnly: true,
+                Consumer<ProfileController>(
+                  builder: (context, profileCtrl, _) {
+                    final shops = profileCtrl.shopListData.data ?? [];
+                    return ShopsDropDown(
+                      title: 'Shop Name',
+                      dropdownValue: shopDetailData,
+                      hintText: "Select shop name",
+                      items: shops,
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            shopDetailData = val;
+                            final cat = val.category?.toLowerCase() ?? '';
+                            categoryController.text = _iconMap.contains(cat)
+                                ? cat
+                                : "others";
+                          });
+                        }
+                      },
+                      validator: (value) {
+                        if (shopDetailData == null) {
+                          return "Please select a shop";
+                        }
+                        return null;
+                      },
+                    );
+                  },
                 ),
-
                 SizedBox(height: 15),
                 CustomTextField(
                   title: 'Category',
                   controller: categoryController,
-                  hintText: "Enter shop name",
+                  hintText: "Enter category",
                   inputAction: TextInputAction.done,
                   isReadOnly: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Category is required";
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 30),
                 if (videoController.response.status == Status.LOADING)
@@ -361,16 +380,11 @@ class _UploadVideoState extends State<UploadVideo> {
 
     if (pickedFile != null) {
       int fileSizeInBytes = await pickedFile.length();
-
-      // Real video size in MB
       double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
       print("Video Size: ${fileSizeInMB.toStringAsFixed(2)} MB");
-
-      // 30 MB limit
       if (fileSizeInMB > 30.0) {
         videoController.setVideoFileSize = true;
-
         CustomToast.show(
           context,
           title:

@@ -31,7 +31,6 @@ class ProfileController extends ChangeNotifier {
 
   /// SHOP DETAILS UPDATE
 
-
   List<String?> _shopImages = List.generate(4, (index) => null);
 
   List<String?> get shopImages => _shopImages;
@@ -88,6 +87,13 @@ class ProfileController extends ChangeNotifier {
   );
 
   ApiResponse<List<ShopDetailData>> get fetchSavedShop => _fetchSavedShop;
+
+  /// Fetch Shops List
+  ApiResponse<List<ShopDetailData>> _shopListData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<List<ShopDetailData>> get shopListData => _shopListData;
 
   int _page = 1;
   bool _isFetchingMore = false;
@@ -226,32 +232,32 @@ class ProfileController extends ChangeNotifier {
     return _deleteShopResponse;
   }
 
-  Future<ApiResponse<ShopDetailData?>> getShopDetail() async {
-    _shopDetailData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
-    try {
-      final token = SessionManager.getToken() ?? '';
-      final response = await profileService.getShopDetail(token: token);
-      final data = response[Keys.data];
-      if (data != null && data is Map<String, dynamic>) {
-        _shopDetailData = ApiResponse.completed(ShopDetailData.fromJson(data));
-        await SessionManager.setShopId(shopId: _shopDetailData.data?.id ?? 0);
-        await SessionManager.setShopName(
-          shopName: _shopDetailData.data?.shopName ?? '',
-        );
-        await SessionManager.setShopCategory(
-          shopCategory: _shopDetailData.data?.category ?? '',
-        );
-      } else {
-        await SessionManager.setShopId(shopId: 0);
-        _shopDetailData = ApiResponse.completed(null);
-      }
-    } catch (e) {
-      _shopDetailData = ApiResponse.error(e.toString());
-    }
-    notifyListeners();
-    return _shopDetailData;
-  }
+  // Future<ApiResponse<ShopDetailData?>> getShopDetail() async {
+  //   _shopDetailData = ApiResponse.loading(Strings.loading);
+  //   notifyListeners();
+  //   try {
+  //     final token = SessionManager.getToken() ?? '';
+  //     final response = await profileService.getShopDetail(token: token);
+  //     final data = response[Keys.data];
+  //     if (data != null && data is Map<String, dynamic>) {
+  //       _shopDetailData = ApiResponse.completed(ShopDetailData.fromJson(data));
+  //       await SessionManager.setShopId(shopId: _shopDetailData.data?.id ?? 0);
+  //       await SessionManager.setShopName(
+  //         shopName: _shopDetailData.data?.shopName ?? '',
+  //       );
+  //       await SessionManager.setShopCategory(
+  //         shopCategory: _shopDetailData.data?.category ?? '',
+  //       );
+  //     } else {
+  //       await SessionManager.setShopId(shopId: 0);
+  //       _shopDetailData = ApiResponse.completed(null);
+  //     }
+  //   } catch (e) {
+  //     _shopDetailData = ApiResponse.error(e.toString());
+  //   }
+  //   notifyListeners();
+  //   return _shopDetailData;
+  // }
 
   Future<ApiResponse<AnalyticsData?>> getAnalytics() async {
     _analyticsData = ApiResponse.loading(Strings.loading);
@@ -363,5 +369,24 @@ class ProfileController extends ChangeNotifier {
     _page = 1;
     _hasMoreData = false;
     _isFetchingMore = false;
+  }
+
+  Future<ApiResponse> getShopList() async {
+    _shopListData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await profileService.getShopList(token: token);
+      final List list = response[Keys.data] ?? [];
+      final List<ShopDetailData> shopList = list
+          .map((e) => ShopDetailData.fromJson(e))
+          .toList();
+      await SessionManager.setShopId(shopId: shopList.length);
+      _shopListData = ApiResponse.completed(shopList);
+    } catch (e) {
+      _shopListData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _shopListData;
   }
 }

@@ -20,11 +20,9 @@ import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:get_thumbnail_video/index.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class ViewedVideos extends StatefulWidget {
@@ -367,20 +365,12 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
         timeMs: 0,
       );
 
-      if (data != null) {
-        VideoCacheManager.cacheThumbnail(widget.videoUrl, data);
-        if (mounted) {
-          setState(() {
-            _thumbnailData = data;
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      VideoCacheManager.cacheThumbnail(widget.videoUrl, data);
+      if (mounted) {
+        setState(() {
+          _thumbnailData = data;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       debugPrint('Error generating thumbnail: $e');
@@ -404,10 +394,7 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF2A2D32),
-                Color(0xFF131417),
-              ],
+              colors: [Color(0xFF2A2D32), Color(0xFF131417)],
             ),
           ),
           child: ClipRRect(
@@ -469,9 +456,7 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
                   ),
 
                 // Play circle button icon
-                const Center(
-                  child: VideoPausePlayGradientCircleContainer(),
-                ),
+                const Center(child: VideoPausePlayGradientCircleContainer()),
 
                 // Bookmark icon on top-right
                 if (widget.isViews)
@@ -485,7 +470,9 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
                         width: 30,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.scaffoldBackground.withValues(alpha: 0.8),
+                          color: AppColors.scaffoldBackground.withValues(
+                            alpha: 0.8,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.1),

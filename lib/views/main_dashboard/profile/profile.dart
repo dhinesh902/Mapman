@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/profile_model.dart';
@@ -43,7 +42,7 @@ class _ProfileState extends State<Profile> {
         homeController.getNotificationCount();
         getProfile();
       }
-      profileController.getShopDetail();
+      profileController.getShopList();
     });
     super.initState();
   }
@@ -185,13 +184,22 @@ class _ProfileState extends State<Profile> {
                             );
                           },
                         ),
+                        // SizedBox(height: 15),
+                        // ProfileListTile(
+                        //   image: AppIcons.shopP,
+                        //   title: 'Shop Details',
+                        //   body: 'Edit shop details',
+                        //   onTap: () {
+                        //     context.pushNamed(AppRoutes.addShopDetail);
+                        //   },
+                        // ),
                         SizedBox(height: 15),
                         ProfileListTile(
                           image: AppIcons.shopP,
-                          title: 'Shop Details',
-                          body: 'Edit shop details',
+                          title: 'Shop List',
+                          body: 'View list of shops',
                           onTap: () {
-                            context.pushNamed(AppRoutes.addShopDetail);
+                            context.pushNamed(AppRoutes.shopList);
                           },
                         ),
                         if (shopId != 0) ...[

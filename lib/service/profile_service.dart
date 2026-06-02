@@ -92,8 +92,8 @@ class ProfileService extends ApiRoutes {
     required ShopDetailData shopDetail,
   }) async {
     try {
-      print('-----------------------------------${shopDetail.registerNumber}');
       final Map<String, dynamic> data = {
+        'shopId':shopDetail.id,
         'shopName': shopDetail.shopName,
         'category': shopDetail.category,
         'lat': shopDetail.lat,
@@ -102,6 +102,7 @@ class ProfileService extends ApiRoutes {
         'openTime': shopDetail.openTime,
         'closeTime': shopDetail.closeTime,
         'address': shopDetail.address,
+        'type':shopDetail.type,
         'registerNumber': shopDetail.registerNumber,
         'whatsappNumber': shopDetail.whatsappNumber,
         'shopNumber': shopDetail.shopNumber,
@@ -218,6 +219,18 @@ class ProfileService extends ApiRoutes {
         ApiRoutes.fetchSavedShops,
         options: headerWithToken(token),
         queryParameters: {'page': page},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getShopList({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.shopList,
+        options: headerWithToken(token),
       );
       return response.data;
     } on DioException catch (e) {

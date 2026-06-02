@@ -1,5 +1,9 @@
 import 'dart:io';
 
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,15 +45,191 @@ class _MainDashboardState extends State<MainDashboard> {
   void initState() {
     homeController = context.read<HomeController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.isLogin) {
-        CustomDialogues.showSuccessDialog(
-          context,
-          title: 'Login Successfully!!',
-          body: 'Welcome back!!.Your login was successful!',
-        );
-      }
+      _checkForAppUpdate();
     });
     super.initState();
+  }
+
+  Future<void> _checkForAppUpdate() async {
+    try {
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      String currentVersion = packageInfo.version;
+      String latestVersion = currentVersion;
+
+      try {
+        final response = await Dio().get('${ApiRoutes.baseUrl}/app/version');
+        if (response.statusCode == 200 && response.data != null) {
+          latestVersion = response.data['version']?.toString() ?? currentVersion;
+        }
+      } catch (e) {
+        debugPrint('Failed to fetch latest version: $e');
+      }
+
+      if (currentVersion != latestVersion && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2A2D32), Color(0xFF131417)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      height: 70,
+                      width: 70,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.system_update_rounded,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    HeaderTextPrimary(
+                      title: 'New Update Available',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    BodyTextColors(
+                      title: 'We have just released a new version of the app. Please update to get the latest features and improvements.',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white70,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showSuccessDialogIfNeeded();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white30,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: BodyTextColors(
+                                title: 'Later',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final String url = Platform.isAndroid 
+                                  ? "https://play.google.com/store/apps/details?id=com.mapman.mapman"
+                                  : "https://apps.apple.com/app/idYOUR_APP_ID";
+                              final Uri uri = Uri.parse(url);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF4CAF50).withValues(alpha: .4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: BodyTextColors(
+                                title: 'Update Now',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      } else {
+        _showSuccessDialogIfNeeded();
+      }
+    } catch (e) {
+      _showSuccessDialogIfNeeded();
+    }
+  }
+
+  void _showSuccessDialogIfNeeded() {
+    if (widget.isLogin && mounted) {
+      CustomDialogues.showSuccessDialog(
+        context,
+        title: 'Login Successfully!!',
+        body: 'Welcome back!!.Your login was successful!',
+      );
+    }
   }
 
   Color getBackgroundColor(int currentPage, int currentVideoIndex) {

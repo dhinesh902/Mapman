@@ -79,6 +79,7 @@ dependencies:
   get_thumbnail_video: ^0.7.3
   wakelock_plus: ^1.5.2
   animated_hint_textfield: ^1.1.1
+  package_info_plus: ^9.0.1
 
 flutter_launcher_icons:
   android: "launcher_icon"

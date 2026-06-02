@@ -40,7 +40,7 @@ class _AddShopDetailState extends State<AddShopDetail> {
     homeController = context.read<HomeController>();
     profileController = context.read<ProfileController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      getShopDetail();
+      // getShopDetail();
       getHome();
     });
     super.initState();
@@ -58,17 +58,17 @@ class _AddShopDetailState extends State<AddShopDetail> {
     }
   }
 
-  Future<void> getShopDetail() async {
-    final response = await profileController.getShopDetail();
-    if (!mounted) return;
-    if (response.status == Status.ERROR) {
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
-    }
-  }
+  // Future<void> getShopDetail() async {
+  //   final response = await profileController.getShopDetail();
+  //   if (!mounted) return;
+  //   if (response.status == Status.ERROR) {
+  //     ExceptionHandler.handleUiException(
+  //       context: context,
+  //       status: response.status,
+  //       message: response.message,
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

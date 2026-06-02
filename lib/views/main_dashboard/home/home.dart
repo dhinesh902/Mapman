@@ -43,7 +43,7 @@ class _HomeState extends State<Home> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       homeController.getNotificationCount();
       getHome();
-      context.read<ProfileController>().getShopDetail();
+      context.read<ProfileController>().getShopList();
     });
     super.initState();
   }
@@ -433,7 +433,6 @@ class HomeTopCard extends StatelessWidget {
                                   InkWell(
                                     borderRadius: BorderRadius.circular(8),
                                     onTap: () async {
-                                      final shopId = SessionManager.getShopId();
                                       final token = SessionManager.getToken();
 
                                       if (token == null) {
@@ -443,14 +442,7 @@ class HomeTopCard extends StatelessWidget {
                                         return;
                                       }
 
-                                      if (shopId == null) {
-                                        await showAddShopDetail(context);
-                                      } else {
-                                        CustomToast.show(
-                                          context,
-                                          title: "You have already registered",
-                                        );
-                                      }
+                                      await showAddShopDetail(context);
                                     },
                                     child: Container(
                                       height: 28,

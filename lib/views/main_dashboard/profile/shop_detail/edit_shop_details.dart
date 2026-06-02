@@ -209,6 +209,8 @@ class _EditShopDetailState extends State<EditShopDetail> {
       closeTime: closeTimeController.text.trim(),
       lat: lat ?? '',
       long: lng ?? '',
+      type: 'update',
+      id: shopDetailData.id
     );
 
     final response = await profileController.registerShop(
@@ -224,7 +226,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
       );
       if (!mounted) return;
       context.pop();
-      await profileController.getShopDetail();
+      await profileController.getShopList();
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -252,26 +254,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
     }
   }
 
-  Future<void> deleteShop({required int shopId}) async {
-    CustomDialogues.showLoadingDialogue(context);
-    final response = await profileController.deleteShop(shopId: shopId);
-    if (!mounted) return;
-    if (response.status == Status.COMPLETED) {
-      Navigator.pop(context);
-      CustomDialogues().showDeleteDialog(
-        context,
-        body: 'Shop details deleted successfully',
-      );
-      await profileController.getShopDetail();
-    } else {
-      Navigator.pop(context);
-      ExceptionHandler.handleUiException(
-        context: context,
-        status: response.status,
-        message: response.message,
-      );
-    }
-  }
+
 
   Future<void> addShopCategory() async {
     final response = await homeController.addNewCategory(
@@ -429,31 +412,6 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   title: 'Shop Name / Business Name',
                   hintText: 'Enter shop name / business name or service name',
                   inputAction: TextInputAction.next,
-                  suffixWidget: Container(
-                    height: 30,
-                    width: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: GenericColors.borderGrey),
-                    ),
-                    child: Center(
-                      child: IconButton(
-                        onPressed: () async {
-                          CustomDialogues().showDeleteConfirmDialog(
-                            context,
-                            onTap: () async {
-                              await deleteShop(shopId: shopDetailData.id ?? 0);
-                            },
-                          );
-                        },
-                        icon: Icon(
-                          Icons.delete,
-                          color: GenericColors.darkRed,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
                   validator: (value) {
                     if (value!.isEmpty) {
                       return "Please enter shop name";

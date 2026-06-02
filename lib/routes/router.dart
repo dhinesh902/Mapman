@@ -2,6 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/main.dart';
 import 'package:mapman/model/profile_model.dart';
+import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/keys.dart';
@@ -9,6 +10,8 @@ import 'package:mapman/views/auth_screens/login.dart';
 import 'package:mapman/views/auth_screens/login_profile.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/auth_screens/splash.dart';
+import 'package:mapman/views/main_dashboard/profile/shop_detail/edit_shop_details.dart';
+import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_list.dart';
 import 'package:mapman/views/main_dashboard/home/saved_videos.dart';
 import 'package:mapman/views/main_dashboard/main_dashboard.dart';
 import 'package:mapman/views/main_dashboard/notification/notification_settings.dart';
@@ -243,6 +246,21 @@ class AppRouter {
                 path: '/analytics',
                 name: AppRoutes.analytics,
                 builder: (context, state) => ShopAnalytics(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/shop_list',
+            name: AppRoutes.shopList,
+            builder: (context, state) => const ShopListScreen(),
+            routes: [
+              GoRoute(
+                path: '/edit_shop_detail',
+                name: AppRoutes.editShopDetail,
+                builder: (context, state) {
+                  final shopDetail = state.extra as ShopDetailData;
+                  return EditShopDetail(shopDetailData: shopDetail);
+                },
               ),
             ],
           ),

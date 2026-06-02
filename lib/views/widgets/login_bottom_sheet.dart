@@ -448,7 +448,7 @@ class _OTPScreenState extends State<OTPScreen> {
         .getProfile();
 
     if (!mounted) return;
-    await context.read<ProfileController>().getShopDetail();
+    await context.read<ProfileController>().getShopList();
 
     if (!mounted) return;
 

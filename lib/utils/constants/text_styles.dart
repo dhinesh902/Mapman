@@ -128,7 +128,7 @@ class BodyTextColors extends StatelessWidget {
     this.overflow = TextOverflow.visible,
     this.textDecoration = TextDecoration.none,
     this.decorationColor,
-    this.letterSpacing,
+    this.letterSpacing, this.maxLines,
   });
 
   final String title;
@@ -140,6 +140,7 @@ class BodyTextColors extends StatelessWidget {
   final TextDecoration textDecoration;
   final Color? decorationColor;
   final double? letterSpacing;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +148,7 @@ class BodyTextColors extends StatelessWidget {
       title,
       textAlign: textAlign,
       overflow: overflow,
+      maxLines: maxLines,
       style: GoogleFonts.outfit(
         fontSize: fontSize,
         fontWeight: fontWeight,

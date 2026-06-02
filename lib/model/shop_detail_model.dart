@@ -9,6 +9,7 @@ class ShopDetailData {
   String? lat;
   String? long;
   String? address;
+  String? type;
   String? description;
   String? registerNumber;
   String? shopNumber;
@@ -33,6 +34,7 @@ class ShopDetailData {
     this.lat,
     this.long,
     this.address,
+    this.type,
     this.description,
     this.registerNumber,
     this.shopNumber,
@@ -58,6 +60,7 @@ class ShopDetailData {
     lat = json['lat'];
     long = json['long'];
     address = json['address'];
+    type = json['type'];
     description = json['description'];
     registerNumber = json['registerNumber'];
     whatsappNumber = json['whatsappNumber'];

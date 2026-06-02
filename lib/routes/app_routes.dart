@@ -8,6 +8,7 @@ class AppRoutes {
   static String editProfile = 'edit_profile';
   static String helpAndSupport = 'help_and_support';
   static String addShopDetail = 'add_shop_detail';
+  static String editShopDetail = 'edit_shop_detail';
   static String analytics = 'analytics';
   static String shopDetail = 'shop_detail';
   static String registerShopDetail = 'register_shop_detail';
@@ -28,4 +29,5 @@ class AppRoutes {
   static String privacyPolicy = 'privacy_policy';
   static String termsAndConditions = 'terms_and_conditions';
   static String reportIssue = 'report_issue';
+  static String shopList = 'shop_list';
 }

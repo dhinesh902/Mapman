@@ -133,6 +133,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       closeTime: closeTimeController.text.trim(),
       lat: '${placeController.selectedShopLatLong?.latitude}',
       long: '${placeController.selectedShopLatLong?.longitude}',
+      type: 'add'
     );
     final response = await profileController.registerShop(
       shopImages: shopImages,
@@ -148,7 +149,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       if (!mounted) return;
       context.pop();
       context.pop();
-      await profileController.getShopDetail();
+      await profileController.getShopList();
     } else {
       ExceptionHandler.handleUiException(
         context: context,
@@ -578,7 +579,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               profileController.apiResponse.status == Status.LOADING
                   ? ButtonProgressBar()
                   : CustomFullButton(
-                      title: 'Update Shop details',
+                      title: 'Add Shop details',
                       isDialogue: true,
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
