@@ -133,7 +133,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       closeTime: closeTimeController.text.trim(),
       lat: '${placeController.selectedShopLatLong?.latitude}',
       long: '${placeController.selectedShopLatLong?.longitude}',
-      type: 'add'
+      type: 'add',
     );
     final response = await profileController.registerShop(
       shopImages: shopImages,
@@ -147,7 +147,6 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
         body: 'Your shop has been registered successfully',
       );
       if (!mounted) return;
-      context.pop();
       context.pop();
       await profileController.getShopList();
     } else {

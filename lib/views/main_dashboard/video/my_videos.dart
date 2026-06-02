@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
@@ -24,240 +25,111 @@ import 'package:provider/provider.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
-class MyVideos extends StatefulWidget {
+class MyVideos extends StatelessWidget {
   const MyVideos({super.key, required this.myVideos});
 
   final List<VideosData> myVideos;
 
   @override
-  State<MyVideos> createState() => _MyVideosState();
-}
-
-class _MyVideosState extends State<MyVideos> {
-  ShopDetailData? selectedShop;
-
-  @override
   Widget build(BuildContext context) {
-    return Consumer<ProfileController>(
-      builder: (context, profileCtrl, _) {
-        final shops = profileCtrl.shopListData.data ?? [];
-        final filteredVideos = selectedShop != null
-            ? widget.myVideos
-                  .where((v) => v.shopName == selectedShop?.shopName)
-                  .toList()
-            : widget.myVideos;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 100),
-          child: Column(
-            children: [
-              if (shops.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      gradient: const LinearGradient(
-                        colors: [Colors.white, Color(0xFFF4FFF5)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      border: Border.all(
-                        color: const Color(0xFF4CAF50).withValues(alpha: .18),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4CAF50).withValues(alpha: .10),
-                          blurRadius: 15,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 100),
+      child: StaggeredGrid.count(
+        crossAxisCount: 4,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        children: List.generate(myVideos.length, (index) {
+          final video = myVideos[index];
+
+          final pattern = index % 4;
+
+          int crossAxis = 2;
+          double mainAxis = 2;
+
+          switch (pattern) {
+            case 0:
+
+            /// big left (tall)
+              crossAxis = 2;
+              mainAxis = 3;
+              break;
+
+            case 1:
+
+            /// top right small
+              crossAxis = 2;
+              mainAxis = 2.2;
+              break;
+
+            case 2:
+
+            /// bottom right tall
+              crossAxis = 2;
+              mainAxis = 3;
+              break;
+
+            case 3:
+
+            /// next row left medium
+              crossAxis = 2;
+              mainAxis = 2.2;
+              break;
+          }
+
+          return StaggeredGridTile.count(
+            crossAxisCellCount: crossAxis,
+            mainAxisCellCount: mainAxis,
+            child: GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  AppRoutes.singleVideoScreen,
+                  extra: {
+                    Keys.videosData: myVideos,
+                    Keys.isMyVideos: true,
+                    Keys.initialIndex: index,
+                  },
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton2<ShopDetailData>(
-                        isExpanded: true,
-                        hint: Row(
-                          children: [
-                            Icon(
-                              Icons.storefront_outlined,
-                              color: const Color(0xFF4CAF50),
-                              size: 20,
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Select shop to filter videos',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.darkText.withValues(
-                                    alpha: .7,
-                                  ),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        items: shops.map((item) {
-                          return DropdownMenuItem<ShopDetailData>(
-                            value: item,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.store,
-                                  color: const Color(0xFF4CAF50),
-                                  size: 18,
-                                ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    item.shopName?.capitalize() ?? '',
-                                    style: AppTextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.darkText,
-                                    ).textStyle,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        value: selectedShop,
-                        onChanged: (value) {
-                          if (mounted) setState(() => selectedShop = value);
-                        },
-                        buttonStyleData: ButtonStyleData(
-                          height: 55,
-                          padding: const EdgeInsets.only(left: 15, right: 15),
-                          elevation: 0,
-                        ),
-                        iconStyleData: IconStyleData(
-                          icon: Icon(Icons.keyboard_arrow_down_rounded),
-                          iconSize: 24,
-                          iconEnabledColor: AppColors.darkText,
-                          iconDisabledColor: AppColors.darkText.withValues(
-                            alpha: .5,
-                          ),
-                        ),
-                        dropdownStyleData: DropdownStyleData(
-                          maxHeight: 250,
-                          padding: EdgeInsets.zero,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            color: Colors.white,
-                            border: Border.all(
-                              color: const Color(
-                                0xFF4CAF50,
-                              ).withValues(alpha: .18),
-                              width: 2,
-                            ),
-                          ),
-                          offset: const Offset(0, -5),
-                        ),
-                        menuItemStyleData: const MenuItemStyleData(
-                          height: 50,
-                          padding: EdgeInsets.symmetric(horizontal: 15),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Stack(
+                    children: [
+                      MyVideoContainer(
+                        videoUrl: video.video ?? '',
+                        views: video.views.toString(),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: VideoTitleBlurContainer(
+                          isEditIcon: true,
+                          videosData: video,
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              if (filteredVideos.isEmpty)
-                const NoVideoContainer()
-              else
-                StaggeredGrid.count(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  children: List.generate(filteredVideos.length, (index) {
-                    final video = filteredVideos[index];
-
-                    final pattern = index % 4;
-
-                    int crossAxis = 2;
-                    double mainAxis = 2;
-
-                    switch (pattern) {
-                      case 0:
-                        crossAxis = 2;
-                        mainAxis = 3;
-                        break;
-                      case 1:
-                        crossAxis = 2;
-                        mainAxis = 2.2;
-                        break;
-                      case 2:
-                        crossAxis = 2;
-                        mainAxis = 3;
-                        break;
-                      case 3:
-                        crossAxis = 2;
-                        mainAxis = 2.2;
-                        break;
-                    }
-
-                    return StaggeredGridTile.count(
-                      crossAxisCellCount: crossAxis,
-                      mainAxisCellCount: mainAxis,
-                      child: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(
-                            AppRoutes.singleVideoScreen,
-                            extra: {
-                              Keys.videosData: filteredVideos,
-                              Keys.isMyVideos: true,
-                              Keys.initialIndex: index,
-                            },
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
-                            child: Stack(
-                              children: [
-                                MyVideoContainer(
-                                  videoUrl: video.video ?? '',
-                                  views: video.views.toString(),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: VideoTitleBlurContainer(
-                                    isEditIcon: true,
-                                    videosData: video,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-            ],
-          ),
-        );
-      },
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }
@@ -515,6 +387,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
 
       final data = await VideoThumbnail.thumbnailData(
         video: fullUrl,
+        headers: const {"Range": "bytes=0-2000000"},
         imageFormat: ImageFormat.WEBP,
         maxHeight: 150,
         quality: 50,

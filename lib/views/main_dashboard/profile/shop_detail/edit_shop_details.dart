@@ -210,7 +210,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
       lat: lat ?? '',
       long: lng ?? '',
       type: 'update',
-      id: shopDetailData.id
+      id: shopDetailData.id,
     );
 
     final response = await profileController.registerShop(
@@ -254,7 +254,31 @@ class _EditShopDetailState extends State<EditShopDetail> {
     }
   }
 
-
+  Future<void> deleteShop({required int shopId}) async {
+    CustomDialogues.showLoadingDialogue(context);
+    final response = await profileController.deleteShop(shopId: shopId);
+    if (!mounted) return;
+    
+    // Pop the loading dialog
+    Navigator.of(context, rootNavigator: true).pop();
+    
+    if (response.status == Status.COMPLETED) {
+      await CustomDialogues().showDeleteDialog(
+        context,
+        body: 'Shop details deleted successfully',
+      );
+      if (!mounted) return;
+      // Pop the EditShopDetail page itself
+      context.pop();
+      await profileController.getShopList();
+    } else {
+      ExceptionHandler.handleUiException(
+        context: context,
+        status: response.status,
+        message: response.message,
+      );
+    }
+  }
 
   Future<void> addShopCategory() async {
     final response = await homeController.addNewCategory(
@@ -418,6 +442,31 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     }
                     return null;
                   },
+                  suffixWidget: Container(
+                    height: 30,
+                    width: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: GenericColors.borderGrey),
+                    ),
+                    child: Center(
+                      child: IconButton(
+                        onPressed: () async {
+                          CustomDialogues().showDeleteConfirmDialog(
+                            context,
+                            onTap: () async {
+                              await deleteShop(shopId: shopDetailData.id ?? 0);
+                            },
+                          );
+                        },
+                        icon: Icon(
+                          Icons.delete,
+                          color: GenericColors.darkRed,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 SizedBox(height: 15),
                 CustomTextFieldContainer(

@@ -180,6 +180,13 @@ class HomeController extends ChangeNotifier {
 
   ApiResponse<HomeData> get homeData => _homeData;
 
+  /// Home data
+  ApiResponse<VersionData> _versionData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
+  ApiResponse<VersionData> get versionData => _versionData;
+
   ///Maps Data
   ApiResponse<List<ShopSearchData>> _shopSearchData = ApiResponse.initial(
     Strings.noDataFound,
@@ -194,7 +201,9 @@ class HomeController extends ChangeNotifier {
   ApiResponse<List<ShopSearchData>> get nearByShopData => _nearByShopData;
 
   Position? _currentPosition;
+
   Position? get currentPosition => _currentPosition;
+
   set setCurrentPosition(Position? value) {
     _currentPosition = value;
     notifyListeners();
@@ -636,5 +645,24 @@ class HomeController extends ChangeNotifier {
   void removeCategoryLocally(String categoryName) {
     _categories.remove(categoryName);
     notifyListeners();
+  }
+
+  Future<ApiResponse<VersionData>> getVersion() async {
+    _versionData = ApiResponse.loading(Strings.loading);
+    notifyListeners();
+    try {
+      final token = SessionManager.getToken() ?? '';
+      final response = await homeService.getVersion(token: token);
+      final data = response[Keys.data];
+      if (data != null && data is Map<String, dynamic>) {
+        _versionData = ApiResponse.completed(VersionData.fromJson(data));
+      } else {
+        _versionData = ApiResponse.completed(null);
+      }
+    } catch (e) {
+      _versionData = ApiResponse.error(e.toString());
+    }
+    notifyListeners();
+    return _versionData;
   }
 }

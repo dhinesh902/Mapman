@@ -57,28 +57,43 @@ class _ShopListScreenState extends State<ShopListScreen> {
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(
           title: 'Shop List',
-          action: GestureDetector(
-            onTap: () {
-              context.pushNamed(AppRoutes.registerShopDetail);
-            },
-            child: Container(
-              padding: EdgeInsets.fromLTRB(15, 5, 10, 5),
-              margin: EdgeInsets.only(right: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: AppColors.primary,
-              ),
-              child: Row(
-                children: [
-                  BodyTextColors(
-                    title: 'Add Shop',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.whiteText,
+          action: Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                context.pushNamed(AppRoutes.registerShopDetail);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, GenericColors.homeTopPrimary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  SizedBox(width: 5),
-                  Icon(Icons.add, size: 16, color: AppColors.whiteText),
-                ],
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.add_business_rounded,
+                      size: 18,
+                      color: AppColors.whiteText,
+                    ),
+                    const SizedBox(width: 6),
+                    const BodyTextColors(
+                      title: 'Add Shop',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.whiteText,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -166,132 +181,226 @@ class _ProfessionalShopCardState extends State<ProfessionalShopCard> {
     }
   }
 
-  void _handleMenuAction(String value) {
-    switch (value) {
-      case 'edit':
-        context.pushNamed(AppRoutes.editShopDetail, extra: widget.shopDetailData);
-        break;
-      case 'delete':
-        CustomDialogues().showDeleteConfirmDialog(
-          context,
-          onTap: () async {
-            Navigator.pop(context);
-            await deleteShop(shopId: widget.shopDetailData.id ?? 0);
-          },
-        );
-        break;
-    }
-  }
+  // void _handleMenuAction(String value) {
+  //   switch (value) {
+  //     case 'edit':
+  //       context.pushNamed(
+  //         AppRoutes.editShopDetail,
+  //         extra: widget.shopDetailData,
+  //       );
+  //       break;
+  //     case 'delete':
+  //       CustomDialogues().showDeleteConfirmDialog(
+  //         context,
+  //         onTap: () async {
+  //           await deleteShop(shopId: widget.shopDetailData.id ?? 0);
+  //         },
+  //       );
+  //       break;
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: CustomNetworkImage(
-                  imageUrl: widget.shopDetailData.shopImage ?? '',
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRoutes.editShopDetail,
+          extra: widget.shopDetailData,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                SizedBox(
+                  height: 180,
+                  width: double.infinity,
+                  child: CustomNetworkImage(
+                    imageUrl: widget.shopDetailData.shopImage ?? '',
+                  ),
                 ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.2),
-                        Colors.black.withValues(alpha: 0.8),
-                      ],
-                      stops: const [0.4, 0.7, 1.0],
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.2),
+                          Colors.black.withValues(alpha: 0.8),
+                        ],
+                        stops: const [0.4, 0.7, 1.0],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 16,
-                left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: BodyTextColors(
+                      title:
+                          widget.shopDetailData.category?.capitalize() ??
+                          'Store',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                ),
+                // Positioned(
+                //   top: 12,
+                //   right: 12,
+                //   child: Container(
+                //     height: 36,
+                //     width: 36,
+                //     decoration: BoxDecoration(
+                //       color: AppColors.darkText.withValues(alpha: 0.3),
+                //       shape: BoxShape.circle,
+                //     ),
+                //     child: PopupMenuButton<String>(
+                //       padding: EdgeInsets.zero,
+                //       icon: const Icon(
+                //         Icons.more_vert_rounded,
+                //         color: Colors.white,
+                //         size: 20,
+                //       ),
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(16),
+                //       ),
+                //       color: Colors.white,
+                //       elevation: 8,
+                //       offset: const Offset(0, 40),
+                //       onSelected: _handleMenuAction,
+                //       itemBuilder: (BuildContext context) => [
+                //         PopupMenuItem(
+                //           value: 'edit',
+                //           child: Row(
+                //             children: [
+                //               Container(
+                //                 padding: const EdgeInsets.all(6),
+                //                 decoration: BoxDecoration(
+                //                   color: AppColors.primary.withValues(alpha: 0.1),
+                //                   shape: BoxShape.circle,
+                //                 ),
+                //                 child: const Icon(
+                //                   Icons.edit_rounded,
+                //                   color: AppColors.primary,
+                //                   size: 16,
+                //                 ),
+                //               ),
+                //               const SizedBox(width: 12),
+                //               const BodyTextColors(
+                //                 title: 'Edit Shop',
+                //                 fontSize: 14,
+                //                 fontWeight: FontWeight.w600,
+                //                 color: AppColors.darkText,
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //         PopupMenuItem(
+                //           value: 'delete',
+                //           child: Row(
+                //             children: [
+                //               Container(
+                //                 padding: const EdgeInsets.all(6),
+                //                 decoration: BoxDecoration(
+                //                   color: Colors.redAccent.withValues(alpha: 0.1),
+                //                   shape: BoxShape.circle,
+                //                 ),
+                //                 child: const Icon(
+                //                   Icons.delete_outline_rounded,
+                //                   color: Colors.redAccent,
+                //                   size: 16,
+                //                 ),
+                //               ),
+                //               const SizedBox(width: 12),
+                //               const BodyTextColors(
+                //                 title: 'Delete Shop',
+                //                 fontSize: 14,
+                //                 fontWeight: FontWeight.w600,
+                //                 color: Colors.redAccent,
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
                   child: BodyTextColors(
-                    title:
-                        widget.shopDetailData.category?.capitalize() ?? 'Store',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    title: widget.shopDetailData.shopName?.capitalize() ?? '',
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  height: 36,
-                  width: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.darkText.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.more_vert_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    color: Colors.white,
-                    elevation: 8,
-                    offset: const Offset(0, 40),
-                    onSelected: _handleMenuAction,
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.access_time_filled_rounded,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.edit_rounded,
-                                color: AppColors.primary,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
                             const BodyTextColors(
-                              title: 'Edit Shop',
+                              title: 'Business Hours',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey,
+                            ),
+                            BodyTextColors(
+                              title:
+                                  '${widget.shopDetailData.openTime ?? 'N/A'} - ${widget.shopDetailData.closeTime ?? 'N/A'}',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppColors.darkText,
@@ -299,160 +408,78 @@ class _ProfessionalShopCardState extends State<ProfessionalShopCard> {
                           ],
                         ),
                       ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Info Row: Address
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.location_on_rounded,
+                          size: 16,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.delete_outline_rounded,
-                                color: Colors.redAccent,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
                             const BodyTextColors(
-                              title: 'Delete Shop',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.redAccent,
+                              title: 'Location',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey,
+                            ),
+                            BodyTextColors(
+                              title:
+                                  widget.shopDetailData.address ??
+                                  'Not provided',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.darkGrey,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: BodyTextColors(
-                  title: widget.shopDetailData.shopName?.capitalize() ?? '',
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.access_time_filled_rounded,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
+
+                  if (widget.shopDetailData.description != null &&
+                      widget.shopDetailData.description!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Divider(color: Color(0xFFEEEEEE), height: 1),
+                    const SizedBox(height: 16),
+                    BodyTextColors(
+                      title: 'About',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.darkText,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const BodyTextColors(
-                            title: 'Business Hours',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey,
-                          ),
-                          BodyTextColors(
-                            title:
-                                '${widget.shopDetailData.openTime ?? 'N/A'} - ${widget.shopDetailData.closeTime ?? 'N/A'}',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkText,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 6),
+                    BodyTextColors(
+                      title: widget.shopDetailData.description!,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.darkGrey,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Info Row: Address
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.location_on_rounded,
-                        size: 16,
-                        color: Colors.orange,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const BodyTextColors(
-                            title: 'Location',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey,
-                          ),
-                          BodyTextColors(
-                            title:
-                                widget.shopDetailData.address ?? 'Not provided',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.darkGrey,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                if (widget.shopDetailData.description != null &&
-                    widget.shopDetailData.description!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Divider(color: Color(0xFFEEEEEE), height: 1),
-                  const SizedBox(height: 16),
-                  BodyTextColors(
-                    title: 'About',
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
-                  ),
-                  const SizedBox(height: 6),
-                  BodyTextColors(
-                    title: widget.shopDetailData.description!,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.darkGrey,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

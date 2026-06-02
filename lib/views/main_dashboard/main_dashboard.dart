@@ -1,10 +1,14 @@
 import 'dart:io';
 
+import 'package:mapman/model/home_model.dart';
+import 'package:mapman/utils/constants/enums.dart';
+import 'package:mapman/utils/handlers/api_response.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -50,167 +54,198 @@ class _MainDashboardState extends State<MainDashboard> {
     super.initState();
   }
 
+  late ApiResponse<VersionData> _apiResponse;
+
   Future<void> _checkForAppUpdate() async {
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
-      String latestVersion = currentVersion;
+
+      String? latestVersion = "";
+      bool forceUpdate = false;
 
       try {
-        final response = await Dio().get('${ApiRoutes.baseUrl}/app/version');
-        if (response.statusCode == 200 && response.data != null) {
-          latestVersion = response.data['version']?.toString() ?? currentVersion;
+        _apiResponse = await context.read<HomeController>().getVersion();
+        
+        final forceUpdateStr = _apiResponse.data?.forceUpdate?.toLowerCase();
+        forceUpdate = forceUpdateStr == 'true' || forceUpdateStr == '1';
+        
+        if (_apiResponse.status == Status.COMPLETED) {
+          latestVersion = Platform.isIOS
+              ? _apiResponse.data?.iosVersion?.toString()
+              : _apiResponse.data?.androidVersion?.toString();
         }
       } catch (e) {
         debugPrint('Failed to fetch latest version: $e');
       }
-
+      print('----------------------------------${currentVersion}');
+      print(
+        '----------------------------------${latestVersion}',
+      );
       if (currentVersion != latestVersion && mounted) {
         showDialog(
           context: context,
-          barrierDismissible: false,
+          barrierDismissible: !forceUpdate,
+          useRootNavigator: true,
           builder: (BuildContext context) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2A2D32), Color(0xFF131417)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+            Widget dialogContent;
+
+            if (Platform.isIOS) {
+              dialogContent = CupertinoAlertDialog(
+                title: HeaderTextBlack(
+                  title: '${_apiResponse.data?.updateTitle}',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                content: HeaderTextBlack(
+                  title: '${_apiResponse.data?.updateMessage}',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                ),
+                actions: [
+                  if (!forceUpdate)
+                    CupertinoDialogAction(
+                      child: BodyTextColors(
+                        title: 'Later',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: GenericColors.darkRed,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showSuccessDialogIfNeeded();
+                      },
+                    ),
+                  CupertinoDialogAction(
+                    isDefaultAction: true,
+                    child: HeaderTextPrimary(
+                      title: 'Update',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    onPressed: () async {
+                      final Uri uri = Uri.parse(
+                        "${_apiResponse.data?.iosStoreUrl}",
+                      );
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              );
+            } else {
+              dialogContent = Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 24,
+                    left: 24,
+                    right: 24,
+                    bottom: 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HeaderTextBlack(
+                        title: "${_apiResponse.data?.updateTitle}",
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      const SizedBox(height: 16),
+                      BodyTextColors(
+                        title: "${_apiResponse.data?.updateMessage}",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black54,
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (!forceUpdate) ...[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showSuccessDialogIfNeeded();
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF00875F),
+                              ),
+                              child: const Text(
+                                'No thanks',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          ElevatedButton(
+                            onPressed: () async {
+                              final Uri uri = Uri.parse(
+                                "${_apiResponse.data?.androidStoreUrl}",
+                              );
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00875F),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            child: const Text(
+                              'Update',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.system_update_rounded,
-                        size: 32,
-                        color: Colors.white,
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.black12, height: 1),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Image.network(
+                            'https://cdn-icons-png.flaticon.com/128/12942/12942208.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          const BodyTextColors(
+                            title: 'Google Play',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54,
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    HeaderTextPrimary(
-                      title: 'New Update Available',
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    BodyTextColors(
-                      title: 'We have just released a new version of the app. Please update to get the latest features and improvements.',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white70,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.pop(context);
-                              _showSuccessDialogIfNeeded();
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white30,
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: BodyTextColors(
-                                title: 'Later',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final String url = Platform.isAndroid 
-                                  ? "https://play.google.com/store/apps/details?id=com.mapman.mapman"
-                                  : "https://apps.apple.com/app/idYOUR_APP_ID";
-                              final Uri uri = Uri.parse(url);
-                              if (await canLaunchUrl(uri)) {
-                                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF4CAF50).withValues(alpha: .4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: BodyTextColors(
-                                title: 'Update Now',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              );
+            }
+
+            return PopScope(
+              canPop: !forceUpdate,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) return;
+              },
+              child: dialogContent,
             );
           },
         );

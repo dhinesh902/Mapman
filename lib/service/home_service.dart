@@ -167,4 +167,16 @@ class HomeService extends ApiRoutes {
       throw ExceptionHandler.handleApiException(e);
     }
   }
+
+  Future<Map<String, dynamic>> getVersion({required String token}) async {
+    try {
+      final response = await dio.get(
+        ApiRoutes.getVersion,
+        options: headerWithToken(token),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw ExceptionHandler.handleApiException(e);
+    }
+  }
 }

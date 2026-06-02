@@ -1,10 +1,13 @@
 import 'dart:ui';
 
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
+import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -29,6 +32,7 @@ class Videos extends StatefulWidget {
 
 class _VideosState extends State<Videos> {
   late VideoController videoController;
+  ShopDetailData? selectedShop;
 
   List<CategoryVideosData> categoryVideos = [];
 
@@ -56,8 +60,16 @@ class _VideosState extends State<Videos> {
     super.initState();
   }
 
-  Future<void> getMyVideos() async {
-    final response = await videoController.getMyVideos();
+  Future<void> getMyVideos({int? shopId}) async {
+    int? finalShopId = shopId;
+    if (finalShopId == null) {
+      final shops = context.read<ProfileController>().shopListData.data ?? [];
+      if (shops.isNotEmpty) {
+        finalShopId = videoController.myVideosShopId ?? shops.first.id;
+      }
+    }
+
+    final response = await videoController.getMyVideos(shopId: finalShopId);
     if (!mounted) return;
     if (response.status == Status.ERROR) {
       ExceptionHandler.handleUiException(
@@ -95,6 +107,7 @@ class _VideosState extends State<Videos> {
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
+    final shops = context.watch<ProfileController>().shopListData.data ?? [];
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Column(
@@ -260,7 +273,9 @@ class _VideosState extends State<Videos> {
                     case Status.LOADING:
                       return CustomLoadingIndicator();
                     case Status.COMPLETED:
-                      categoryVideos = [...(videoController.categoryVideoData.data ?? [])];
+                      categoryVideos = [
+                        ...(videoController.categoryVideoData.data ?? []),
+                      ];
 
                       categoryVideos.sort((a, b) {
                         final aIsOthers =
@@ -286,6 +301,122 @@ class _VideosState extends State<Videos> {
 
           /// MY VIDEOS
           if (videoController.currentVideoIndex == 1) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10,right: 10,left: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: const LinearGradient(
+                    colors: [Colors.white, Color(0xFFF4FFF5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(
+                    color: const Color(0xFF4CAF50).withValues(alpha: .18),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withValues(alpha: .10),
+                      blurRadius: 15,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton2<ShopDetailData>(
+                    isExpanded: true,
+                    hint: Row(
+                      children: [
+                        Icon(
+                          Icons.storefront_outlined,
+                          color: const Color(0xFF4CAF50),
+                          size: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Select shop to filter videos',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.darkText.withValues(alpha: .7),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    items: shops.map((item) {
+                      return DropdownMenuItem<ShopDetailData>(
+                        value: item,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.store,
+                              color: const Color(0xFF4CAF50),
+                              size: 18,
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                item.shopName?.capitalize() ?? '',
+                                style: AppTextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.darkText,
+                                ).textStyle,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    value: selectedShop,
+                    onChanged: (value) async {
+                      if (mounted && value != null) {
+                        setState(() => selectedShop = value);
+                        await context.read<VideoController>().getMyVideos(
+                          shopId: value.id,
+                        );
+                      }
+                    },
+                    buttonStyleData: ButtonStyleData(
+                      height: 55,
+                      padding: const EdgeInsets.only(left: 15, right: 15),
+                      elevation: 0,
+                    ),
+                    iconStyleData: IconStyleData(
+                      icon: Icon(Icons.keyboard_arrow_down_rounded),
+                      iconSize: 24,
+                      iconEnabledColor: AppColors.darkText,
+                      iconDisabledColor: AppColors.darkText.withValues(
+                        alpha: .5,
+                      ),
+                    ),
+                    dropdownStyleData: DropdownStyleData(
+                      maxHeight: 250,
+                      padding: EdgeInsets.zero,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.white,
+                        border: Border.all(
+                          color: const Color(0xFF4CAF50).withValues(alpha: .18),
+                          width: 2,
+                        ),
+                      ),
+                      offset: const Offset(0, -5),
+                    ),
+                    menuItemStyleData: const MenuItemStyleData(
+                      height: 50,
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Builder(
               builder: (context) {
                 switch (videoController.myVideosData.status) {

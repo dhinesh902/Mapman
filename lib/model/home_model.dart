@@ -130,3 +130,33 @@ class CategoryBanners {
     updatedAt = json['updatedAt'];
   }
 }
+
+class VersionData {
+  String? androidVersion;
+  String? iosVersion;
+  String? forceUpdate;
+  String? updateTitle;
+  String? updateMessage;
+  String? androidStoreUrl;
+  String? iosStoreUrl;
+
+  VersionData({
+    this.androidVersion,
+    this.iosVersion,
+    this.forceUpdate,
+    this.updateTitle,
+    this.updateMessage,
+    this.androidStoreUrl,
+    this.iosStoreUrl,
+  });
+
+  VersionData.fromJson(Map<String, dynamic> json) {
+    androidVersion = json['androidVersion']?.toString();
+    iosVersion = json['iosVersion']?.toString();
+    forceUpdate = json['forceUpdate']?.toString();
+    updateTitle = json['updateTitle']?.toString();
+    updateMessage = json['updateMessage']?.toString();
+    androidStoreUrl = json['androidStoreUrl']?.toString();
+    iosStoreUrl = json['iosStoreUrl']?.toString();
+  }
+}

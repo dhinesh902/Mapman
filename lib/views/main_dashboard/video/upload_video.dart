@@ -109,6 +109,7 @@ class _UploadVideoState extends State<UploadVideo> {
       shopName: shopDetailData?.shopName,
       category: categoryController.text.trim().toLowerCase(),
       description: videoDescriptionController.text.trim(),
+      shopId: shopDetailData?.id,
     );
     final response = await videoController.uploadMyVideos(
       video: videoNotifier.value!,

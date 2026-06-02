@@ -12,10 +12,9 @@ class VideoService extends ApiRoutes {
     required File video,
     required VideosData videoData,
   }) async {
-    final shopId = SessionManager.getShopId() ?? 0;
     try {
       final FormData formData = FormData.fromMap({
-        'shopId': shopId,
+        'shopId': videoData.shopId,
         'video': await MultipartFile.fromFile(
           video.path,
           filename: video.path.split('/').last,
@@ -37,11 +36,15 @@ class VideoService extends ApiRoutes {
     }
   }
 
-  Future<Map<String, dynamic>> getMyVideos({required String token}) async {
+  Future<Map<String, dynamic>> getMyVideos({
+    required String token,
+    required int shopId,
+  }) async {
     try {
       final response = await dio.get(
         ApiRoutes.myVideos,
         options: headerWithToken(token),
+        queryParameters: {"shopId": shopId},
       );
       return response.data;
     } on DioException catch (e) {

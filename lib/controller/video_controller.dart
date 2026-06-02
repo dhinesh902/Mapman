@@ -121,6 +121,8 @@ class VideoController extends ChangeNotifier {
 
   ApiResponse<List<VideosData>> get myVideosData => _myVideosData;
 
+  int? myVideosShopId;
+
   /// Viewed Videos
   ApiResponse<List<VideosData>> _viewedVideoData = ApiResponse.initial(
     Strings.noDataFound,
@@ -222,12 +224,20 @@ class VideoController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<VideosData>>> getMyVideos() async {
+  Future<ApiResponse<List<VideosData>>> getMyVideos({
+    int? shopId,
+  }) async {
+    int idToFetch = shopId ?? myVideosShopId ?? 0;
+    myVideosShopId = idToFetch;
+
     _myVideosData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await videoService.getMyVideos(token: token);
+      final response = await videoService.getMyVideos(
+        token: token,
+        shopId: idToFetch,
+      );
       final data = response[Keys.data];
       if (data != null && data is List) {
         _myVideosData = ApiResponse.completed(
