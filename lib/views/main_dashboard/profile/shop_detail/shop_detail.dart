@@ -416,6 +416,20 @@ class ShopDetailContainer extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (shop.websiteLink != null && shop.websiteLink!.isNotEmpty) ...[
+                SizedBox(height: 15),
+                CustomTextFieldContainer(
+                  title: 'Website Link',
+                  onTap: () async {
+                    await CustomLaunchers.openWebsite(url: shop.websiteLink!);
+                  },
+                  child: HeaderTextBlack(
+                    title: shop.websiteLink ?? '',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
               SizedBox(height: 15),
               Row(
                 children: [

@@ -602,10 +602,7 @@ class _OTPScreenState extends State<OTPScreen> {
 
     final profile = profileResponse.data;
 
-    final isProfileIncomplete =
-        (profile?.userName?.isEmpty ?? true) ||
-        (profile?.district?.isEmpty ?? true) ||
-        (profile?.state?.isEmpty ?? true);
+    final isProfileIncomplete = profile?.userName?.isEmpty ?? true;
 
     if (isProfileIncomplete) {
       context.goNamed(AppRoutes.loginProfile);

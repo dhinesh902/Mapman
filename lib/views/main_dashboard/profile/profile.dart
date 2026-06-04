@@ -196,7 +196,7 @@ class _ProfileState extends State<Profile> {
                         SizedBox(height: 15),
                         ProfileListTile(
                           image: AppIcons.shopP,
-                          title: 'Shop List',
+                          title: 'Your Listings',
                           body: 'View list of shops',
                           onTap: () {
                             context.pushNamed(AppRoutes.shopList);

@@ -68,6 +68,11 @@ class CustomLaunchers {
     await _launch(uri, 'Google Maps');
   }
 
+  static Future<void> openWebsite({required String url}) async {
+    final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+    await _launch(uri, 'Website');
+  }
+
   static Future<void> _launch(Uri uri, String featureName) async {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

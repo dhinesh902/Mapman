@@ -12,6 +12,8 @@ import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
+import 'package:mapman/views/auth_screens/login_profile.dart';
+
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
@@ -100,8 +102,8 @@ class _EditProfileState extends State<EditProfile> {
 
     emailAddressController.text = profileData.email ?? '';
     stateController.text = profileData.state ?? '';
-    selectedState = profileData.state;
-    selectedDistrict = profileData.district;
+    selectedState = (profileData.state?.isNotEmpty ?? false) ? profileData.state : null;
+    selectedDistrict = (profileData.district?.isNotEmpty ?? false) ? profileData.district : null;
     districtController.text = profileData.district ?? '';
 
     if (selectedState != null && stateData.containsKey(selectedState)) {
@@ -316,148 +318,48 @@ class _EditProfileState extends State<EditProfile> {
                   },
                 ),
                 SizedBox(height: 15),
-                Autocomplete<String>(
-                  initialValue: TextEditingValue(text: stateController.text),
-                  optionsBuilder: (TextEditingValue textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return const Iterable<String>.empty();
-                    }
-                    return stateData.keys.where((String option) {
-                      return option.toLowerCase().contains(
-                        textEditingValue.text.toLowerCase(),
-                      );
-                    });
-                  },
-                  onSelected: (String selection) {
+                SearchableDropdown(
+                  title: "State",
+                  hintText: "Select state",
+                  items: stateData.keys.map((item) => item).toList(),
+                  searchController: stateController,
+                  value: selectedState,
+                  onChanged: (value) {
                     setState(() {
-                      selectedState = selection;
-                      stateController.text = selection;
+                      selectedState = value;
+                      stateController.text = value ?? '';
+
                       selectedDistrict = null;
                       districtController.clear();
-                      districts = List<String>.from(stateData[selection] ?? []);
+
+                      districts = List<String>.from(stateData[value] ?? []);
                     });
                   },
-                  fieldViewBuilder:
-                      (context, controller, focusNode, onFieldSubmitted) {
-                        return CustomTextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          onChanged: (val) =>
-                              stateController.text = val as String,
-                          title: 'State',
-                          hintText: "Select State",
-                          inputAction: TextInputAction.next,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return "Please select state";
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                  optionsViewBuilder: (context, onSelected, options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          color: AppColors.whiteText,
-                          constraints: const BoxConstraints(maxHeight: 200),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: options.length,
-                            itemBuilder: (context, index) {
-                              final String option = options.elementAt(index);
-                              return ListTile(
-                                title: Text(
-                                  option,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.darkText,
-                                  ),
-                                ),
-                                onTap: () => onSelected(option),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    );
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select state';
+                    }
+                    return null;
                   },
                 ),
-                SizedBox(height: 15),
-                Autocomplete<String>(
-                  initialValue: TextEditingValue(text: districtController.text),
-                  optionsBuilder: (TextEditingValue textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return const Iterable<String>.empty();
-                    }
-                    return districts.where((String option) {
-                      return option.toLowerCase().contains(
-                        textEditingValue.text.toLowerCase(),
-                      );
-                    });
-                  },
-                  onSelected: (String selection) {
+                const SizedBox(height: 15),
+                SearchableDropdown(
+                  title: "District",
+                  hintText: "Select district",
+                  items: districts,
+                  value: selectedDistrict,
+                  searchController: districtController,
+                  onChanged: (value) {
                     setState(() {
-                      selectedDistrict = selection;
-                      districtController.text = selection;
+                      selectedDistrict = value;
+                      districtController.text = value ?? '';
                     });
                   },
-                  fieldViewBuilder:
-                      (context, controller, focusNode, onFieldSubmitted) {
-                        return CustomTextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          onChanged: (val) =>
-                              districtController.text = val as String,
-                          title: 'District',
-                          hintText: "Select District",
-                          inputAction: TextInputAction.next,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return "Please select district";
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                  optionsViewBuilder: (context, onSelected, options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          color: AppColors.whiteText,
-                          width: MediaQuery.of(context).size.width,
-                          constraints: const BoxConstraints(maxHeight: 200),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: options.length,
-                            itemBuilder: (context, index) {
-                              final String option = options.elementAt(index);
-                              return ListTile(
-                                title: Text(
-                                  option,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.darkText,
-                                  ),
-                                ),
-                                onTap: () => onSelected(option),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    );
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select district';
+                    }
+                    return null;
                   },
                 ),
                 SizedBox(height: 15),

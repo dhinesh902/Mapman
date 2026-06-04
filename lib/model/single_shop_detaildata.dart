@@ -31,6 +31,7 @@ class Shop {
   String? description;
   String? registerNumber;
   String? shopNumber;
+  String? websiteLink;
   String? openTime;
   String? closeTime;
   String? image1;
@@ -53,6 +54,7 @@ class Shop {
     this.long,
     this.address,
     this.description,
+    this.websiteLink,
     this.registerNumber,
     this.shopNumber,
     this.openTime,
@@ -78,6 +80,7 @@ class Shop {
     long = json['long'];
     address = json['address'];
     description = json['description'];
+    websiteLink = json['websiteLink'];
     registerNumber = json['registerNumber'];
     shopNumber = json['shopNumber'];
     openTime = json['openTime'];
