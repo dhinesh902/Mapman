@@ -529,7 +529,7 @@ class ShopDetailContainer extends StatelessWidget {
         "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
     "hospital":
         "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
-    "bars":
+    "bar":
         "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
     "grocery":
         "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",

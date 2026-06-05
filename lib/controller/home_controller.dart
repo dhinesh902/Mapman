@@ -290,7 +290,7 @@ class HomeController extends ChangeNotifier {
     'theater',
     'restaurant',
     'hospital',
-    'bars',
+    'bar',
     'grocery',
     'textile',
     'resort',

@@ -52,7 +52,7 @@ class _UploadVideoState extends State<UploadVideo> {
     'theater',
     'restaurant',
     'hospital',
-    'bars',
+    'bar',
     'grocery',
     'textile',
     'resort',
