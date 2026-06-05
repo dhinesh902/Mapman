@@ -247,7 +247,6 @@ class _LoginProfileState extends State<LoginProfile> {
                 title: 'Email Address',
                 hintText: 'Enter email',
                 inputType: TextInputType.emailAddress,
-                isReadOnly: true,
                 textCapitalization: TextCapitalization.none,
                 validator: (value) {
                   if (value != null && value.isNotEmpty && !isValidEmail(value.trim())) {

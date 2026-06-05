@@ -368,7 +368,6 @@ class _EditProfileState extends State<EditProfile> {
                   title: 'Email Address',
                   hintText: 'Enter email address',
                   inputType: TextInputType.emailAddress,
-                  isReadOnly: true,
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.done,
                   validator: (value) {

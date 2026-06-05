@@ -97,8 +97,7 @@ Future<void> requestTrackingPermission() async {
   final status = await AppTrackingTransparency.trackingAuthorizationStatus;
 
   if (status == TrackingStatus.notDetermined) {
-    final result =
-        await AppTrackingTransparency.requestTrackingAuthorization();
+    final result = await AppTrackingTransparency.requestTrackingAuthorization();
 
     if (result == TrackingStatus.authorized) {
       debugPrint("Tracking Allowed");
@@ -126,7 +125,6 @@ Future<void> main() async {
   final sharedPrefs = await SessionManager.initialize();
   await VideoCacheManager.init();
 
-
   runApp(
     MultiProvider(
       providers: [
@@ -141,7 +139,6 @@ Future<void> main() async {
   );
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-
     await requestTrackingPermission();
 
     await initializeLocalNotifications();
