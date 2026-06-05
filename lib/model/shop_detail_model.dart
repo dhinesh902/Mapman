@@ -9,6 +9,7 @@ class ShopDetailData {
   String? lat;
   String? long;
   String? address;
+  String? websiteLink;
   String? type;
   String? description;
   String? registerNumber;
@@ -31,6 +32,7 @@ class ShopDetailData {
     this.shopImage,
     this.shopName,
     this.category,
+    this.websiteLink,
     this.lat,
     this.long,
     this.address,
@@ -55,6 +57,7 @@ class ShopDetailData {
     id = json['id'];
     profileId = json['profileId'];
     shopImage = json['shopImage'];
+    websiteLink = json['websiteLink'];
     shopName = json['shopName'];
     category = json['category'];
     lat = json['lat'];

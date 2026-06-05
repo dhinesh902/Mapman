@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:mapman/utils/constants/keys.dart';
 
 abstract class ApiRoutes {
@@ -20,6 +22,17 @@ abstract class ApiRoutes {
           receiveTimeout: const Duration(seconds: 30),
         ),
       ) {
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        // This is the critical fix for Data Saver on mobile networks:
+        // It forces Dart's HttpClient to respect Android's system proxy settings, 
+        // which Samsung's Data Saver often uses to route and compress traffic.
+        client.findProxy = HttpClient.findProxyFromEnvironment;
+        return client;
+      },
+    );
+
     dio.interceptors.add(
       LogInterceptor(requestBody: true, responseBody: true, error: true),
     );

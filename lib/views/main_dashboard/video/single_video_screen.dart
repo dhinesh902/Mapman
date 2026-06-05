@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'package:path_provider/path_provider.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:video_player/video_player.dart' as vp;
 import 'package:flutter/material.dart';
@@ -111,7 +112,30 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     for (final notifier in _readyMap.values) {
       notifier.dispose();
     }
-    // Do NOT clear cache here — it forces all videos to re-download
+    // Clean up temporary files to ensure no storage increase
+    try {
+      getTemporaryDirectory().then((tempDir) {
+        if (tempDir.existsSync()) {
+          for (final entity in tempDir.listSync(followLinks: false)) {
+            if (entity is File) {
+              final path = entity.path.toLowerCase();
+              if (path.contains('thumb') ||
+                  path.endsWith('.webp') ||
+                  path.endsWith('.jpg') ||
+                  path.endsWith('.jpeg') ||
+                  path.contains('video') ||
+                  path.endsWith('.tmp')) {
+                try {
+                  entity.deleteSync();
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Temp cleanup on dispose error: $e');
+    }
     super.dispose();
   }
 
@@ -226,10 +250,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
             useCache: false,
           ),
           bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-            minBufferMs: 1000, // Very low minimum buffer for fast startup
-            maxBufferMs: 5000, // Reduced max buffer to optimize RAM usage
-            bufferForPlaybackMs: 200, // Tiny buffer to play instantly (Shorts/Reels style)
-            bufferForPlaybackAfterRebufferMs: 1000,
+            minBufferMs: 2500, // Balanced minimum buffer
+            maxBufferMs: 6000, // Keep RAM footprint low
+            bufferForPlaybackMs: 400, // Balanced buffer to play quickly and smoothly
+            bufferForPlaybackAfterRebufferMs: 1200,
           ),
         );
 
@@ -470,15 +494,41 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (index != _currentIndex || _isDisposed) return;
 
     // ── Current video FIRST ─────────────────────────────────────────────
-    // Always initialize the current index before preloading neighbors so
-    // the tapped/landed video starts buffering immediately without competing
-    // with neighbor network requests.
+    // Start initializing the current index immediately.
     await _initController(index);
 
     if (index != _currentIndex || _isDisposed) return;
 
-    // Safety net: already initialized but not playing (preloaded controller
-    // that fired its initialized event before the user landed here).
+    // Wait for the active video's controller to finish initializing.
+    // This allows the active video to utilize 100% of the network bandwidth at startup.
+    int timeoutCount = 0;
+    while (timeoutCount < 20) { // Max 2 seconds timeout (20 * 100ms)
+      if (index != _currentIndex || _isDisposed) return;
+      final currentController = _controllers[index];
+      bool isInitialized = false;
+      if (currentController != null) {
+        if (Platform.isAndroid) {
+          final vpc = (currentController as BetterPlayerController).videoPlayerController;
+          if (vpc != null && vpc.value.initialized) {
+            isInitialized = true;
+          }
+        } else {
+          final vpc = currentController as vp.VideoPlayerController;
+          if (vpc.value.isInitialized) {
+            isInitialized = true;
+          }
+        }
+      }
+      if (isInitialized) {
+        break;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+      timeoutCount++;
+    }
+
+    if (index != _currentIndex || _isDisposed) return;
+
+    // Play/resume current video if it's initialized but not yet playing
     final currentController = _controllers[index];
     if (currentController != null &&
         !_disposedControllers.contains(currentController)) {
@@ -497,8 +547,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     if (index != _currentIndex || _isDisposed) return;
 
-    // ── Preload neighbors AFTER current has started buffering ───────────
-    // Preload only the next 1-2 upcoming videos to enable instant swiping forward
+    // ── Preload neighbors AFTER current has initialized/started ───────────
+    // Now that the active video is ready, preload the upcoming/previous videos.
     if (index + 1 < widget.videosData.length) {
       _initController(index + 1);
     }
@@ -644,6 +694,29 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   void _onPageChanged(int index) {
     if (_isDisposed) return;
+
+    // Clean up temporary files when changing pages to prevent local storage footprint buildup
+    try {
+      getTemporaryDirectory().then((tempDir) {
+        if (tempDir.existsSync()) {
+          for (final entity in tempDir.listSync(followLinks: false)) {
+            if (entity is File) {
+              final path = entity.path.toLowerCase();
+              if (path.contains('thumb') ||
+                  path.endsWith('.webp') ||
+                  path.endsWith('.jpg') ||
+                  path.endsWith('.jpeg') ||
+                  path.contains('video') ||
+                  path.endsWith('.tmp')) {
+                try {
+                  entity.deleteSync();
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      });
+    } catch (_) {}
 
     // Invalidate all pending async inits started for the old page
     _sessionToken++;

@@ -100,12 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       final profile = context.read<ProfileController>().profileData.data;
       if (profile != null &&
-          (profile.userName == null ||
-              profile.userName!.isEmpty ||
-              profile.district == null ||
-              profile.district!.isEmpty ||
-              profile.state == null ||
-              profile.state!.isEmpty)) {
+          (profile.userName == null || profile.userName!.isEmpty)) {
         context.go('/login_profile');
       } else {
         context.go('/main_dashboard', extra: false);

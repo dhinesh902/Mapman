@@ -16,6 +16,10 @@ class ExceptionHandler {
         e.type == DioExceptionType.sendTimeout) {
       throw DataFetchException('Connection Timed Out');
     } else if (e.type == DioExceptionType.connectionError || e.error is SocketException) {
+      final errorMessage = e.error.toString();
+      if (errorMessage.contains('Network is unreachable') || errorMessage.contains('errno = 101')) {
+        throw DataFetchException('Network restricted. Please disable Data Saver or allow this app in your Data Saver settings.');
+      }
       throw DataFetchException(Strings.noInternet);
     } else if (e.response?.statusCode == 400) {
       String? type = e.response?.data['error']['type'];
@@ -58,6 +62,12 @@ class ExceptionHandler {
           isError: true,
         );
         context.goNamed(AppRoutes.login);
+      } else if (message?.contains('Network restricted') ?? false) {
+        CustomToast.show(
+          context,
+          title: 'Mobile Data Blocked: Please disable Data Saver or allow MapMan in Data Saver settings.',
+          isError: true,
+        );
       } else if (message?.contains(Strings.noInternet) ?? false) {
         //TODO: Design No internet page
         // context.goNamed(noInternetRoute);

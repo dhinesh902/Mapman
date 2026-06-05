@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -359,6 +361,30 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
       final data = await _thumbnailFutures[url];
 
       if (!mounted) return;
+
+      // Clean up temporary files generated during thumbnail decoding/processing to ensure no local storage footprint
+      try {
+        final tempDir = await getTemporaryDirectory();
+        if (tempDir.existsSync()) {
+          for (final entity in tempDir.listSync(followLinks: false)) {
+            if (entity is File) {
+              final path = entity.path.toLowerCase();
+              if (path.contains('thumb') ||
+                  path.endsWith('.webp') ||
+                  path.endsWith('.jpg') ||
+                  path.endsWith('.jpeg') ||
+                  path.contains('video') ||
+                  path.endsWith('.tmp')) {
+                try {
+                  entity.deleteSync();
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Temporary thumbnail file cleanup failed: $e');
+      }
 
       if (data != null) {
         VideoCacheManager.cacheThumbnail(url, data);

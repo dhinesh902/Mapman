@@ -99,6 +99,7 @@ class ProfileService extends ApiRoutes {
         'lat': shopDetail.lat,
         'long': shopDetail.long,
         'description': shopDetail.description,
+        'websiteLink': shopDetail.websiteLink,
         'openTime': shopDetail.openTime,
         'closeTime': shopDetail.closeTime,
         'address': shopDetail.address,

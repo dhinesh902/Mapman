@@ -44,6 +44,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       locationController,
       openTimeController,
       phoneNumberController,
+      websiteLinkController,
       whatsAppNumberController,
       shopNumberController,
       addNewCategoryController,
@@ -67,6 +68,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     placeController = context.read<PlaceController>();
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
+    websiteLinkController = TextEditingController();
     phoneNumberController = TextEditingController(
       text: getLast10Digits(SessionManager.getMobile() ?? ''),
     );
@@ -81,6 +83,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       homeController.setSelectedCategory = null;
       profileController.setIsActive = false;
       placeController.setSelectedShopLatLong = null;
+      profileController.setIsActiveWhatsappNumber = false;
     });
     super.initState();
   }
@@ -93,6 +96,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
     whatsAppNumberController.dispose();
     locationController.dispose();
     openTimeController.dispose();
+    websiteLinkController.dispose();
     closeTimeController.dispose();
     shopNumberController.dispose();
     addNewCategoryController.dispose();
@@ -134,6 +138,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
       lat: '${placeController.selectedShopLatLong?.latitude}',
       long: '${placeController.selectedShopLatLong?.longitude}',
       type: 'add',
+      websiteLink: websiteLinkController.text.trim(),
     );
     final response = await profileController.registerShop(
       shopImages: shopImages,
@@ -220,7 +225,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 hintText: 'Enter shop name / business name or service name',
                 inputAction: TextInputAction.next,
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter shop name";
                   }
                   return null;
@@ -271,7 +276,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                   }
                 },
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter shop address";
                   }
                   return null;
@@ -286,11 +291,18 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 inputAction: TextInputAction.next,
                 maxLines: 3,
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter description";
                   }
                   return null;
                 },
+              ),
+              SizedBox(height: 15),
+              CustomTextField(
+                controller: websiteLinkController,
+                title: 'Website Link (optional)',
+                hintText: 'Enter website link',
+                inputAction: TextInputAction.next,
               ),
               SizedBox(height: 15),
               CustomTextField(
@@ -303,8 +315,8 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 isReadOnly: true,
                 inputAction: TextInputAction.next,
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return "Please enter register email";
+                  if (value == null || value.trim().isEmpty) {
+                    return "Please enter register mobile";
                   }
                   return null;
                 },
@@ -326,15 +338,15 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       SessionManager.getMobile() ?? '',
                     );
                   } else {
-                    shopNumberController.clear();
+                    whatsAppNumberController.clear();
                   }
                 },
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter whatsapp number";
                   }
-                  if (value.length != 10) {
-                    return "Please enter 10 whatsapp number";
+                  if (value.trim().length != 10) {
+                    return "Please enter 10 digit whatsapp number";
                   }
                   return null;
                 },
@@ -360,10 +372,10 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 hintText: 'Enter shop contact number',
                 inputAction: TextInputAction.done,
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter shop contact number";
                   }
-                  if (value.length != 10) {
+                  if (value.trim().length != 10) {
                     return "Please enter 10 digit phone number";
                   }
                   return null;
@@ -381,7 +393,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       hintText: 'Select time',
                       isReadOnly: true,
                       validator: (value) {
-                        if (value!.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return "Please select open time";
                         }
                         return null;
@@ -405,7 +417,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       inputAction: TextInputAction.done,
                       isReadOnly: true,
                       validator: (value) {
-                        if (value!.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return "Please select close time";
                         }
                         return null;
@@ -582,10 +594,28 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       isDialogue: true,
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
-                          if (homeController.category == null) {
+                          // if (shopImageNotifier.value == null) {
+                          //   CustomToast.show(
+                          //     context,
+                          //     title: 'Please select shop image',
+                          //     isError: true,
+                          //   );
+                          //   return;
+                          // }
+                          if (shopNameController.text.isEmpty) {
+                            CustomToast.show(
+                              context,
+                              title: 'Please enter shop name',
+                              isError: true,
+                            );
+                            return;
+                          }
+                          if (homeController.category == null ||
+                              homeController.category!.trim().isEmpty) {
                             CustomToast.show(
                               context,
                               title: 'Please select category',
+                              isError: true,
                             );
                             return;
                           }

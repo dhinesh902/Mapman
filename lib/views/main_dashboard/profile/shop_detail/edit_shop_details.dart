@@ -53,12 +53,14 @@ class _EditShopDetailState extends State<EditShopDetail> {
       descriptionController,
       locationController,
       openTimeController,
+      websiteLinkController,
       phoneNumberController,
       shopNumberController,
       whatsAppNumberController,
       addNewCategoryController,
       closeTimeController;
 
+  late String _initialWebsiteLink;
   late String _initialShopName;
   late String _initialDescription;
   late String _initialShopNumber;
@@ -88,6 +90,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
     shopNameController = TextEditingController();
     descriptionController = TextEditingController();
     phoneNumberController = TextEditingController();
+    websiteLinkController = TextEditingController();
     addNewCategoryController = TextEditingController();
     shopNumberController = TextEditingController();
     locationController = TextEditingController();
@@ -109,6 +112,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
     phoneNumberController.dispose();
     whatsAppNumberController.dispose();
     locationController.dispose();
+    websiteLinkController.dispose();
     addNewCategoryController.dispose();
     openTimeController.dispose();
     closeTimeController.dispose();
@@ -128,6 +132,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
       shopDetailData.shopNumber ?? '',
     );
     locationController.text = shopDetailData.address ?? '';
+    websiteLinkController.text = shopDetailData.websiteLink ?? '';
     openTimeController.text = shopDetailData.openTime ?? '';
     closeTimeController.text = shopDetailData.closeTime ?? '';
     whatsAppNumberController.text = getLast10Digits(
@@ -155,6 +160,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
     _initialShopName = shopNameController.text;
     _initialDescription = descriptionController.text;
     _initialShopNumber = shopNumberController.text;
+    _initialWebsiteLink = websiteLinkController.text;
     _initialLocation = locationController.text;
     _initialOpenTime = openTimeController.text;
     _initialCloseTime = closeTimeController.text;
@@ -210,6 +216,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
       lat: lat ?? '',
       long: lng ?? '',
       type: 'update',
+      websiteLink: websiteLinkController.text.trim(),
       id: shopDetailData.id,
     );
 
@@ -258,10 +265,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
     CustomDialogues.showLoadingDialogue(context);
     final response = await profileController.deleteShop(shopId: shopId);
     if (!mounted) return;
-    
+
     // Pop the loading dialog
     Navigator.of(context, rootNavigator: true).pop();
-    
+
     if (response.status == Status.COMPLETED) {
       await CustomDialogues().showDeleteDialog(
         context,
@@ -305,6 +312,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
   bool hasChanges() {
     if (shopNameController.text != _initialShopName) return true;
     if (descriptionController.text != _initialDescription) return true;
+    if (websiteLinkController.text != _initialWebsiteLink) return true;
     // if (phoneNumberController.text != _initialPhoneNumber) return true;
     if (shopNumberController.text != _initialShopNumber) return true;
     if (locationController.text != _initialLocation) return true;
@@ -337,7 +345,26 @@ class _EditShopDetailState extends State<EditShopDetail> {
         await CustomDialogues().showUpdateReviewDialogue(
           context,
           onTap: () async {
-            await updateShopDetail();
+            if (formKey.currentState!.validate()) {
+              if (homeController.category == null ||
+                  homeController.category!.trim().isEmpty) {
+                CustomToast.show(
+                  context,
+                  title: 'Please select category',
+                  isError: true,
+                );
+                return;
+              }
+              Navigator.pop(context); // Pop the confirmation dialog
+              await updateShopDetail();
+            } else {
+              Navigator.pop(context); // Pop the confirmation dialog
+              CustomToast.show(
+                context,
+                title: 'Please fill all required fields correctly',
+                isError: true,
+              );
+            }
           },
         );
       },
@@ -355,7 +382,26 @@ class _EditShopDetailState extends State<EditShopDetail> {
               await CustomDialogues().showUpdateReviewDialogue(
                 context,
                 onTap: () async {
-                  await updateShopDetail();
+                  if (formKey.currentState!.validate()) {
+                    if (homeController.category == null ||
+                        homeController.category!.trim().isEmpty) {
+                      CustomToast.show(
+                        context,
+                        title: 'Please select category',
+                        isError: true,
+                      );
+                      return;
+                    }
+                    Navigator.pop(context); // Pop the confirmation dialog
+                    await updateShopDetail();
+                  } else {
+                    Navigator.pop(context); // Pop the confirmation dialog
+                    CustomToast.show(
+                      context,
+                      title: 'Please fill all required fields correctly',
+                      isError: true,
+                    );
+                  }
                 },
               );
             },
@@ -437,7 +483,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   hintText: 'Enter shop name / business name or service name',
                   inputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Please enter shop name";
                     }
                     return null;
@@ -512,7 +558,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                     }
                   },
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Please enter shop address";
                     }
                     return null;
@@ -526,7 +572,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                       'Describe about the product you\'re selling..or the service you\'re providing',
                   inputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Please enter description";
                     }
                     return null;
@@ -534,17 +580,24 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 ),
                 SizedBox(height: 15),
                 CustomTextField(
+                  controller: websiteLinkController,
+                  title: 'Website Link (optional)',
+                  hintText: 'Enter website link',
+                  inputAction: TextInputAction.next,
+                ),
+                SizedBox(height: 15),
+                CustomTextField(
                   controller: phoneNumberController,
-                  title: 'Register Email',
-                  hintText: 'Enter register email',
-                  inputType: TextInputType.emailAddress,
+                  title: 'Register Mobile',
+                  hintText: 'Enter register mobile',
+                  inputType: TextInputType.number,
                   maxLength: 10,
                   isReadOnly: true,
                   textCapitalization: TextCapitalization.none,
                   inputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.isEmpty) {
-                      return "Please enter register email";
+                    if (value == null || value.trim().isEmpty) {
+                      return "Please enter register mobile";
                     }
                     return null;
                   },
@@ -569,11 +622,11 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   },
                   inputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Please enter whatsapp number";
                     }
-                    if (value.length != 10) {
-                      return "Please enter 10 whatsapp number";
+                    if (value.trim().length != 10) {
+                      return "Please enter 10 digit whatsapp number";
                     }
                     return null;
                   },
@@ -598,10 +651,10 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   hintText: 'Enter shop contact number',
                   inputAction: TextInputAction.done,
                   validator: (value) {
-                    if (value!.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Please enter shop contact number";
                     }
-                    if (value.length != 10) {
+                    if (value.trim().length != 10) {
                       return "Please enter 10 digit phone number";
                     }
                     return null;
@@ -619,7 +672,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         hintText: 'Select time',
                         isReadOnly: true,
                         validator: (value) {
-                          if (value!.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return "Please select open time";
                           }
                           return null;
@@ -645,7 +698,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         inputAction: TextInputAction.done,
                         isReadOnly: true,
                         validator: (value) {
-                          if (value!.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return "Please select close time";
                           }
                           return null;
@@ -834,10 +887,20 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         isDialogue: true,
                         onTap: () async {
                           if (formKey.currentState!.validate()) {
-                            if (homeController.category == null) {
+                            if (shopNameController.text.isEmpty) {
+                              CustomToast.show(
+                                context,
+                                title: 'Please enter shop name',
+                                isError: true,
+                              );
+                              return;
+                            }
+                            if (homeController.category == null ||
+                                homeController.category!.trim().isEmpty) {
                               CustomToast.show(
                                 context,
                                 title: 'Please select category',
+                                isError: true,
                               );
                               return;
                             }

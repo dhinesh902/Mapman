@@ -56,7 +56,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(
-          title: 'Shop List',
+          title: 'Listings',
           action: Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: InkWell(
@@ -87,7 +87,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
                     ),
                     const SizedBox(width: 6),
                     const BodyTextColors(
-                      title: 'Add Shop',
+                      title: 'Add',
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppColors.whiteText,
