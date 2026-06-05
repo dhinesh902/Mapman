@@ -49,7 +49,7 @@ class _MapsState extends State<Maps> {
   double _currentZoom = 12.5;
   bool isClicking = false;
   String? _mapStyle;
-  
+
   ApiResponse<List<ShopSearchData>>? _lastShopSearchData;
 
   /// Current Location notifier
@@ -363,15 +363,16 @@ class _MapsState extends State<Maps> {
     path.close();
 
     /// BACKGROUND
+    final Color baseColor = _categoryColors[category] ?? const Color(0xFF7B1FA2);
     final fillPaint = Paint()
-      ..color = Colors.white
+      ..color = Color.lerp(baseColor, Colors.white, 0.9)!
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(path, fillPaint);
 
     /// NORMAL BORDER
     final borderPaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
+      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -382,7 +383,7 @@ class _MapsState extends State<Maps> {
 
     /// CIRCLE FILL
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
+      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -428,7 +429,7 @@ class _MapsState extends State<Maps> {
 
     /// Fill
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFFFF7043)
+      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -462,7 +463,7 @@ class _MapsState extends State<Maps> {
     'theater',
     'restaurant',
     'hospital',
-    'bars',
+    'bar',
     'grocery',
     'textile',
     'resort',
@@ -476,20 +477,20 @@ class _MapsState extends State<Maps> {
   ];
 
   final Map<String, Color> _categoryColors = {
-    'theater': Color(0xFF7B1FA2), // Purple
-    'restaurant': Color(0xFFF4511E), // Orange
+    'theater': Color(0xFFFF7043), // Purple
+    'restaurant': Color(0xFF1E88E5), // Orange
     'hospital': Color(0xFFD32F2F), // Red
-    'bars': Color(0xFF8D6E63), // Brown
+    'bar': Color(0xFF6D4C41), // Brown
     'grocery': Color(0xFF43A047), // Green
-    'textile': Color(0xFFE91E63), // Pink
-    'resort': Color(0xFF00897B), // Teal
+    'textile': Color(0xFFEC407A), // Pink
+    'resort': Color(0xFF004D40), // Teal
     'bunk': Color(0xFFFFA000), // Amber
     'spa': Color(0xFFAD1457), // Rose Pink
-    'hotel': Color(0xFF6A1B9A), // Deep Purple
+    'hotel': Color(0xFF283593), // Deep Purple
     'jewellery': Color(0xFFFF7043), // Coral
-    'furniture': Color(0xFF26A69A), // Aqua Green
+    'furniture': Color(0xFF00ACC1), // Aqua Green
     'salons': Color(0xFF7CB342), // Lime Green
-    'others': Color(0xFFFF7043), // Soft Brown
+    'others': Color(0xFF7B1FA2), // Soft Brown
   };
 
   // Set<Marker> getMarkers() {
@@ -684,7 +685,7 @@ class _MapsState extends State<Maps> {
   @override
   Widget build(BuildContext context) {
     homeController = context.watch<HomeController>();
-    
+
     if (_lastShopSearchData != homeController.shopSearchData) {
       _lastShopSearchData = homeController.shopSearchData;
       if (homeController.shopSearchData.status == Status.COMPLETED) {
@@ -1323,7 +1324,7 @@ class LocationShopContainer extends StatelessWidget {
         "https://img.freepik.com/free-vector/cafe-restaurant-interior_107791-30184.jpg",
     "hospital":
         "https://static.vecteezy.com/system/resources/previews/005/317/601/non_2x/elderly-patient-in-front-the-hospital-vector.jpg",
-    "bars":
+    "bar":
         "https://img.freepik.com/free-vector/bar-table-pub-interior-cartoon-background_107791-28898.jpg?semt=ais_incoming&w=740&q=80",
     "grocery":
         "https://img.freepik.com/premium-photo/supermarket-business-vertical-poster-template_1257223-126129.jpg",

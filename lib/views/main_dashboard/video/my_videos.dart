@@ -444,21 +444,6 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              /// Background watermark
-              Center(
-                child: Opacity(
-                  opacity: 0.10,
-                  child: Image.asset(
-                    AppIcons.videoClipP,
-                    height: 60,
-                    width: 60,
-                    fit: BoxFit.contain,
-                    cacheWidth: 120,
-                    cacheHeight: 120,
-                  ),
-                ),
-              ),
-
               /// Thumbnail
               if (_thumbnailData != null)
                 Positioned.fill(

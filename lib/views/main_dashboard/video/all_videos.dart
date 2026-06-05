@@ -285,13 +285,13 @@ class ParticularShopVideoList extends StatelessWidget {
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                             child: Container(
-                              width: 44,
-                              height: 44,
+                              width: 35,
+                              height: 35,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1,
+                                  width: 2,
                                 ),
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
@@ -333,33 +333,33 @@ class ParticularShopVideoList extends StatelessWidget {
                             ),
                           ),
                         ),
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SvgPicture.asset(
-                              AppIcons.eye,
-                              height: 12,
-                              width: 12,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            BodyTextColors(
-                              title: formatViewCount(
-                                video.viewCount ?? video.views ?? 0,
-                              ),
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Positioned(
+                      //   bottom: 8,
+                      //   left: 8,
+                      //   child: Row(
+                      //     mainAxisSize: MainAxisSize.min,
+                      //     children: [
+                      //       SvgPicture.asset(
+                      //         AppIcons.eye,
+                      //         height: 12,
+                      //         width: 12,
+                      //         colorFilter: const ColorFilter.mode(
+                      //           Colors.white,
+                      //           BlendMode.srcIn,
+                      //         ),
+                      //       ),
+                      //       const SizedBox(width: 4),
+                      //       BodyTextColors(
+                      //         title: formatViewCount(
+                      //           video.viewCount ?? video.views ?? 0,
+                      //         ),
+                      //         color: Colors.white,
+                      //         fontSize: 10,
+                      //         fontWeight: FontWeight.w400,
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                 );
