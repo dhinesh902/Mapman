@@ -2,13 +2,13 @@ import 'dart:ui';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -18,9 +18,9 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
-import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
+import 'package:mapman/views/widgets/looped_media_preview.dart';
 import 'package:provider/provider.dart';
 
 class Videos extends StatefulWidget {
@@ -719,92 +719,120 @@ class VideoHeadingContainer extends StatelessWidget {
 //   }
 // }
 
-class AllVideosCard extends StatelessWidget {
+class AllVideosCard extends StatefulWidget {
   const AllVideosCard({super.key, required this.categoryVideoData});
 
   final List<CategoryVideosData> categoryVideoData;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: SingleChildScrollView(
-        child: StaggeredGrid.count(
-          crossAxisCount: 4,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
-          children: _buildGridItems(context),
-        ),
-      ),
-    );
+  State<AllVideosCard> createState() => _AllVideosCardState();
+}
+
+class _AllVideosCardState extends State<AllVideosCard> {
+  late List<_RowData> _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _groupItems();
   }
 
-  List<Widget> _buildGridItems(BuildContext context) {
-    List<Widget> tiles = [];
+  @override
+  void didUpdateWidget(covariant AllVideosCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categoryVideoData != widget.categoryVideoData) {
+      _groupItems();
+    }
+  }
+
+  void _groupItems() {
+    _rows = [];
     int i = 0;
     int row = 0;
 
-    while (i < categoryVideoData.length) {
+    while (i < widget.categoryVideoData.length) {
       bool isOddRow = row % 2 == 0;
 
       if (isOddRow) {
         bool isLeftBig = (row ~/ 2) % 3 == 0;
-
-        if (i < categoryVideoData.length) {
-          tiles.add(
-            StaggeredGridTile.count(
-              crossAxisCellCount: isLeftBig ? 3 : 1,
-              mainAxisCellCount: 2,
-              child: _buildItem(context, i),
-            ),
-          );
+        int leftIdx = i;
+        i++;
+        int? rightIdx;
+        if (i < widget.categoryVideoData.length) {
+          rightIdx = i;
           i++;
         }
-
-        if (i < categoryVideoData.length) {
-          tiles.add(
-            StaggeredGridTile.count(
-              crossAxisCellCount: isLeftBig ? 1 : 3,
-              mainAxisCellCount: 2,
-              child: _buildItem(context, i),
-            ),
-          );
-          i++;
-        }
+        _rows.add(_RowData(
+          isSingle: false,
+          isLeftBig: isLeftBig,
+          leftIndex: leftIdx,
+          rightIndex: rightIdx,
+        ));
       } else {
-        tiles.add(
-          StaggeredGridTile.count(
-            crossAxisCellCount: 4,
-            mainAxisCellCount: 2,
-            child: _buildItem(context, i),
-          ),
-        );
+        _rows.add(_RowData(
+          isSingle: true,
+          isLeftBig: false,
+          leftIndex: i,
+        ));
         i++;
       }
-
       row++;
     }
+  }
 
-    tiles.add(
-      const StaggeredGridTile.count(
-        crossAxisCellCount: 4,
-        mainAxisCellCount: 1.2,
-        child: SizedBox(),
+  @override
+  Widget build(BuildContext context) {
+    if (_rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: 100),
+        itemCount: _rows.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 2),
+        itemBuilder: (context, index) {
+          final rowData = _rows[index];
+          return AspectRatio(
+            aspectRatio: 2.0, // aspect ratio matching standard staggered cell structure
+            child: rowData.isSingle
+                ? _buildItem(context, rowData.leftIndex)
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: rowData.isLeftBig ? 3 : 1,
+                        child: _buildItem(context, rowData.leftIndex),
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        flex: rowData.isLeftBig ? 1 : 3,
+                        child: rowData.rightIndex != null
+                            ? _buildItem(context, rowData.rightIndex!)
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+          );
+        },
       ),
     );
-
-    return tiles;
   }
 
   Widget _buildItem(BuildContext context, int index) {
-    final data = categoryVideoData[index];
+    final data = widget.categoryVideoData[index];
+    final String videoPath = data.categoryVideo ?? '';
+    final String videoUrl = videoPath.startsWith('http')
+        ? videoPath
+        : '${ApiRoutes.baseUrl}$videoPath';
 
     return InkWell(
       onTap: () {
         final token = SessionManager.getToken();
         if (token != null) {
           context.read<VideoController>().setSelectedCategory =
-              categoryVideoData[index].categoryName?.capitalize() ?? '';
+              data.categoryName?.capitalize() ?? '';
           context.pushNamed(AppRoutes.allVideos);
         } else {
           LoginBottomSheet.showLoginBottomSheet(context);
@@ -816,9 +844,17 @@ class AllVideosCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: CustomNetworkImage(
-                imageUrl: data.categoryVideo ?? '',
-                showProgressIndicator: false,
+              child: LoopedMediaPreview(
+                mediaUrl: videoUrl,
+                placeholder: Container(
+                  color: GenericColors.placeHolderGrey,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      AppIcons.galleryPlaceholder,
+                      height: 36,
+                    ),
+                  ),
+                ),
               ),
             ),
 
@@ -855,4 +891,18 @@ class AllVideosCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RowData {
+  final bool isSingle;
+  final bool isLeftBig;
+  final int leftIndex;
+  final int? rightIndex;
+
+  _RowData({
+    required this.isSingle,
+    required this.isLeftBig,
+    required this.leftIndex,
+    this.rightIndex,
+  });
 }
