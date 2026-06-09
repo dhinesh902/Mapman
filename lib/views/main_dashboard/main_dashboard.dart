@@ -5,8 +5,6 @@ import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/utils/handlers/api_response.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:dio/dio.dart';
-import 'package:mapman/routes/api_routes.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

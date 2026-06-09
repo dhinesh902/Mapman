@@ -5,8 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mapman/controller/video_controller.dart';
-import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -23,9 +21,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
-import 'package:provider/provider.dart';
-import 'package:mapman/controller/profile_controller.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 
 class MyVideos extends StatelessWidget {
   const MyVideos({super.key, required this.myVideos});

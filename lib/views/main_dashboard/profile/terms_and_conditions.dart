@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
@@ -17,7 +18,7 @@ class _TermsAndConditionsState extends State<TermsAndConditions> {
   late WebViewController _controller;
   bool _isLoading = true;
   final String _url =
-      'https://mapman-production.up.railway.app/terms-and-condtions';
+      '${ApiRoutes.baseUrl}/terms-and-condtions';
 
   @override
   void initState() {

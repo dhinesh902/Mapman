@@ -184,7 +184,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     try {
       if (!videoPlayerController.value.initialized) return;
 
-      if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.inactive) {
         if (videoPlayerController.value.isPlaying) {
           controller.pause();
           _isPlayingNotifier.value = false;
@@ -230,7 +231,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
           minBufferMs: 2500, // Balanced minimum buffer
           maxBufferMs: 6000, // Keep RAM footprint low
-          bufferForPlaybackMs: 400, // Balanced buffer to play quickly and smoothly
+          bufferForPlaybackMs:
+              400, // Balanced buffer to play quickly and smoothly
           bufferForPlaybackAfterRebufferMs: 1200,
         ),
       );
@@ -239,7 +241,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         BetterPlayerConfiguration(
           autoPlay: false,
           looping: true,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           expandToFill: true,
           aspectRatio: 9 / 16,
           handleLifecycle: false,
@@ -384,7 +386,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
     // Signal readiness so the cell rebuilds and shows the video surface.
     _readyMap[index] ??= ValueNotifier(false);
-    _readyMap[index]!.value = true;
+    if (!alreadyInitialized) {
+      _readyMap[index]!.value = false;
+    }
 
     _isPlayingNotifier.value = true;
   }
@@ -418,7 +422,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     // Wait for the active video's controller to finish initializing.
     // This allows the active video to utilize 100% of the network bandwidth at startup.
     int timeoutCount = 0;
-    while (timeoutCount < 20) { // Max 2 seconds timeout (20 * 100ms)
+    while (timeoutCount < 20) {
+      // Max 2 seconds timeout (20 * 100ms)
       if (index != _currentIndex || _isDisposed) return;
       final currentController = _controllers[index];
       if (currentController != null &&
@@ -668,7 +673,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundDark,
+      backgroundColor: AppColors.darkText,
       body: PageView.builder(
         controller: _pageController,
         scrollDirection: Axis.vertical,
@@ -682,7 +687,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           final String videoUrl = videoPath.startsWith('http')
               ? videoPath
               : '${ApiRoutes.baseUrl}$videoPath';
-          final cachedThumbnail = VideoCacheManager.getCachedThumbnail(videoUrl);
+          final cachedThumbnail = VideoCacheManager.getCachedThumbnail(
+            videoUrl,
+          );
 
           if (!_bookmarkMap.containsKey(videoId)) {
             _bookmarkMap[videoId] = ValueNotifier(video.savedAlready ?? false);
@@ -698,11 +705,13 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
             valueListenable: readyNotifier,
             builder: (context, isReady, _) {
               final controller = _controllers[index];
-              final bool isControllerValid = controller != null &&
+              final bool isControllerValid =
+                  controller != null &&
                   !_disposedControllers.contains(controller);
 
               // Check if controller is already initialized.
-              final bool initiallyReady = isControllerValid &&
+              final bool initiallyReady =
+                  isControllerValid &&
                   controller.videoPlayerController != null &&
                   controller.videoPlayerController!.value.initialized;
 
@@ -751,36 +760,30 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                     },
                     child: shouldShowVideo
                         ? Platform.isIOS
-                            // On iOS, FittedBox+SizedBox with raw pixel
-                            // dimensions breaks AVPlayerLayer attachment
-                            // (audio plays but video stays black).
-                            // AspectRatio lets the native layer render
-                            // correctly without fighting Flutter's layout.
-                            ? AspectRatio(
-                                aspectRatio: videoWidth / videoHeight,
-                                child: BetterPlayer(controller: controller!),
-                              )
-                            : FittedBox(
-                                fit: BoxFit.cover,
-                                child: SizedBox(
-                                  width: videoWidth,
-                                  height: videoHeight,
+                              // On iOS, FittedBox+SizedBox with raw pixel
+                              // dimensions breaks AVPlayerLayer attachment
+                              // (audio plays but video stays black).
+                              // AspectRatio lets the native layer render
+                              // correctly without fighting Flutter's layout.
+                              ? AspectRatio(
+                                  aspectRatio: videoWidth / videoHeight,
                                   child: BetterPlayer(controller: controller!),
-                                ),
-                              )
+                                )
+                              : AspectRatio(
+                                  aspectRatio: videoWidth / videoHeight,
+                                  child: BetterPlayer(controller: controller!),
+                                )
                         : Container(
-                            color: AppColors.scaffoldBackgroundDark,
+                            color: AppColors.darkText,
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
                                 if (cachedThumbnail != null)
                                   Image.memory(
                                     cachedThumbnail,
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.contain,
                                   ),
-                                const Center(
-                                  child: CustomLoadingIndicator(),
-                                ),
+                                const Center(child: CustomLoadingIndicator()),
                               ],
                             ),
                           ),

@@ -280,36 +280,10 @@ class ParticularShopVideoList extends StatelessWidget {
                         isAllVideos: true,
                       ),
                       Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(50),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                            child: Container(
-                              width: 35,
-                              height: 35,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 2,
-                                ),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withValues(alpha: 0.4),
-                                    Colors.white.withValues(alpha: 0.1),
-                                  ],
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.play_arrow,
-                                size: 26,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          size: 26,
+                          color: Colors.white,
                         ),
                       ),
                       if (video.watched ?? false)
@@ -378,4 +352,3 @@ class ParticularShopVideoList extends StatelessWidget {
     );
   }
 }
-

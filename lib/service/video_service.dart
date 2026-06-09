@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
-import 'package:mapman/utils/storage/session_manager.dart';
 
 class VideoService extends ApiRoutes {
   Future<Map<String, dynamic>> uploadMyVideos({

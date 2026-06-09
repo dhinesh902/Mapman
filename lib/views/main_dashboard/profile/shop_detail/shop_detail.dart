@@ -318,16 +318,63 @@ class ShopDetailContainer extends StatelessWidget {
     ].where((e) => e != null && e.trim().isNotEmpty).cast<String>().toList();
 
     bool isShopClosed() {
-      final now = TimeOfDay.now();
+      try {
+        if ((shop.openTime ?? '').trim().isEmpty ||
+            (shop.closeTime ?? '').trim().isEmpty) {
+          return false;
+        }
 
-      final openTime = const TimeOfDay(hour: 9, minute: 30);
-      final closeTime = const TimeOfDay(hour: 18, minute: 30);
+        int convertToMinutes(String value) {
+          value = value.trim().toUpperCase();
 
-      int nowMinutes = now.hour * 60 + now.minute;
-      int openMinutes = openTime.hour * 60 + openTime.minute;
-      int closeMinutes = closeTime.hour * 60 + closeTime.minute;
+          bool isPM = value.contains('PM');
+          bool isAM = value.contains('AM');
 
-      return nowMinutes < openMinutes || nowMinutes > closeMinutes;
+          value = value.replaceAll('AM', '').replaceAll('PM', '').trim();
+
+          final parts = value.split(':');
+
+          int hour = int.parse(parts[0]);
+
+          int minute = 0;
+          if (parts.length > 1) {
+            minute = int.parse(parts[1]);
+          }
+
+          if (isPM && hour < 12) {
+            hour += 12;
+          }
+
+          if (isAM && hour == 12) {
+            hour = 0;
+          }
+
+          return hour * 60 + minute;
+        }
+
+        final now = TimeOfDay.now();
+        final nowMinutes = now.hour * 60 + now.minute;
+
+        final openMinutes = convertToMinutes(shop.openTime!);
+        final closeMinutes = convertToMinutes(shop.closeTime!);
+
+        bool isOpen;
+
+        if (openMinutes < closeMinutes) {
+          // same day
+          isOpen = nowMinutes >= openMinutes && nowMinutes < closeMinutes;
+        } else {
+          // overnight
+          isOpen = nowMinutes >= openMinutes || nowMinutes < closeMinutes;
+        }
+
+        return !isOpen;
+      } catch (e) {
+        debugPrint('TIME ERROR => $e');
+        debugPrint('OPEN => ${shop.openTime}');
+        debugPrint('CLOSE => ${shop.closeTime}');
+        return false;
+      }
     }
 
     return Column(
@@ -379,6 +426,39 @@ class ShopDetailContainer extends StatelessWidget {
                     ),
                   ),
                 ),
+              ] else ...[
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: GenericColors.darkGreen,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          AppIcons.videoShop,
+                          height: 16,
+                          width: 16,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.whiteText,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        BodyTextColors(
+                          title: 'Shop Open',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.whiteText,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -419,11 +499,11 @@ class ShopDetailContainer extends StatelessWidget {
               if (shop.websiteLink != null && shop.websiteLink!.isNotEmpty) ...[
                 SizedBox(height: 15),
                 CustomTextFieldContainer(
-                  title: 'Website Link',
+                  title: 'Website',
                   onTap: () async {
                     await CustomLaunchers.openWebsite(url: shop.websiteLink!);
                   },
-                  child: HeaderTextBlack(
+                  child: HeaderTextPrimary(
                     title: shop.websiteLink ?? '',
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -582,8 +662,7 @@ class ShopVideosList extends StatelessWidget {
                     );
                   },
                   child: MyVideoContainer(
-                    videoUrl:
-                        shopVideos[index].video ?? '',
+                    videoUrl: shopVideos[index].video ?? '',
                     views: '${shopVideos[index].views ?? 0}',
                   ),
                 ),
