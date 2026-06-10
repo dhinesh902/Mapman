@@ -15,6 +15,8 @@ import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
 import 'package:provider/provider.dart';
 
 class ShopListScreen extends StatefulWidget {
@@ -100,47 +102,54 @@ class _ShopListScreenState extends State<ShopListScreen> {
         ),
         body: Builder(
           builder: (context) {
-            switch (profileController.shopListData.status) {
-              case Status.INITIAL:
-              case Status.LOADING:
-                return CustomLoadingIndicator();
-              case Status.COMPLETED:
-                final shopList = profileController.shopListData.data ?? [];
-                if (shopList.isEmpty) {
-                  return EmptyDataContainer(
-                    children: [
-                      Image.asset(AppIcons.shopP, height: 130, width: 130),
-                      const SizedBox(height: 20),
-                      BodyTextColors(
-                        title: 'You don\'t have any shops yet.',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        textAlign: TextAlign.center,
-                        color: AppColors.lightGreyHint,
-                      ),
-                    ],
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  itemCount: shopList.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: ProfessionalShopCard(
-                        shopDetailData: shopList[index],
-                      ),
-                    );
-                  },
-                );
-              case Status.ERROR:
-                return CustomErrorTextWidget(
-                  title: '${profileController.shopListData.message}',
-                );
+            final isLoading =
+                profileController.shopListData.status == Status.INITIAL ||
+                profileController.shopListData.status == Status.LOADING;
+
+            if (profileController.shopListData.status == Status.ERROR) {
+              return CustomErrorTextWidget(
+                title: '${profileController.shopListData.message}',
+              );
             }
+
+            final shopList = profileController.shopListData.data ?? [];
+
+            if (shopList.isEmpty && !isLoading) {
+              return EmptyDataContainer(
+                children: [
+                  Image.asset(AppIcons.shopP, height: 130, width: 130),
+                  const SizedBox(height: 20),
+                  BodyTextColors(
+                    title: 'You don\'t have any shops yet.',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    textAlign: TextAlign.center,
+                    color: AppColors.lightGreyHint,
+                  ),
+                ],
+              );
+            }
+
+            return Skeletonizer(
+              enabled: isLoading,
+              child: isLoading
+                  ? const ShopListSkeleton()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      itemCount: shopList.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: ProfessionalShopCard(
+                            shopDetailData: shopList[index],
+                          ),
+                        );
+                      },
+                    ),
+            );
           },
         ),
       ),

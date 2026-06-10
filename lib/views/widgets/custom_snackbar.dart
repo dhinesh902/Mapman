@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class CustomToast {
   static show(
@@ -59,14 +60,15 @@ class CustomLoadingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: SizedBox(
-        height: height,
-        width: height,
-        child: CircularProgressIndicator(
-          color: AppColors.primary,
-          strokeCap: StrokeCap.round,
-          backgroundColor: AppColors.primaryBorder.withValues(alpha: .2),
-          strokeWidth: strokeWidth,
+      child: Skeletonizer(
+        enabled: true,
+        child: Container(
+          height: height,
+          width: height,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
     );

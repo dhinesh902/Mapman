@@ -3,6 +3,7 @@ class VideosData {
   int? profileId;
   int? shopId;
   String? video;
+  String? thumbnail;
   String? videoTitle;
   String? whatsappNumber;
   String? shopName;
@@ -21,6 +22,7 @@ class VideosData {
     this.profileId,
     this.shopId,
     this.video,
+    this.thumbnail,
     this.videoTitle,
     this.whatsappNumber,
     this.shopName,
@@ -40,6 +42,7 @@ class VideosData {
     profileId = json['profileId'];
     shopId = json['shopId'];
     video = json['video'];
+    thumbnail = json['thumbnail'];
     videoTitle = json['videoTitle'];
     whatsappNumber = json['whatsappNumber'];
     shopName = json['shopName'];

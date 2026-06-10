@@ -168,24 +168,35 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
 
     final videoPath = videosData.video;
     if (videoPath == null || videoPath.isEmpty) return;
-    
+
     final String videoUrl = videoPath.startsWith('http')
         ? videoPath
         : '${ApiRoutes.baseUrl}$videoPath';
 
     try {
       if (Platform.isAndroid) {
+        final isHls = videoUrl.contains('.m3u8');
+        final isDash = videoUrl.contains('.mpd');
+
         final dataSource = BetterPlayerDataSource(
           BetterPlayerDataSourceType.network,
           videoUrl,
+          videoFormat: isHls
+              ? BetterPlayerVideoFormat.hls
+              : (isDash ? BetterPlayerVideoFormat.dash : null),
+          useAsmsSubtitles: false,
+          useAsmsTracks: true,
+          useAsmsAudioTracks: true,
           cacheConfiguration: const BetterPlayerCacheConfiguration(
-            useCache: false,
+            useCache: true,
+            maxCacheSize: 300 * 1024 * 1024,
+            maxCacheFileSize: 50 * 1024 * 1024,
           ),
           bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-            minBufferMs: 2000,
-            maxBufferMs: 10000,
-            bufferForPlaybackMs: 1000,
-            bufferForPlaybackAfterRebufferMs: 2000,
+            minBufferMs: 500, // Low buffer for fast startup
+            maxBufferMs: 30000, // Large buffer for higher quality loading
+            bufferForPlaybackMs: 100, // Instant playback threshold
+            bufferForPlaybackAfterRebufferMs: 500,
           ),
         );
 
@@ -201,6 +212,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
             allowedScreenSleep: false,
             controlsConfiguration: BetterPlayerControlsConfiguration(
               showControls: false,
+              loadingWidget: SizedBox.shrink(),
             ),
           ),
           betterPlayerDataSource: dataSource,
@@ -341,7 +353,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundDark,
+      backgroundColor: AppColors.darkText,
       appBar:
           (videoController.videoByIdData.status == Status.LOADING ||
               videoController.videoByIdData.data != null)
@@ -369,7 +381,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                 );
               }
               if (_player == null || !_isInitialized) {
-                return CustomLoadingIndicator();
+                return Container(color: AppColors.darkText);
               }
               return Stack(
                 fit: StackFit.expand,
@@ -516,177 +528,206 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                               GenericColors.darkGreen,
                             ),
                           ),
-                          Container(
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  AppColors.whiteText,
-                                  GenericColors.lightPrimary,
-                                ],
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Flexible(
-                                            child: InkWell(
-                                              onTap: () {
-                                                if (_player != null &&
-                                                    _isInitialized) {
-                                                  _player!.pause();
-                                                }
-                                                context.pushNamed(
-                                                  AppRoutes.shopDetail,
-                                                  extra: videosData.shopId,
-                                                );
-                                              },
-                                              child: HeaderTextBlack(
-                                                title:
-                                                    videosData.shopName
-                                                        ?.capitalize() ??
-                                                    '',
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w400,
-                                                textDecoration:
-                                                    TextDecoration.underline,
-                                                decorationColor:
-                                                    AppColors.darkText,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.visible,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          if (videosData.watched == true &&
-                                              !isMyVideos)
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Center(
-                                                child: BodyTextColors(
-                                                  title: 'Watched',
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w400,
-                                                  color: AppColors.whiteText,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
+                          ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                              child: Container(
+                                padding: EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: AppColors.whiteText.withValues(
+                                        alpha: 0.12,
                                       ),
-                                      SizedBox(height: 8),
-                                      BodyTextHint(
-                                        title:
-                                            videosData.description
-                                                ?.capitalize() ??
-                                            '',
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w400,
-                                        maxLines: 2,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppColors.whiteText.withValues(
+                                        alpha: 0.10,
                                       ),
-                                      // SizedBox(height: 8),
-                                      // BodyTextHint(
-                                      //   title:
-                                      //       '+91 ${videosData.whatsappNumber}',
-                                      //   fontSize: 12,
-                                      //   fontWeight: FontWeight.w400,
-                                      // ),
+                                      GenericColors.lightPrimary.withValues(
+                                        alpha: 0.05,
+                                      ),
                                     ],
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                if (!isMyVideos) ...[
-                                  Row(
-                                    children: [
-                                      CircleContainer(
-                                        onTap: () async {
-                                          await CustomLaunchers.openWhatsApp(
-                                            phoneNumber:
-                                                '${videosData.whatsappNumber}',
-                                          );
-                                        },
-                                        child: Image.asset(
-                                          AppIcons.whatsappP,
-                                          height: 30,
-                                          width: 30,
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      ValueListenableBuilder<bool>(
-                                        valueListenable: bookMarkNotifier,
-                                        builder: (context, isBookmarked, _) {
-                                          return CircleContainer(
-                                            onTap: () async {
-                                              final bool updatedStatus =
-                                                  !isBookmarked;
-
-                                              // Optimistic UI update
-                                              bookMarkNotifier.value =
-                                                  updatedStatus;
-
-                                              final profileController = context.read<ProfileController>();
-
-                                              try {
-                                                await videoController
-                                                    .addSavedVideos(
-                                                      videoId:
-                                                          videosData.id ?? 0,
-                                                      status: updatedStatus
-                                                          ? 'active'
-                                                          : 'inactive',
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Flexible(
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    if (_player != null &&
+                                                        _isInitialized) {
+                                                      _player!.pause();
+                                                    }
+                                                    context.pushNamed(
+                                                      AppRoutes.shopDetail,
+                                                      extra: videosData.shopId,
                                                     );
-
-                                                await profileController
-                                                    .saveShop(
-                                                      shopId:
-                                                          videosData.shopId ??
-                                                          0,
-                                                      status: updatedStatus
-                                                          ? 'active'
-                                                          : 'inactive',
-                                                    );
-                                              } catch (e) {
-                                                bookMarkNotifier.value =
-                                                    isBookmarked;
-                                              }
-                                            },
-                                            child: isBookmarked
-                                                ? Image.asset(
-                                                    AppIcons.bookmarkP,
-                                                    height: 30,
-                                                    width: 30,
-                                                  )
-                                                : const Icon(
-                                                    Icons
-                                                        .bookmark_border_outlined,
-                                                    size: 30,
-                                                    color: AppColors.darkGrey,
+                                                  },
+                                                  child: BodyTextColors(
+                                                    title:
+                                                        videosData.shopName
+                                                            ?.capitalize() ??
+                                                        '',
+                                                    fontSize: 16,
+                                                    color: AppColors.whiteText,
+                                                    fontWeight: FontWeight.w400,
+                                                    textDecoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                    decorationColor:
+                                                        AppColors.whiteText,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.visible,
                                                   ),
-                                          );
-                                        },
+                                                ),
+                                              ),
+                                              SizedBox(width: 10),
+                                              if (videosData.watched == true &&
+                                                  !isMyVideos)
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                  ),
+                                                  child: Center(
+                                                    child: BodyTextColors(
+                                                      title: 'Watched',
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      color:
+                                                          AppColors.whiteText,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 8),
+                                          BodyTextColors(
+                                            title:
+                                                videosData.description
+                                                    ?.capitalize() ??
+                                                '',
+                                            fontSize: 12,
+                                            color: AppColors.whiteText,
+                                            fontWeight: FontWeight.w400,
+                                            maxLines: 1,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    if (!isMyVideos) ...[
+                                      Row(
+                                        children: [
+                                          CircleContainer(
+                                            onTap: () async {
+                                              if (_player != null &&
+                                                  _isInitialized) {
+                                                _player!.pause();
+                                              }
+                                              context.pushNamed(
+                                                AppRoutes.shopDetail,
+                                                extra: videosData.shopId,
+                                              );
+                                            },
+                                            child: Icon(
+                                              Icons.info,
+                                              color: AppColors.primary,
+                                              size: 25,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          ValueListenableBuilder<bool>(                                            valueListenable: bookMarkNotifier,
+                                            builder: (context, isBookmarked, _) {
+                                              return CircleContainer(
+                                                onTap: () async {
+                                                  final bool updatedStatus =
+                                                      !isBookmarked;
+
+                                                  // Optimistic UI update
+                                                  bookMarkNotifier.value =
+                                                      updatedStatus;
+
+                                                  final profileController =
+                                                      context
+                                                          .read<
+                                                            ProfileController
+                                                          >();
+
+                                                  try {
+                                                    await videoController
+                                                        .addSavedVideos(
+                                                          videoId:
+                                                              videosData.id ??
+                                                              0,
+                                                          status: updatedStatus
+                                                              ? 'active'
+                                                              : 'inactive',
+                                                        );
+
+                                                    await profileController
+                                                        .saveShop(
+                                                          shopId:
+                                                              videosData
+                                                                  .shopId ??
+                                                              0,
+                                                          status: updatedStatus
+                                                              ? 'active'
+                                                              : 'inactive',
+                                                        );
+                                                  } catch (e) {
+                                                    bookMarkNotifier.value =
+                                                        isBookmarked;
+                                                  }
+                                                },
+                                                child: isBookmarked
+                                                    ? Image.asset(
+                                                        AppIcons.bookmarkP,
+                                                        height: 25,
+                                                        width: 25,
+                                                      )
+                                                    : const Icon(
+                                                        Icons
+                                                            .bookmark_border_outlined,
+                                                        size: 25,
+                                                        color:
+                                                            AppColors.darkGrey,
+                                                      ),
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
                                     ],
-                                  ),
-                                ],
-                              ],
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -952,8 +993,8 @@ class CircleContainer extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 52,
-        width: 52,
+        height: 40,
+        width: 40,
         decoration: BoxDecoration(
           border: Border.all(color: GenericColors.borderGrey),
           shape: BoxShape.circle,

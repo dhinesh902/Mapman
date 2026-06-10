@@ -14,6 +14,7 @@ import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
 import 'package:provider/provider.dart';
 
 class AllVideos extends StatefulWidget {
@@ -153,7 +154,7 @@ class _AllVideosState extends State<AllVideos> {
             switch (videoController.allVideosData.status) {
               case Status.INITIAL:
               case Status.LOADING:
-                return const CustomLoadingIndicator();
+                return const AllVideosSkeleton();
 
               case Status.COMPLETED:
                 final allVideo = videoController.allVideosData.data ?? [];
@@ -274,42 +275,16 @@ class ParticularShopVideoList extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       MyVideoContainer(
-                        videoUrl: (video.video ?? ''),
+                        thumbnail: (video.thumbnail ?? ''),
                         isViews: false,
                         isShowPlayButton: false,
                         isAllVideos: true,
                       ),
                       Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(50),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                            child: Container(
-                              width: 35,
-                              height: 35,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 2,
-                                ),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withValues(alpha: 0.4),
-                                    Colors.white.withValues(alpha: 0.1),
-                                  ],
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.play_arrow,
-                                size: 26,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          size: 26,
+                          color: Colors.white,
                         ),
                       ),
                       if (video.watched ?? false)
@@ -378,4 +353,3 @@ class ParticularShopVideoList extends StatelessWidget {
     );
   }
 }
-

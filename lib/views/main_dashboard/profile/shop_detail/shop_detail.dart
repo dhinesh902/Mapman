@@ -24,6 +24,7 @@ import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:provider/provider.dart';
 
 class ShopDetail extends StatefulWidget {
@@ -95,14 +96,50 @@ class _ShopDetailState extends State<ShopDetail> {
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
+    final isLoading =
+        videoController.singleShopDetailData.status == Status.INITIAL ||
+        videoController.singleShopDetailData.status == Status.LOADING;
+
+    final mockShop = Shop(
+      id: 1,
+      shopName: 'Mock Shop Name',
+      category: 'theater',
+      address: '123 Mock Address Road',
+      openTime: '09:00 AM',
+      closeTime: '09:00 PM',
+      shopNumber: '1234567890',
+      lat: '0.0',
+      long: '0.0',
+      image1: '',
+      image2: '',
+      image3: '',
+      image4: '',
+      shopImage: '',
+    );
+
+    final mockVideos = List.generate(
+      3,
+      (index) => VideosData(
+        id: index,
+        videoTitle: 'Mock Video Title $index',
+        thumbnail: '',
+        views: 123,
+      ),
+    );
+
+    final shopDetailData = isLoading
+        ? SingleShopDetailData(shop: mockShop, shopVideos: mockVideos)
+        : videoController.singleShopDetailData.data;
+
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
         appBar: ActionBar(
-          title: shopName(
-            videoController.singleShopDetailData.status,
-            videoController.singleShopDetailData.data?.shop?.shopName,
-          ),
+          title: isLoading
+              ? 'Mock Shop Name'
+              : (videoController.singleShopDetailData.data?.shop?.shopName
+                        ?.capitalize() ??
+                    ''),
           action: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -130,7 +167,7 @@ class _ShopDetailState extends State<ShopDetail> {
                   child: Image.asset(AppIcons.alertP, height: 24, width: 24),
                 ),
               ),
-              videoController.singleShopDetailData.data != null
+              shopDetailData != null
                   ? ShopShopButton(
                       onTap: () {
                         VideoShopDialogue().showSaveOrRemoveShopDialogue(
@@ -138,13 +175,7 @@ class _ShopDetailState extends State<ShopDetail> {
                           isRemoveShop: videoController.isSaveShop,
                           onTap: () async {
                             await savedShops(
-                              shopId:
-                                  videoController
-                                      .singleShopDetailData
-                                      .data
-                                      ?.shop
-                                      ?.id ??
-                                  0,
+                              shopId: shopDetailData.shop?.id ?? 0,
                               status: videoController.isSaveShop
                                   ? 'inactive'
                                   : 'active',
@@ -177,10 +208,20 @@ class _ShopDetailState extends State<ShopDetail> {
         ),
         body: Builder(
           builder: (context) {
+            if (videoController.singleShopDetailData.status == Status.ERROR) {
+              return CustomErrorTextWidget(
+                title: '${videoController.singleShopDetailData.message}',
+              );
+            }
+
+            final shopVideos = shopDetailData?.shopVideos ?? [];
+            if (isLoading) {
+              return CustomLoadingIndicator();
+            }
             return Column(
               children: [
                 SizedBox(height: 15),
-                if (videoController.singleShopDetailData.data != null) ...[
+                if (shopDetailData != null) ...[
                   Container(
                     height: 44,
                     margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -219,81 +260,44 @@ class _ShopDetailState extends State<ShopDetail> {
                   ),
                 ],
 
-                Builder(
-                  builder: (context) {
-                    switch (videoController.singleShopDetailData.status) {
-                      case Status.INITIAL:
-                      case Status.LOADING:
-                        return Expanded(child: const CustomLoadingIndicator());
-                      case Status.COMPLETED:
-                        final shopVideos =
-                            videoController
-                                .singleShopDetailData
-                                .data
-                                ?.shopVideos ??
-                            [];
-                        if (videoController.singleShopDetailData.data != null) {
-                          if (videoController.currentShopDetailIndex == 0) {
-                            return ShopDetailContainer(
-                              shop:
-                                  videoController
-                                      .singleShopDetailData
-                                      .data
-                                      ?.shop ??
-                                  Shop(),
-                            );
-                          } else {
-                            if (shopVideos.isEmpty) {
-                              return EmptyDataContainer(
-                                children: [
-                                  Image.asset(
-                                    AppIcons.playVideoP,
-                                    height: 130,
-                                    width: 130,
-                                  ),
-                                  SizedBox(height: 20),
-                                  BodyTextColors(
-                                    title: 'No shop videos found',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.lightGreyHint,
-                                  ),
-                                ],
-                              );
-                            }
-                            return Expanded(
-                              child: ShopVideosList(shopVideos: shopVideos),
-                            );
-                          }
-                        } else {
-                          return EmptyDataContainer(
-                            children: [
-                              Image.asset(
-                                AppIcons.shopP,
-                                height: 120,
-                                width: 120,
-                              ),
-                              SizedBox(height: 20),
-                              BodyTextColors(
-                                title: 'This shop is currently unavailable!!',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.lightGreyHint,
-                              ),
-                            ],
-                          );
-                        }
-
-                      case Status.ERROR:
-                        return Expanded(
-                          child: CustomErrorTextWidget(
-                            title:
-                                '${videoController.singleShopDetailData.message}',
+                if (shopDetailData != null) ...[
+                  if (videoController.currentShopDetailIndex == 0)
+                    ShopDetailContainer(shop: shopDetailData.shop ?? Shop())
+                  else ...[
+                    if (shopVideos.isEmpty && !isLoading)
+                      EmptyDataContainer(
+                        children: [
+                          Image.asset(
+                            AppIcons.playVideoP,
+                            height: 130,
+                            width: 130,
                           ),
-                        );
-                    }
-                  },
-                ),
+                          SizedBox(height: 20),
+                          BodyTextColors(
+                            title: 'No shop videos found',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.lightGreyHint,
+                          ),
+                        ],
+                      )
+                    else
+                      Expanded(child: ShopVideosList(shopVideos: shopVideos)),
+                  ],
+                ] else ...[
+                  EmptyDataContainer(
+                    children: [
+                      Image.asset(AppIcons.shopP, height: 120, width: 120),
+                      SizedBox(height: 20),
+                      BodyTextColors(
+                        title: 'This shop is currently unavailable!!',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.lightGreyHint,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             );
           },
@@ -318,16 +322,63 @@ class ShopDetailContainer extends StatelessWidget {
     ].where((e) => e != null && e.trim().isNotEmpty).cast<String>().toList();
 
     bool isShopClosed() {
-      final now = TimeOfDay.now();
+      try {
+        if ((shop.openTime ?? '').trim().isEmpty ||
+            (shop.closeTime ?? '').trim().isEmpty) {
+          return false;
+        }
 
-      final openTime = const TimeOfDay(hour: 9, minute: 30);
-      final closeTime = const TimeOfDay(hour: 18, minute: 30);
+        int convertToMinutes(String value) {
+          value = value.trim().toUpperCase();
 
-      int nowMinutes = now.hour * 60 + now.minute;
-      int openMinutes = openTime.hour * 60 + openTime.minute;
-      int closeMinutes = closeTime.hour * 60 + closeTime.minute;
+          bool isPM = value.contains('PM');
+          bool isAM = value.contains('AM');
 
-      return nowMinutes < openMinutes || nowMinutes > closeMinutes;
+          value = value.replaceAll('AM', '').replaceAll('PM', '').trim();
+
+          final parts = value.split(':');
+
+          int hour = int.parse(parts[0]);
+
+          int minute = 0;
+          if (parts.length > 1) {
+            minute = int.parse(parts[1]);
+          }
+
+          if (isPM && hour < 12) {
+            hour += 12;
+          }
+
+          if (isAM && hour == 12) {
+            hour = 0;
+          }
+
+          return hour * 60 + minute;
+        }
+
+        final now = TimeOfDay.now();
+        final nowMinutes = now.hour * 60 + now.minute;
+
+        final openMinutes = convertToMinutes(shop.openTime!);
+        final closeMinutes = convertToMinutes(shop.closeTime!);
+
+        bool isOpen;
+
+        if (openMinutes < closeMinutes) {
+          // same day
+          isOpen = nowMinutes >= openMinutes && nowMinutes < closeMinutes;
+        } else {
+          // overnight
+          isOpen = nowMinutes >= openMinutes || nowMinutes < closeMinutes;
+        }
+
+        return !isOpen;
+      } catch (e) {
+        debugPrint('TIME ERROR => $e');
+        debugPrint('OPEN => ${shop.openTime}');
+        debugPrint('CLOSE => ${shop.closeTime}');
+        return false;
+      }
     }
 
     return Column(
@@ -379,6 +430,39 @@ class ShopDetailContainer extends StatelessWidget {
                     ),
                   ),
                 ),
+              ] else ...[
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: GenericColors.darkGreen,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          AppIcons.videoShop,
+                          height: 16,
+                          width: 16,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.whiteText,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        BodyTextColors(
+                          title: 'Shop Open',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.whiteText,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -419,11 +503,11 @@ class ShopDetailContainer extends StatelessWidget {
               if (shop.websiteLink != null && shop.websiteLink!.isNotEmpty) ...[
                 SizedBox(height: 15),
                 CustomTextFieldContainer(
-                  title: 'Website Link',
+                  title: 'Website',
                   onTap: () async {
                     await CustomLaunchers.openWebsite(url: shop.websiteLink!);
                   },
-                  child: HeaderTextBlack(
+                  child: HeaderTextPrimary(
                     title: shop.websiteLink ?? '',
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -582,8 +666,7 @@ class ShopVideosList extends StatelessWidget {
                     );
                   },
                   child: MyVideoContainer(
-                    videoUrl:
-                        shopVideos[index].video ?? '',
+                    thumbnail: shopVideos[index].thumbnail ?? '',
                     views: '${shopVideos[index].views ?? 0}',
                   ),
                 ),

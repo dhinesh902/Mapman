@@ -5,8 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mapman/controller/video_controller.dart';
-import 'package:mapman/model/shop_detail_model.dart';
 import 'package:mapman/model/video_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -19,13 +17,20 @@ import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
-import 'package:provider/provider.dart';
-import 'package:mapman/controller/profile_controller.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mapman/routes/api_routes.dart';
+
+class _MyVideosBlockData {
+  final int? index0;
+  final int? index1;
+  final int? index2;
+  final int? index3;
+
+  _MyVideosBlockData({this.index0, this.index1, this.index2, this.index3});
+}
 
 class MyVideos extends StatelessWidget {
   const MyVideos({super.key, required this.myVideos});
@@ -34,103 +39,134 @@ class MyVideos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    if (myVideos.isEmpty) {
+      return const Center(
+        child: BodyTextColors(
+          title: 'No videos uploaded yet',
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.whiteText,
+        ),
+      );
+    }
+
+    final totalCount = myVideos.length;
+    final List<_MyVideosBlockData> blocks = [];
+    for (int i = 0; i < totalCount; i += 4) {
+      blocks.add(_MyVideosBlockData(
+        index0: i,
+        index1: i + 1 < totalCount ? i + 1 : null,
+        index2: i + 2 < totalCount ? i + 2 : null,
+        index3: i + 3 < totalCount ? i + 3 : null,
+      ));
+    }
+
+    return ListView.separated(
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 100),
-      child: StaggeredGrid.count(
-        crossAxisCount: 4,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        children: List.generate(myVideos.length, (index) {
-          final video = myVideos[index];
-
-          final pattern = index % 4;
-
-          int crossAxis = 2;
-          double mainAxis = 2;
-
-          switch (pattern) {
-            case 0:
-
-            /// big left (tall)
-              crossAxis = 2;
-              mainAxis = 3;
-              break;
-
-            case 1:
-
-            /// top right small
-              crossAxis = 2;
-              mainAxis = 2.2;
-              break;
-
-            case 2:
-
-            /// bottom right tall
-              crossAxis = 2;
-              mainAxis = 3;
-              break;
-
-            case 3:
-
-            /// next row left medium
-              crossAxis = 2;
-              mainAxis = 2.2;
-              break;
-          }
-
-          return StaggeredGridTile.count(
-            crossAxisCellCount: crossAxis,
-            mainAxisCellCount: mainAxis,
-            child: GestureDetector(
-              onTap: () {
-                context.pushNamed(
-                  AppRoutes.singleVideoScreen,
-                  extra: {
-                    Keys.videosData: myVideos,
-                    Keys.isMyVideos: true,
-                    Keys.initialIndex: index,
-                  },
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+      itemCount: blocks.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final block = blocks[index];
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left Column
+            Expanded(
+              child: Column(
+                children: [
+                  if (block.index0 != null) ...[
+                    AspectRatio(
+                      aspectRatio: 2 / 3,
+                      child: _buildTile(context, block.index0!),
                     ),
                   ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: Stack(
-                    children: [
-                      MyVideoContainer(
-                        videoUrl: video.video ?? '',
-                        views: video.views.toString(),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: VideoTitleBlurContainer(
-                          isEditIcon: true,
-                          videosData: video,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                  if (block.index3 != null) ...[
+                    const SizedBox(height: 8),
+                    AspectRatio(
+                      aspectRatio: 2 / 2.2,
+                      child: _buildTile(context, block.index3!),
+                    ),
+                  ],
+                ],
               ),
             ),
-          );
-        }),
+            const SizedBox(width: 8),
+            // Right Column
+            Expanded(
+              child: Column(
+                children: [
+                  if (block.index1 != null) ...[
+                    AspectRatio(
+                      aspectRatio: 2 / 2.2,
+                      child: _buildTile(context, block.index1!),
+                    ),
+                  ],
+                  if (block.index2 != null) ...[
+                    const SizedBox(height: 8),
+                    AspectRatio(
+                      aspectRatio: 2 / 3,
+                      child: _buildTile(context, block.index2!),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTile(BuildContext context, int index) {
+    final video = myVideos[index];
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRoutes.singleVideoScreen,
+          extra: {
+            Keys.videosData: myVideos,
+            Keys.isMyVideos: true,
+            Keys.initialIndex: index,
+          },
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.12),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(11),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: MyVideoContainer(
+                  thumbnail: video.thumbnail ?? '',
+                  views: video.views.toString(),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: VideoTitleBlurContainer(
+                  isEditIcon: true,
+                  videosData: video,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -289,14 +325,14 @@ class VideoTitleBlurContainer extends StatelessWidget {
 class MyVideoContainer extends StatefulWidget {
   const MyVideoContainer({
     super.key,
-    required this.videoUrl,
+    required this.thumbnail,
     this.isViews = true,
     this.isAllVideos = false,
     this.views,
     this.isShowPlayButton = true,
   });
 
-  final String videoUrl;
+  final String thumbnail;
   final bool isViews, isAllVideos;
   final String? views;
   final bool isShowPlayButton;
@@ -323,17 +359,26 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
   void didUpdateWidget(covariant MyVideoContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.videoUrl != widget.videoUrl) {
+    if (oldWidget.thumbnail != widget.thumbnail) {
       _thumbnailData = null;
       _loadThumbnail();
     }
   }
 
+  bool get _isVideoUrl {
+    final lower = widget.thumbnail.toLowerCase();
+    return lower.contains('.mp4') ||
+        lower.contains('.mov') ||
+        lower.contains('.avi') ||
+        lower.contains('.m3u8') ||
+        lower.contains('.mpd');
+  }
+
   Future<void> _loadThumbnail() async {
-    if (widget.videoUrl.isEmpty) return;
+    if (widget.thumbnail.isEmpty || !_isVideoUrl) return;
 
     /// Already cached in memory
-    final cached = VideoCacheManager.getCachedThumbnail(widget.videoUrl);
+    final cached = VideoCacheManager.getCachedThumbnail(widget.thumbnail);
 
     if (cached != null) {
       if (mounted) {
@@ -350,7 +395,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
       });
     }
 
-    final url = widget.videoUrl;
+    final url = widget.thumbnail;
     try {
       /// Avoid multiple thumbnail generation for the same video.
       /// Entry is removed after resolution to free the Future reference.
@@ -444,8 +489,20 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              /// Thumbnail
-              if (_thumbnailData != null)
+              /// Thumbnail from API (Image URL)
+              if (widget.thumbnail.isNotEmpty && !_isVideoUrl)
+                Positioned.fill(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.thumbnail.startsWith('http')
+                        ? widget.thumbnail
+                        : '${ApiRoutes.baseUrl}${widget.thumbnail}',
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => const SizedBox.shrink(),
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                )
+              /// Fallback dynamically generated thumbnail from video
+              else if (_thumbnailData != null)
                 Positioned.fill(
                   child: Image.memory(
                     _thumbnailData!,

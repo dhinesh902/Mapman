@@ -19,6 +19,8 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:provider/provider.dart';
 
 class Notifications extends StatefulWidget {
@@ -133,81 +135,102 @@ class _NotificationsState extends State<Notifications> {
                   Flexible(
                     child: Builder(
                       builder: (context) {
-                        switch (homeController.notificationsData.status) {
-                          case Status.INITIAL:
-                          case Status.LOADING:
-                            return const CustomLoadingIndicator();
+                        final isLoading =
+                            homeController.notificationsData.status ==
+                                Status.INITIAL ||
+                            homeController.notificationsData.status ==
+                                Status.LOADING;
 
-                          case Status.COMPLETED:
-                            final notifications =
-                                homeController.notificationsData.data ?? [];
-
-                            if (notifications.isEmpty) {
-                              return EmptyDataContainer(
-                                children: [
-                                  Image.asset(
-                                    AppIcons.notificationEmptyP,
-                                    height: 130,
-                                    width: 130,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  BodyTextColors(
-                                    title:
-                                        'You don’t have any notifications yet',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    textAlign: TextAlign.center,
-                                    color: AppColors.lightGreyHint,
-                                  ),
-                                ],
-                              );
-                            }
-
-                            return NotificationListener<ScrollNotification>(
-                              onNotification: (ScrollNotification scrollInfo) {
-                                if (homeController.isFetchingMore ||
-                                    !homeController.hasMoreData) {
-                                  return false;
-                                }
-
-                                final bool isAtBottom =
-                                    scrollInfo.metrics.pixels >=
-                                    scrollInfo.metrics.maxScrollExtent - 150;
-
-                                if (scrollInfo is ScrollEndNotification &&
-                                    isAtBottom) {
-                                  homeController.loadMoreNotifications();
-                                }
-
-                                return false;
-                              },
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                padding: EdgeInsets.zero,
-                                key: const PageStorageKey('notifications_list'),
-                                itemCount:
-                                    notifications.length +
-                                    (homeController.isFetchingMore ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (index == notifications.length) {
-                                    return const MoreLoadingContainer();
-                                  }
-
-                                  return NotificationCard(
-                                    key: ValueKey(notifications[index].id),
-                                    notificationsData: notifications[index],
-                                  );
-                                },
-                              ),
-                            );
-
-                          case Status.ERROR:
-                            return CustomErrorTextWidget(
-                              title:
-                                  homeController.notificationsData.message ??
-                                  '',
-                            );
+                        if (homeController.notificationsData.status ==
+                            Status.ERROR) {
+                          return CustomErrorTextWidget(
+                            title:
+                                homeController.notificationsData.message ?? '',
+                          );
                         }
+
+                        final notifications = isLoading
+                            ? List.generate(
+                                6,
+                                (index) => NotificationsData(
+                                  id: index,
+                                  msgTitle: 'Mock Notification Title $index',
+                                  msgDesc:
+                                      'This is a description of the mock notification $index.',
+                                  msgImage: '',
+                                  msgType: 'newShop',
+                                  msgLink: '0',
+                                  openStatus: 'notOpened',
+                                  createdAt: '10 mins ago',
+                                ),
+                              )
+                            : (homeController.notificationsData.data ?? []);
+                        if (isLoading) {
+                          return NotificationSkeleton();
+                        }
+                        if (notifications.isEmpty && !isLoading) {
+                          return EmptyDataContainer(
+                            children: [
+                              Image.asset(
+                                AppIcons.notificationEmptyP,
+                                height: 130,
+                                width: 130,
+                              ),
+                              const SizedBox(height: 20),
+                              BodyTextColors(
+                                title: 'You don’t have any notifications yet',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                textAlign: TextAlign.center,
+                                color: AppColors.lightGreyHint,
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Skeletonizer(
+                          enabled: isLoading,
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (ScrollNotification scrollInfo) {
+                              if (isLoading ||
+                                  homeController.isFetchingMore ||
+                                  !homeController.hasMoreData) {
+                                return false;
+                              }
+
+                              final bool isAtBottom =
+                                  scrollInfo.metrics.pixels >=
+                                  scrollInfo.metrics.maxScrollExtent - 150;
+
+                              if (scrollInfo is ScrollEndNotification &&
+                                  isAtBottom) {
+                                homeController.loadMoreNotifications();
+                              }
+
+                              return false;
+                            },
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              padding: EdgeInsets.zero,
+                              key: const PageStorageKey('notifications_list'),
+                              itemCount:
+                                  notifications.length +
+                                  (homeController.isFetchingMore && !isLoading
+                                      ? 1
+                                      : 0),
+                              itemBuilder: (context, index) {
+                                if (index == notifications.length) {
+                                  return const MoreLoadingContainer();
+                                }
+
+                                return NotificationCard(
+                                  key: ValueKey(notifications[index].id),
+                                  notificationsData: notifications[index],
+                                );
+                              },
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),

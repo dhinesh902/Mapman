@@ -117,7 +117,6 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                       builder: (context) {
                         switch (profileController.analyticsData.status) {
                           case Status.INITIAL:
-                            return CustomLoadingIndicator();
                           case Status.LOADING:
                             return CustomLoadingIndicator();
                           case Status.COMPLETED:
@@ -197,9 +196,9 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                                 );
                                               },
                                               child: MyVideoContainer(
-                                                videoUrl:
+                                                thumbnail:
 
-                                                    videos[index].video ?? '',
+                                                    videos[index].thumbnail ?? '',
                                                 isViews: false,
                                               ),
                                             ),

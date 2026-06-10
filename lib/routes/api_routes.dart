@@ -42,7 +42,7 @@ abstract class ApiRoutes {
     return Options(headers: {Keys.userToken: token});
   }
 
-  static const String baseUrl = 'https://mapman-production.up.railway.app';
+  static const String baseUrl = 'https://api.mapman.in';
   // static const String baseUrl = 'https://2nb22tn8-3007.inc1.devtunnels.ms';
 
   static const String sendOTP = '/shop/auth/sendOtp';
