@@ -19,6 +19,8 @@ import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
 import 'package:provider/provider.dart';
 
 class Profile extends StatefulWidget {
@@ -154,120 +156,126 @@ class _ProfileState extends State<Profile> {
       backgroundColor: AppColors.scaffoldBackgroundDark,
       body: Builder(
         builder: (context) {
-          switch (profileController.profileData.status) {
-            case Status.INITIAL:
-              return CustomLoadingIndicator();
-            case Status.LOADING:
-              return CustomLoadingIndicator();
-            case Status.COMPLETED:
-              final profileData =
-                  profileController.profileData.data ?? ProfileData();
-              return Column(
-                children: [
-                  ProfileTopCard(homeController: homeController),
-                  const SizedBox(height: 20),
-                  ProfileImage(profileData: profileData),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.only(bottom: 30),
-                      shrinkWrap: true,
-                      children: [
-                        ProfileListTile(
-                          image: AppIcons.personP,
-                          title: 'Profile Details',
-                          body: 'View your details',
-                          onTap: () {
-                            context.pushNamed(
-                              AppRoutes.editProfile,
-                              extra: profileData,
-                            );
-                          },
-                        ),
-                        // SizedBox(height: 15),
-                        // ProfileListTile(
-                        //   image: AppIcons.shopP,
-                        //   title: 'Shop Details',
-                        //   body: 'Edit shop details',
-                        //   onTap: () {
-                        //     context.pushNamed(AppRoutes.addShopDetail);
-                        //   },
-                        // ),
-                        SizedBox(height: 15),
-                        ProfileListTile(
-                          image: AppIcons.shopP,
-                          title: 'Your Listings',
-                          body: 'View list of shops',
-                          onTap: () {
-                            context.pushNamed(AppRoutes.shopList);
-                          },
-                        ),
-                        if (shopId != 0) ...[
-                          SizedBox(height: 15),
-                          ProfileListTile(
-                            image: AppIcons.analyticsP,
-                            title: 'Shop Analytics',
-                            body: 'Shop Metrics',
-                            onTap: () {
-                              context.pushNamed(AppRoutes.analytics);
-                            },
-                          ),
-                        ],
-                        SizedBox(height: 15),
-                        ProfileListTile(
-                          image: AppIcons.helpP,
-                          title: 'Help & Support',
-                          body: '24×7 Customer Support',
-                          onTap: () {
-                            context.pushNamed(AppRoutes.helpAndSupport);
-                          },
-                        ),
-                        SizedBox(height: 15),
-                        ProfileListTile(
-                          image: AppIcons.alertP,
-                          title: 'Report an Issue',
-                          body: 'Report bugs or submit feedback',
-                          onTap: () {
-                            context.pushNamed(AppRoutes.reportIssue);
-                          },
-                        ),
-                        SizedBox(height: 15),
-                        ProfileListTile(
-                          image: AppIcons.logoutP,
-                          title: 'Logout',
-                          body: 'Close the Current Profile',
-                          onTap: () {
-                            CustomDialogues().showLogoutDialog(
-                              context,
-                              title: 'Sign out',
-                              isDeleteAccount: false,
-                            );
-                          },
-                        ),
-                        SizedBox(height: 15),
-                        GeneralSettingListTile(
-                          image: AppIcons.deleteBlueP,
-                          title: 'Delete Account',
-                          body: 'Permanently remove your account',
-                          onTap: () {
-                            CustomDialogues().showLogoutDialog(
-                              context,
-                              title: 'Delete Account',
-                              isDeleteAccount: true,
-                            );
-                          },
-                        ),
-                        SizedBox(height: 80),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            case Status.ERROR:
-              return CustomErrorTextWidget(
-                title: '${profileController.profileData.message}',
-              );
+          final isLoading =
+              profileController.profileData.status == Status.INITIAL ||
+              profileController.profileData.status == Status.LOADING;
+
+          if (profileController.profileData.status == Status.ERROR) {
+            return CustomErrorTextWidget(
+              title: '${profileController.profileData.message}',
+            );
           }
+
+          final profileData = isLoading
+              ? ProfileData(userName: 'Profile Name', profilePic: '')
+              : (profileController.profileData.data ?? ProfileData());
+
+          return Skeletonizer(
+            enabled: isLoading,
+            child: isLoading
+                ? const ProfileSkeleton()
+                : Column(
+                    children: [
+                      ProfileTopCard(homeController: homeController),
+                      const SizedBox(height: 20),
+                      ProfileImage(profileData: profileData),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.only(bottom: 30),
+                          shrinkWrap: true,
+                          children: [
+                            ProfileListTile(
+                              image: AppIcons.personP,
+                              title: 'Profile Details',
+                              body: 'View your details',
+                              onTap: () {
+                                context.pushNamed(
+                                  AppRoutes.editProfile,
+                                  extra: profileData,
+                                );
+                              },
+                            ),
+                            // SizedBox(height: 15),
+                            // ProfileListTile(
+                            //   image: AppIcons.shopP,
+                            //   title: 'Shop Details',
+                            //   body: 'Edit shop details',
+                            //   onTap: () {
+                            //     context.pushNamed(AppRoutes.addShopDetail);
+                            //   },
+                            // ),
+                            SizedBox(height: 15),
+                            ProfileListTile(
+                              image: AppIcons.shopP,
+                              title: 'Your Listings',
+                              body: 'View list of shops',
+                              onTap: () {
+                                context.pushNamed(AppRoutes.shopList);
+                              },
+                            ),
+                            if (shopId != 0) ...[
+                              SizedBox(height: 15),
+                              ProfileListTile(
+                                image: AppIcons.analyticsP,
+                                title: 'Shop Analytics',
+                                body: 'Shop Metrics',
+                                onTap: () {
+                                  context.pushNamed(AppRoutes.analytics);
+                                },
+                              ),
+                            ],
+                            SizedBox(height: 15),
+                            ProfileListTile(
+                              image: AppIcons.helpP,
+                              title: 'Help & Support',
+                              body: '24×7 Customer Support',
+                              onTap: () {
+                                context.pushNamed(AppRoutes.helpAndSupport);
+                              },
+                            ),
+                            SizedBox(height: 15),
+                            ProfileListTile(
+                              image: AppIcons.alertP,
+                              title: 'Report an Issue',
+                              body: 'Report bugs or submit feedback',
+                              onTap: () {
+                                context.pushNamed(AppRoutes.reportIssue);
+                              },
+                            ),
+                            SizedBox(height: 15),
+                            ProfileListTile(
+                              image: AppIcons.logoutP,
+                              title: 'Logout',
+                              body: 'Close the Current Profile',
+                              onTap: () {
+                                CustomDialogues().showLogoutDialog(
+                                  context,
+                                  title: 'Sign out',
+                                  isDeleteAccount: false,
+                                );
+                              },
+                            ),
+                            SizedBox(height: 15),
+                            GeneralSettingListTile(
+                              image: AppIcons.deleteBlueP,
+                              title: 'Delete Account',
+                              body: 'Permanently remove your account',
+                              onTap: () {
+                                CustomDialogues().showLogoutDialog(
+                                  context,
+                                  title: 'Delete Account',
+                                  isDeleteAccount: true,
+                                );
+                              },
+                            ),
+                            SizedBox(height: 80),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+          );
         },
       ),
     );

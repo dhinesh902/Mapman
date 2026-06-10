@@ -709,19 +709,22 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                if (videoThumbnail != null && videoThumbnail.isNotEmpty)
+                                if (videoThumbnail != null &&
+                                    videoThumbnail.isNotEmpty)
                                   CachedNetworkImage(
                                     imageUrl: videoThumbnail.startsWith('http')
                                         ? videoThumbnail
                                         : '${ApiRoutes.baseUrl}$videoThumbnail',
                                     fit: BoxFit.contain,
-                                    placeholder: (_, __) => cachedThumbnail != null
+                                    placeholder: (_, __) =>
+                                        cachedThumbnail != null
                                         ? Image.memory(
                                             cachedThumbnail,
                                             fit: BoxFit.contain,
                                           )
                                         : const SizedBox.shrink(),
-                                    errorWidget: (_, __, ___) => cachedThumbnail != null
+                                    errorWidget: (_, __, ___) =>
+                                        cachedThumbnail != null
                                         ? Image.memory(
                                             cachedThumbnail,
                                             fit: BoxFit.contain,
@@ -777,7 +780,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      AppColors.primaryBorder,
+                                      AppColors.primaryBorder.withValues(
+                                        alpha: .8,
+                                      ),
                                       Colors.black38,
                                     ],
                                   ),
@@ -840,16 +845,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             builder: (_, progress, __) {
                               return LinearProgressIndicator(
                                 value: progress.clamp(0.0, 1.0),
+                                minHeight: 3,
                                 backgroundColor: Colors.grey.shade300,
                                 valueColor: AlwaysStoppedAnimation(
-                                  GenericColors.darkGreen,
+                                  AppColors.darkGrey,
                                 ),
                               );
                             },
                           ),
                           ClipRect(
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                              filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                               child: Container(
                                 padding: const EdgeInsets.all(15),
                                 decoration: BoxDecoration(
@@ -1116,8 +1122,8 @@ class BlurBackButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            height: 46,
-            width: 46,
+            height: 38,
+            width: 38,
             decoration: BoxDecoration(
               color: AppColors.whiteText.withValues(alpha: 0.2),
               border: Border.all(
@@ -1125,7 +1131,7 @@ class BlurBackButton extends StatelessWidget {
               ),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.arrow_back, color: Colors.black, size: 24),
+            child: Icon(Icons.arrow_back, color: Colors.black, size: 20),
           ),
         ),
       ),

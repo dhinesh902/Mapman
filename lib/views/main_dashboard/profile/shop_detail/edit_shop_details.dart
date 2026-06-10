@@ -568,6 +568,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 CustomTextField(
                   controller: descriptionController,
                   title: 'Description',
+                  maxLength: 200,
                   hintText:
                       'Describe about the product you\'re selling..or the service you\'re providing',
                   inputAction: TextInputAction.next,

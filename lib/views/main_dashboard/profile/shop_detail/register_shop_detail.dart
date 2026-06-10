@@ -286,6 +286,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
               CustomTextField(
                 controller: descriptionController,
                 title: 'Description',
+                maxLength: 200,
                 hintText:
                     'Describe the product you\'re selling/available/or the service you\'re providing',
                 inputAction: TextInputAction.next,

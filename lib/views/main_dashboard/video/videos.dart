@@ -20,7 +20,9 @@ import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
 import 'package:mapman/views/widgets/looped_media_preview.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:provider/provider.dart';
 
 class Videos extends StatefulWidget {
@@ -267,33 +269,51 @@ class _VideosState extends State<Videos> {
             Expanded(
               child: Builder(
                 builder: (context) {
-                  switch (videoController.categoryVideoData.status) {
-                    case Status.INITIAL:
-                      return CustomLoadingIndicator();
-                    case Status.LOADING:
-                      return CustomLoadingIndicator();
-                    case Status.COMPLETED:
-                      categoryVideos = [
-                        ...(videoController.categoryVideoData.data ?? []),
-                      ];
+                  final isLoading =
+                      videoController.categoryVideoData.status ==
+                          Status.INITIAL ||
+                      videoController.categoryVideoData.status ==
+                          Status.LOADING;
 
-                      categoryVideos.sort((a, b) {
-                        final aIsOthers =
-                            (a.categoryName ?? '').toLowerCase() == 'others';
-                        final bIsOthers =
-                            (b.categoryName ?? '').toLowerCase() == 'others';
-
-                        if (aIsOthers && !bIsOthers) return 1;
-                        if (!aIsOthers && bIsOthers) return -1;
-
-                        return 0;
-                      });
-                      return AllVideosCard(categoryVideoData: categoryVideos);
-                    case Status.ERROR:
-                      return CustomErrorTextWidget(
-                        title: '${videoController.categoryVideoData.message}',
-                      );
+                  if (videoController.categoryVideoData.status ==
+                      Status.ERROR) {
+                    return CustomErrorTextWidget(
+                      title: '${videoController.categoryVideoData.message}',
+                    );
                   }
+
+                  final dataList = isLoading
+                      ? List.generate(
+                          6,
+                          (index) => CategoryVideosData(
+                            id: index,
+                            categoryName: 'Category $index',
+                            categoryVideo: '',
+                          ),
+                        )
+                      : (videoController.categoryVideoData.data ?? []);
+
+                  categoryVideos = [...dataList];
+                  if (!isLoading) {
+                    categoryVideos.sort((a, b) {
+                      final aIsOthers =
+                          (a.categoryName ?? '').toLowerCase() == 'others';
+                      final bIsOthers =
+                          (b.categoryName ?? '').toLowerCase() == 'others';
+
+                      if (aIsOthers && !bIsOthers) return 1;
+                      if (!aIsOthers && bIsOthers) return -1;
+
+                      return 0;
+                    });
+                  }
+
+                  return Skeletonizer(
+                    enabled: isLoading,
+                    child: isLoading
+                        ? const VideosSkeleton(isMyVideos: false)
+                        : AllVideosCard(categoryVideoData: categoryVideos),
+                  );
                 },
               ),
             ),
@@ -302,7 +322,7 @@ class _VideosState extends State<Videos> {
           /// MY VIDEOS
           if (videoController.currentVideoIndex == 1) ...[
             Padding(
-              padding: const EdgeInsets.only(bottom: 10,right: 10,left: 10),
+              padding: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
@@ -419,66 +439,86 @@ class _VideosState extends State<Videos> {
             ),
             Builder(
               builder: (context) {
-                switch (videoController.myVideosData.status) {
-                  case Status.INITIAL:
-                    return Flexible(child: CustomLoadingIndicator());
-                  case Status.LOADING:
-                    return Flexible(child: CustomLoadingIndicator());
-                  case Status.COMPLETED:
-                    final videoData = videoController.myVideosData.data ?? [];
-                    if (videoData.isNotEmpty) {
-                      return Flexible(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  HeaderTextBlack(
-                                    title: 'Total Videos (${videoData.length})',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  InkWell(
-                                    onTap: () {
-                                      context.pushNamed(
-                                        AppRoutes.uploadVideo,
-                                        extra: VideosData(),
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SvgPicture.asset(AppIcons.upload),
-                                        BodyTextColors(
-                                          title: 'Upload ',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w300,
-                                          color: GenericColors.darkGreen,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 15),
-                            Flexible(child: MyVideos(myVideos: videoData)),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return NoVideoContainer();
-                    }
-                  case Status.ERROR:
-                    return CustomErrorTextWidget(
-                      title: '${videoController.myVideosData.message}',
-                    );
+                final isLoading =
+                    videoController.myVideosData.status == Status.INITIAL ||
+                    videoController.myVideosData.status == Status.LOADING;
+
+                if (videoController.myVideosData.status == Status.ERROR) {
+                  return CustomErrorTextWidget(
+                    title: '${videoController.myVideosData.message}',
+                  );
                 }
+
+                final videoData = isLoading
+                    ? List.generate(
+                        4,
+                        (index) => VideosData(
+                          id: index,
+                          videoTitle: 'Video Title $index',
+                          thumbnail: '',
+                          views: 100,
+                          viewCount: 100,
+                          watched: false,
+                        ),
+                      )
+                    : (videoController.myVideosData.data ?? []);
+
+                if (videoData.isEmpty && !isLoading) {
+                  return NoVideoContainer();
+                }
+
+                return Flexible(
+                  child: Skeletonizer(
+                    enabled: isLoading,
+                    child: isLoading
+                        ? const VideosSkeleton(isMyVideos: true)
+                        : Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    HeaderTextBlack(
+                                      title:
+                                          'Total Videos (${videoData.length})',
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    InkWell(
+                                      onTap: isLoading
+                                          ? null
+                                          : () {
+                                              context.pushNamed(
+                                                AppRoutes.uploadVideo,
+                                                extra: VideosData(),
+                                              );
+                                            },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SvgPicture.asset(AppIcons.upload),
+                                          BodyTextColors(
+                                            title: 'Upload ',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w300,
+                                            color: GenericColors.darkGreen,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 15),
+                              Flexible(child: MyVideos(myVideos: videoData)),
+                            ],
+                          ),
+                  ),
+                );
               },
             ),
           ],
@@ -530,7 +570,7 @@ class VideoHeadingContainer extends StatelessWidget {
             BodyTextColors(
               title: title,
               fontSize: 13,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w600,
               color: isActive ? AppColors.whiteText : AppColors.darkText,
             ),
           ],
@@ -762,18 +802,16 @@ class _AllVideosCardState extends State<AllVideosCard> {
           rightIdx = i;
           i++;
         }
-        _rows.add(_RowData(
-          isSingle: false,
-          isLeftBig: isLeftBig,
-          leftIndex: leftIdx,
-          rightIndex: rightIdx,
-        ));
+        _rows.add(
+          _RowData(
+            isSingle: false,
+            isLeftBig: isLeftBig,
+            leftIndex: leftIdx,
+            rightIndex: rightIdx,
+          ),
+        );
       } else {
-        _rows.add(_RowData(
-          isSingle: true,
-          isLeftBig: false,
-          leftIndex: i,
-        ));
+        _rows.add(_RowData(isSingle: true, isLeftBig: false, leftIndex: i));
         i++;
       }
       row++;
@@ -795,7 +833,7 @@ class _AllVideosCardState extends State<AllVideosCard> {
         itemBuilder: (context, index) {
           final rowData = _rows[index];
           return AspectRatio(
-            aspectRatio: 2.0, // aspect ratio matching standard staggered cell structure
+            aspectRatio: 2.0,
             child: rowData.isSingle
                 ? _buildItem(context, rowData.leftIndex)
                 : Row(

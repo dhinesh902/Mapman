@@ -263,12 +263,14 @@ class CategoryTextField extends StatelessWidget {
       controller: controller,
       textCapitalization: TextCapitalization.sentences,
       cursorColor: AppColors.primary,
+      maxLength: 20,
       style: AppTextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         color: AppColors.darkText,
       ).textStyle,
       decoration: InputDecoration(
+        counterText: "",
         border: InputBorder.none,
         hintText: 'Enter Your Category',
         hintStyle: AppTextStyle(

@@ -14,6 +14,7 @@ import 'package:mapman/views/main_dashboard/video/my_videos.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/skeleton_widgets.dart';
 import 'package:provider/provider.dart';
 
 class AllVideos extends StatefulWidget {
@@ -153,7 +154,7 @@ class _AllVideosState extends State<AllVideos> {
             switch (videoController.allVideosData.status) {
               case Status.INITIAL:
               case Status.LOADING:
-                return const CustomLoadingIndicator();
+                return const AllVideosSkeleton();
 
               case Status.COMPLETED:
                 final allVideo = videoController.allVideosData.data ?? [];
