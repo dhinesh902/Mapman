@@ -197,9 +197,9 @@ class _ShopAnalyticsState extends State<ShopAnalytics> {
                                                 );
                                               },
                                               child: MyVideoContainer(
-                                                videoUrl:
+                                                thumbnail:
 
-                                                    videos[index].video ?? '',
+                                                    videos[index].thumbnail ?? '',
                                                 isViews: false,
                                               ),
                                             ),

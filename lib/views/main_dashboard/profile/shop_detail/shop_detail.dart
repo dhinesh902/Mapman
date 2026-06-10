@@ -662,7 +662,7 @@ class ShopVideosList extends StatelessWidget {
                     );
                   },
                   child: MyVideoContainer(
-                    videoUrl: shopVideos[index].video ?? '',
+                    thumbnail: shopVideos[index].thumbnail ?? '',
                     views: '${shopVideos[index].views ?? 0}',
                   ),
                 ),

@@ -20,6 +20,8 @@ import 'package:mapman/views/widgets/custom_containers.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mapman/routes/api_routes.dart';
 
 class _MyVideosBlockData {
   final int? index0;
@@ -149,7 +151,7 @@ class MyVideos extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: MyVideoContainer(
-                  videoUrl: video.video ?? '',
+                  thumbnail: video.thumbnail ?? '',
                   views: video.views.toString(),
                 ),
               ),
@@ -323,14 +325,14 @@ class VideoTitleBlurContainer extends StatelessWidget {
 class MyVideoContainer extends StatefulWidget {
   const MyVideoContainer({
     super.key,
-    required this.videoUrl,
+    required this.thumbnail,
     this.isViews = true,
     this.isAllVideos = false,
     this.views,
     this.isShowPlayButton = true,
   });
 
-  final String videoUrl;
+  final String thumbnail;
   final bool isViews, isAllVideos;
   final String? views;
   final bool isShowPlayButton;
@@ -357,17 +359,26 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
   void didUpdateWidget(covariant MyVideoContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.videoUrl != widget.videoUrl) {
+    if (oldWidget.thumbnail != widget.thumbnail) {
       _thumbnailData = null;
       _loadThumbnail();
     }
   }
 
+  bool get _isVideoUrl {
+    final lower = widget.thumbnail.toLowerCase();
+    return lower.contains('.mp4') ||
+        lower.contains('.mov') ||
+        lower.contains('.avi') ||
+        lower.contains('.m3u8') ||
+        lower.contains('.mpd');
+  }
+
   Future<void> _loadThumbnail() async {
-    if (widget.videoUrl.isEmpty) return;
+    if (widget.thumbnail.isEmpty || !_isVideoUrl) return;
 
     /// Already cached in memory
-    final cached = VideoCacheManager.getCachedThumbnail(widget.videoUrl);
+    final cached = VideoCacheManager.getCachedThumbnail(widget.thumbnail);
 
     if (cached != null) {
       if (mounted) {
@@ -384,7 +395,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
       });
     }
 
-    final url = widget.videoUrl;
+    final url = widget.thumbnail;
     try {
       /// Avoid multiple thumbnail generation for the same video.
       /// Entry is removed after resolution to free the Future reference.
@@ -478,8 +489,20 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              /// Thumbnail
-              if (_thumbnailData != null)
+              /// Thumbnail from API (Image URL)
+              if (widget.thumbnail.isNotEmpty && !_isVideoUrl)
+                Positioned.fill(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.thumbnail.startsWith('http')
+                        ? widget.thumbnail
+                        : '${ApiRoutes.baseUrl}${widget.thumbnail}',
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => const SizedBox.shrink(),
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                )
+              /// Fallback dynamically generated thumbnail from video
+              else if (_thumbnailData != null)
                 Positioned.fill(
                   child: Image.memory(
                     _thumbnailData!,

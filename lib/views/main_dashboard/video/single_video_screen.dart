@@ -20,6 +20,7 @@ import 'package:mapman/views/main_dashboard/video/components/video_shop_dialogue
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 class SingleVideoScreen extends StatefulWidget {
@@ -50,6 +51,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   bool _isDisposed = false;
   Timer? _debounceTimer;
   Timer? _preloadTimer;
+  Timer? _playDebounceTimer;
   bool _hasShownLastVideoToast = false;
 
   // ValueNotifiers — no full-screen setState for progress or play state
@@ -107,6 +109,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   void dispose() {
     _debounceTimer?.cancel();
     _preloadTimer?.cancel();
+    _playDebounceTimer?.cancel();
     _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _disposeAllControllers();
@@ -278,10 +281,10 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       );
 
       // Async gap check: If the user scrolled away and this index is no longer inside
-      // the active window [currentIndex - 1, currentIndex + 2], dispose it immediately.
+      // the active window [currentIndex - 1, currentIndex + 1], dispose it immediately.
       if (_isDisposed ||
           index < _currentIndex - 1 ||
-          index > _currentIndex + 2) {
+          index > _currentIndex + 1) {
         player.dispose(forceDispose: true);
         return;
       }
@@ -299,7 +302,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           _readyMap[index]!.value = true;
 
           if (index == _currentIndex) {
-            _playVideo(index);
+            _schedulePlayVideo(index);
           } else {
             try {
               player.pause();
@@ -312,6 +315,15 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     } finally {
       _initializingIndices.remove(index);
     }
+  }
+
+  void _schedulePlayVideo(int index) {
+    _playDebounceTimer?.cancel();
+    _playDebounceTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!_isDisposed && _currentIndex == index) {
+        _playVideo(index);
+      }
+    });
   }
 
   Future<void> _playVideo(int index) async {
@@ -348,9 +360,6 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _readyMap[index]!.value = true;
 
     _firstFrameRenderedMap[index] ??= ValueNotifier(false);
-    if (videoPlayerController.value.position > Duration.zero) {
-      _firstFrameRenderedMap[index]!.value = true;
-    }
 
     _isPlayingNotifier.value = true;
   }
@@ -372,12 +381,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   }
 
   void _preloadNeighbors(int index) {
-    // Preload next 2 videos for seamless scrolling forward
+    // Preload next video for seamless scrolling forward
     if (index + 1 < widget.videosData.length) {
       _initController(index + 1);
-    }
-    if (index + 2 < widget.videosData.length) {
-      _initController(index + 2);
     }
     // Preload previous video for seamless scrolling backward
     if (index - 1 >= 0) {
@@ -387,7 +393,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
 
   void _disposeFarControllers(int index) {
     final farIndices = _controllers.keys
-        .where((idx) => idx < index - 1 || idx > index + 2)
+        .where((idx) => idx < index - 1 || idx > index + 1)
         .toList();
     for (final idx in farIndices) {
       _disposeController(idx);
@@ -502,14 +508,20 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _progressNotifier.value = 0.0;
     _isPlayingNotifier.value = false;
 
-    // Pause all other controllers
+    // Force thumbnail to show for the new active video until first frame renders
+    _firstFrameRenderedMap[index] ??= ValueNotifier(false);
+    _firstFrameRenderedMap[index]!.value = false;
+
+    // Pause and reset all other controllers
     _controllers.forEach((idx, controller) {
       if (idx != index) {
         try {
           controller.pause();
+          controller.seekTo(Duration.zero);
           controller.setVolume(0.0);
         } catch (_) {}
         _removeVideoListener(idx);
+        _firstFrameRenderedMap[idx]?.value = false;
       }
     });
 
@@ -521,7 +533,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
         controller.videoPlayerController!.value.initialized;
 
     if (alreadyInitialized) {
-      _playVideo(index);
+      _schedulePlayVideo(index);
     } else {
       _readyMap[index] ??= ValueNotifier(false);
       _readyMap[index]!.value = false;
@@ -600,6 +612,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           final String videoUrl = videoPath.startsWith('http')
               ? videoPath
               : '${ApiRoutes.baseUrl}$videoPath';
+          final String? videoThumbnail = video.thumbnail;
           final cachedThumbnail = VideoCacheManager.getCachedThumbnail(
             videoUrl,
           );
@@ -696,7 +709,26 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                if (cachedThumbnail != null)
+                                if (videoThumbnail != null && videoThumbnail.isNotEmpty)
+                                  CachedNetworkImage(
+                                    imageUrl: videoThumbnail.startsWith('http')
+                                        ? videoThumbnail
+                                        : '${ApiRoutes.baseUrl}$videoThumbnail',
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, __) => cachedThumbnail != null
+                                        ? Image.memory(
+                                            cachedThumbnail,
+                                            fit: BoxFit.contain,
+                                          )
+                                        : const SizedBox.shrink(),
+                                    errorWidget: (_, __, ___) => cachedThumbnail != null
+                                        ? Image.memory(
+                                            cachedThumbnail,
+                                            fit: BoxFit.contain,
+                                          )
+                                        : const SizedBox.shrink(),
+                                  )
+                                else if (cachedThumbnail != null)
                                   Image.memory(
                                     cachedThumbnail,
                                     fit: BoxFit.contain,

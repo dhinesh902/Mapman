@@ -274,7 +274,7 @@ class ParticularShopVideoList extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       MyVideoContainer(
-                        videoUrl: (video.video ?? ''),
+                        thumbnail: (video.thumbnail ?? ''),
                         isViews: false,
                         isShowPlayButton: false,
                         isAllVideos: true,
