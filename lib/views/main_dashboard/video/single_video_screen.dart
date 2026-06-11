@@ -17,11 +17,13 @@ import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_shop_dialogue.dart';
-import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:mapman/views/widgets/expandable_description.dart';
 import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:mapman/views/main_dashboard/video/components/app_video_controller.dart';
 
 class SingleVideoScreen extends StatefulWidget {
   const SingleVideoScreen({
@@ -42,7 +44,7 @@ class SingleVideoScreen extends StatefulWidget {
 class _SingleVideoScreenState extends State<SingleVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
-  final Map<int, BetterPlayerController> _controllers = {};
+  final Map<int, AppVideoController> _controllers = {};
   final Map<int, VoidCallback> _activeListeners = {};
 
   // State variables
@@ -134,12 +136,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     if (listener != null) {
       final player = _controllers[index];
       if (player != null) {
-        final videoPlayerController = player.videoPlayerController;
-        if (videoPlayerController != null) {
-          try {
-            videoPlayerController.removeListener(listener);
-          } catch (_) {}
-        }
+        try {
+          player.removeListener(listener);
+        } catch (_) {}
       }
     }
   }
@@ -153,7 +152,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           controller.pause();
         } catch (_) {}
         try {
-          controller.dispose(forceDispose: true);
+          controller.dispose();
         } catch (_) {}
       }
     }
@@ -168,15 +167,12 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     final controller = _controllers[_currentIndex];
     if (controller == null) return;
 
-    final videoPlayerController = controller.videoPlayerController;
-    if (videoPlayerController == null) return;
-
     try {
-      if (!videoPlayerController.value.initialized) return;
+      if (!controller.isInitialized) return;
 
       if (state == AppLifecycleState.paused ||
           state == AppLifecycleState.inactive) {
-        if (videoPlayerController.value.isPlaying) {
+        if (controller.isPlaying) {
           controller.pause();
           _isPlayingNotifier.value = false;
         }
@@ -206,98 +202,25 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     try {
       debugPrint('🎬 Initializing video at index $index: $videoUrl');
 
-      final isHls = videoUrl.contains('.m3u8');
-      final isDash = videoUrl.contains('.mpd');
-
-      final dataSource = BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        videoUrl,
-        videoFormat: isHls
-            ? BetterPlayerVideoFormat.hls
-            : (isDash ? BetterPlayerVideoFormat.dash : null),
-        useAsmsSubtitles: false,
-        useAsmsTracks: true,
-        useAsmsAudioTracks: true,
-        cacheConfiguration: const BetterPlayerCacheConfiguration(
-          useCache: true,
-          maxCacheSize: 300 * 1024 * 1024,
-          maxCacheFileSize: 50 * 1024 * 1024,
-        ),
-        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 500, // Low buffer for fast startup
-          maxBufferMs: 30000, // Large buffer for higher quality loading
-          bufferForPlaybackMs: 100, // Instant playback threshold
-          bufferForPlaybackAfterRebufferMs: 500,
-        ),
-      );
-
-      final player = BetterPlayerController(
-        BetterPlayerConfiguration(
-          autoPlay: false,
-          looping: true,
-          fit: BoxFit.cover,
-          // Reels style should fill screen
-          expandToFill: true,
-          aspectRatio: 9 / 16,
-          handleLifecycle: false,
-          autoDispose: false,
-          allowedScreenSleep: false,
-          controlsConfiguration: const BetterPlayerControlsConfiguration(
-            showControls: false,
-            loadingWidget: SizedBox.shrink(),
-          ),
-          errorBuilder: (context, errorMessage) {
-            return Container(
-              color: AppColors.scaffoldBackgroundDark,
-              child: const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.redAccent,
-                        size: 40,
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Video resolution exceeds device capabilities or format not supported.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.lightGreyHint,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        betterPlayerDataSource: dataSource,
-      );
+      final player = AppVideoController(index: index, videoUrl: videoUrl);
 
       // Async gap check: If the user scrolled away and this index is no longer inside
       // the active window [currentIndex - 1, currentIndex + 1], dispose it immediately.
       if (_isDisposed ||
           index < _currentIndex - 1 ||
           index > _currentIndex + 1) {
-        player.dispose(forceDispose: true);
+        player.dispose();
         return;
       }
 
       _controllers[index] = player;
 
-      // Listen to player initialization events
-      player.addEventsListener((event) {
-        if (_isDisposed || !mounted || _controllers[index] != player) {
-          return;
-        }
+      await player.initialize(
+        onInitialized: () {
+          if (_isDisposed || !mounted || _controllers[index] != player) {
+            return;
+          }
 
-        if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
           _readyMap[index] ??= ValueNotifier(false);
           _readyMap[index]!.value = true;
 
@@ -308,8 +231,8 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
               player.pause();
             } catch (_) {}
           }
-        }
-      });
+        },
+      );
     } catch (e) {
       debugPrint('❌ Init failed for index $index: $e');
     } finally {
@@ -329,10 +252,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
   Future<void> _playVideo(int index) async {
     final controller = _controllers[index];
     if (controller == null) return;
-
-    final videoPlayerController = controller.videoPlayerController;
-    if (videoPlayerController == null) return;
-    if (!videoPlayerController.value.initialized) return;
+    if (!controller.isInitialized) return;
 
     _removeVideoListener(index);
 
@@ -340,7 +260,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     _activeListeners[index] = listener;
 
     try {
-      videoPlayerController.addListener(listener);
+      controller.addListener(listener);
     } catch (e) {
       debugPrint('Controller $index addListener failed: $e. Reinitializing...');
       _controllers.remove(index);
@@ -374,7 +294,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
           player.pause();
         } catch (_) {}
         try {
-          player.dispose(forceDispose: true);
+          player.dispose();
         } catch (_) {}
       }
     }
@@ -407,15 +327,11 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     final player = _controllers[index];
     if (player == null) return;
 
-    final videoPlayerController = player.videoPlayerController;
-    if (videoPlayerController == null) return;
-
     try {
-      if (!videoPlayerController.value.initialized) return;
+      if (!player.isInitialized) return;
 
-      final value = videoPlayerController.value;
-      final position = value.position;
-      final duration = value.duration;
+      final position = player.position;
+      final duration = player.duration;
 
       // Update progress via ValueNotifier (no setState rebuild)
       if (duration != null && duration.inMilliseconds > 0) {
@@ -424,7 +340,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
       }
 
       // Update play state notifier
-      _isPlayingNotifier.value = value.isPlaying;
+      _isPlayingNotifier.value = player.isPlaying;
 
       // Transition check: Mark first frame as rendered once the playback position advances past zero.
       if (position > Duration.zero) {
@@ -528,9 +444,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
     // Safely check if the controller is already preloaded and initialized
     final controller = _controllers[index];
     final bool alreadyInitialized =
-        controller != null &&
-        controller.videoPlayerController != null &&
-        controller.videoPlayerController!.value.initialized;
+        controller != null && controller.isInitialized;
 
     if (alreadyInitialized) {
       _schedulePlayVideo(index);
@@ -635,9 +549,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
               final bool isControllerValid = controller != null;
 
               final bool initiallyReady =
-                  isControllerValid &&
-                  controller.videoPlayerController != null &&
-                  controller.videoPlayerController!.value.initialized;
+                  isControllerValid && controller.isInitialized;
 
               final effectivelyReady = isReady || initiallyReady;
               bool shouldShowVideo = false;
@@ -647,17 +559,17 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
               try {
                 if (effectivelyReady &&
                     isControllerValid &&
-                    controller.videoPlayerController != null) {
-                  final vpc = controller.videoPlayerController!;
-                  shouldShowVideo = vpc.value.initialized;
-                  if (shouldShowVideo) {
-                    videoWidth = vpc.value.size?.width ?? 1080;
-                    videoHeight = vpc.value.size?.height ?? 1920;
-                  }
+                    controller.isInitialized) {
+                  shouldShowVideo = true;
+                  final size = controller.size;
+                  videoWidth = size.width;
+                  videoHeight = size.height;
                 }
               } catch (_) {
                 shouldShowVideo = false;
               }
+
+              final bool isVertical = videoHeight > videoWidth;
 
               return Stack(
                 fit: StackFit.expand,
@@ -667,14 +579,9 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
                       if (!isControllerValid) return;
-                      final videoPlayerController =
-                          controller.videoPlayerController;
-                      if (videoPlayerController == null ||
-                          !videoPlayerController.value.initialized) {
-                        return;
-                      }
+                      if (!controller.isInitialized) return;
                       try {
-                        if (videoPlayerController.value.isPlaying) {
+                        if (controller.isPlaying) {
                           controller.pause();
                           _isPlayingNotifier.value = false;
                         } else {
@@ -684,12 +591,65 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                       } catch (_) {}
                     },
                     child: shouldShowVideo
-                        ? Center(
-                            child: AspectRatio(
-                              aspectRatio: videoWidth / videoHeight,
-                              child: BetterPlayer(controller: controller!),
-                            ),
-                          )
+                        ? () {
+                            if (Platform.isIOS) {
+                              if (isVertical) {
+                                return SizedBox.expand(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: SizedBox(
+                                      width: videoWidth,
+                                      height: videoHeight,
+                                      child: VideoPlayer(
+                                        controller!.videoPlayerController!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Center(
+                                  child: AspectRatio(
+                                    aspectRatio:
+                                        videoWidth > 0 && videoHeight > 0
+                                        ? videoWidth / videoHeight
+                                        : 16 / 9,
+                                    child: VideoPlayer(
+                                      controller!.videoPlayerController!,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              if (isVertical) {
+                                return SizedBox.expand(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: SizedBox(
+                                      width: videoWidth,
+                                      height: videoHeight,
+                                      child: BetterPlayer(
+                                        controller:
+                                            controller!.betterPlayerController!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Center(
+                                  child: AspectRatio(
+                                    aspectRatio:
+                                        videoWidth > 0 && videoHeight > 0
+                                        ? videoWidth / videoHeight
+                                        : 16 / 9,
+                                    child: BetterPlayer(
+                                      controller:
+                                          controller!.betterPlayerController!,
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          }()
                         : const SizedBox.shrink(),
                   ),
 
@@ -752,12 +712,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                           return GestureDetector(
                             onTap: () {
                               if (!isControllerValid) return;
-                              final videoPlayerController =
-                                  controller.videoPlayerController;
-                              if (videoPlayerController == null ||
-                                  !videoPlayerController.value.initialized) {
-                                return;
-                              }
+                              if (!controller.isInitialized) return;
                               try {
                                 if (isPlaying) {
                                   controller.pause();
@@ -812,11 +767,7 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                             onTap: () {
                               try {
                                 if (isControllerValid &&
-                                    controller.videoPlayerController != null &&
-                                    controller
-                                        .videoPlayerController!
-                                        .value
-                                        .initialized) {
+                                    controller.isInitialized) {
                                   controller.pause();
                                 }
                               } catch (e) {
@@ -838,249 +789,218 @@ class _SingleVideoScreenState extends State<SingleVideoScreen>
                     left: 0,
                     right: 0,
                     child: BottomBar(
-                      child: Column(
-                        children: [
-                          ValueListenableBuilder<double>(
-                            valueListenable: _progressNotifier,
-                            builder: (_, progress, __) {
-                              return LinearProgressIndicator(
-                                value: progress.clamp(0.0, 1.0),
-                                minHeight: 3,
-                                backgroundColor: Colors.grey.shade300,
-                                valueColor: AlwaysStoppedAnimation(
-                                  AppColors.darkGrey,
-                                ),
-                              );
-                            },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.6),
+                            ],
                           ),
-                          ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                              child: Container(
-                                padding: const EdgeInsets.all(15),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                      color: AppColors.whiteText.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      width: 1.0,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 15,
+                                      bottom: 15,
+                                      right: 10,
                                     ),
-                                  ),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      AppColors.whiteText.withValues(
-                                        alpha: 0.10,
-                                      ),
-                                      GenericColors.lightPrimary.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Flexible(
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    try {
-                                                      final controller =
-                                                          _controllers[index];
-                                                      if (controller != null &&
-                                                          controller
-                                                                  .videoPlayerController !=
-                                                              null &&
-                                                          controller
-                                                              .videoPlayerController!
-                                                              .value
-                                                              .initialized) {
-                                                        controller.pause();
-                                                      }
-                                                    } catch (e) {
-                                                      debugPrint(
-                                                        'Error pausing player: $e',
-                                                      );
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Flexible(
+                                              child: InkWell(
+                                                onTap: () {
+                                                  try {
+                                                    final controller =
+                                                        _controllers[index];
+                                                    if (controller != null &&
+                                                        controller
+                                                            .isInitialized) {
+                                                      controller.pause();
                                                     }
-                                                    context.pushNamed(
-                                                      AppRoutes.shopDetail,
-                                                      extra: video.shopId,
+                                                  } catch (e) {
+                                                    debugPrint(
+                                                      'Error pausing player: $e',
                                                     );
-                                                  },
+                                                  }
+                                                  context.pushNamed(
+                                                    AppRoutes.shopDetail,
+                                                    extra: video.shopId,
+                                                  );
+                                                },
+                                                child: BodyTextColors(
+                                                  title:
+                                                      video.shopName
+                                                          ?.capitalize() ??
+                                                      '',
+                                                  fontSize: 16,
+                                                  color: AppColors.whiteText,
+                                                  fontWeight: FontWeight.w600,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            if (_watchedMap[videoId] == true &&
+                                                !widget.isMyVideos)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: const Center(
                                                   child: BodyTextColors(
-                                                    title:
-                                                        video.shopName
-                                                            ?.capitalize() ??
-                                                        '',
-                                                    fontSize: 16,
-                                                    color: AppColors.whiteText,
+                                                    title: 'Watched',
+                                                    fontSize: 12,
                                                     fontWeight: FontWeight.w400,
-                                                    textDecoration:
-                                                        TextDecoration
-                                                            .underline,
-                                                    decorationColor:
-                                                        AppColors.whiteText,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.visible,
+                                                    color: AppColors.whiteText,
                                                   ),
                                                 ),
                                               ),
-                                              SizedBox(width: 10),
-                                              if (_watchedMap[videoId] ==
-                                                      true &&
-                                                  !widget.isMyVideos)
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.primary,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          20,
-                                                        ),
-                                                  ),
-                                                  child: Center(
-                                                    child: BodyTextColors(
-                                                      title: 'Watched',
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color:
-                                                          AppColors.whiteText,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-
-                                          SizedBox(height: 8),
-                                          BodyTextHint(
-                                            title:
-                                                video.description
-                                                    ?.capitalize() ??
-                                                '',
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        ExpandableDescription(
+                                          description: video.description?.capitalize() ?? '',
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 10),
-                                    if (!widget.isMyVideos) ...[
-                                      Row(
-                                        children: [
-                                          CircleContainer(
-                                            onTap: () async {
-                                              try {
-                                                final controller =
-                                                    _controllers[index];
-                                                if (controller != null &&
-                                                    controller
-                                                            .videoPlayerController !=
-                                                        null &&
-                                                    controller
-                                                        .videoPlayerController!
-                                                        .value
-                                                        .initialized) {
-                                                  controller.pause();
-                                                }
-                                              } catch (e) {
-                                                debugPrint(
-                                                  'Error pausing player: $e',
-                                                );
-                                              }
-                                              context.pushNamed(
-                                                AppRoutes.shopDetail,
-                                                extra: video.shopId,
-                                              );
-                                            },
-                                            child: Icon(
-                                              Icons.info,
-                                              color: AppColors.primary,
-                                              size: 25,
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-
-                                          ValueListenableBuilder<bool>(
-                                            valueListenable: bookmarkNotifier,
-                                            builder: (_, isActive, __) {
-                                              return CircleContainer(
-                                                onTap: () async {
-                                                  VideoShopDialogue()
-                                                      .showSaveOrRemoveVideoDialogue(
-                                                        context,
-                                                        isRemoveShop: isActive,
-                                                        onTap: () async {
-                                                          final profileController =
-                                                              context
-                                                                  .read<
-                                                                    ProfileController
-                                                                  >();
-                                                          final newVal =
-                                                              !isActive;
-                                                          bookmarkNotifier
-                                                                  .value =
-                                                              newVal;
-                                                          await videoController
-                                                              .addSavedVideos(
-                                                                videoId:
-                                                                    video.id ??
-                                                                    0,
-                                                                status: newVal
-                                                                    ? 'active'
-                                                                    : 'inactive',
-                                                              );
-                                                          await profileController
-                                                              .saveShop(
-                                                                shopId:
-                                                                    video
-                                                                        .shopId ??
-                                                                    0,
-                                                                status: newVal
-                                                                    ? 'active'
-                                                                    : 'inactive',
-                                                              );
-                                                        },
-                                                      );
-                                                },
-                                                child: isActive
-                                                    ? Image.asset(
-                                                        AppIcons.bookmarkP,
-                                                        height: 25,
-                                                      )
-                                                    : const Icon(
-                                                        Icons.bookmark_border,
-                                                        size: 25,
-                                                      ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
-                              ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: 10,
+                                    bottom: 15,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (!widget.isMyVideos) ...[
+                                        const SizedBox(height: 15),
+                                        CircleContainer(
+                                          onTap: () async {
+                                            try {
+                                              final controller =
+                                                  _controllers[index];
+                                              if (controller != null &&
+                                                  controller.isInitialized) {
+                                                controller.pause();
+                                              }
+                                            } catch (e) {
+                                              debugPrint(
+                                                'Error pausing player: $e',
+                                              );
+                                            }
+                                            context.pushNamed(
+                                              AppRoutes.shopDetail,
+                                              extra: video.shopId,
+                                            );
+                                          },
+                                          child: const Icon(
+                                            Icons.info,
+                                            color: AppColors.primary,
+                                            size: 25,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 15),
+                                        ValueListenableBuilder<bool>(
+                                          valueListenable: bookmarkNotifier,
+                                          builder: (_, isActive, __) {
+                                            return CircleContainer(
+                                              onTap: () async {
+                                                VideoShopDialogue()
+                                                    .showSaveOrRemoveVideoDialogue(
+                                                      context,
+                                                      isRemoveShop: isActive,
+                                                      onTap: () async {
+                                                        final profileController =
+                                                            context
+                                                                .read<
+                                                                  ProfileController
+                                                                >();
+                                                        final newVal =
+                                                            !isActive;
+                                                        bookmarkNotifier.value =
+                                                            newVal;
+                                                        await videoController
+                                                            .addSavedVideos(
+                                                              videoId:
+                                                                  video.id ?? 0,
+                                                              status: newVal
+                                                                  ? 'active'
+                                                                  : 'inactive',
+                                                            );
+                                                        await profileController
+                                                            .saveShop(
+                                                              shopId:
+                                                                  video
+                                                                      .shopId ??
+                                                                  0,
+                                                              status: newVal
+                                                                  ? 'active'
+                                                                  : 'inactive',
+                                                            );
+                                                      },
+                                                    );
+                                              },
+                                              child: isActive
+                                                  ? Image.asset(
+                                                      AppIcons.bookmarkP,
+                                                      height: 25,
+                                                    )
+                                                  : const Icon(
+                                                      Icons.bookmark_border,
+                                                      size: 25,
+                                                    ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            ValueListenableBuilder<double>(
+                              valueListenable: _progressNotifier,
+                              builder: (_, progress, __) {
+                                return LinearProgressIndicator(
+                                  value: progress.clamp(0.0, 1.0),
+                                  minHeight: 2,
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  valueColor: const AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1445,3 +1365,4 @@ class CircleContainer extends StatelessWidget {
     );
   }
 }
+

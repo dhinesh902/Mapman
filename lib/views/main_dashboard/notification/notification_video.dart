@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -17,11 +18,14 @@ import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
-import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:mapman/routes/api_routes.dart';
+import 'package:video_player/video_player.dart';
+import 'package:mapman/views/main_dashboard/video/components/app_video_controller.dart';
+import 'package:mapman/views/widgets/expandable_description.dart';
 
 class NotificationVideoScreen extends StatefulWidget {
   const NotificationVideoScreen({
@@ -42,7 +46,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     with WidgetsBindingObserver {
   late VideoController videoController;
 
-  BetterPlayerController? _player;
+  AppVideoController? _player;
   late final ValueNotifier<bool> bookMarkNotifier;
 
   bool _isInitialized = false;
@@ -50,6 +54,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   bool _hasBeenFullyWatched = false;
   late final bool isMyVideos;
   bool _isDisposed = false;
+  bool _firstFrameRendered = false;
 
   double _progress = 0.0;
 
@@ -97,13 +102,13 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
       final p = _player;
       _player = null;
       try {
-        p!.videoPlayerController?.removeListener(_videoListener);
+        p!.removeListener(_videoListener);
       } catch (_) {}
       try {
         p!.pause();
       } catch (_) {}
       try {
-        p!.dispose(forceDispose: true);
+        p!.dispose();
       } catch (_) {}
     }
 
@@ -140,6 +145,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     _isInitialized = false;
     _isCompleted = false;
     _hasBeenFullyWatched = false;
+    _firstFrameRendered = false;
     _progress = 0.0;
 
     final videoPath = videosData.video;
@@ -150,67 +156,25 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
         : '${ApiRoutes.baseUrl}$videoPath';
 
     try {
-      final isHls = videoUrl.contains('.m3u8');
-      final isDash = videoUrl.contains('.mpd');
-
-      final dataSource = BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        videoUrl,
-        videoFormat: isHls
-            ? BetterPlayerVideoFormat.hls
-            : (isDash ? BetterPlayerVideoFormat.dash : null),
-        useAsmsSubtitles: false,
-        useAsmsTracks: true,
-        useAsmsAudioTracks: true,
-        cacheConfiguration: const BetterPlayerCacheConfiguration(
-          useCache: true,
-          maxCacheSize: 300 * 1024 * 1024,
-          maxCacheFileSize: 50 * 1024 * 1024,
-        ),
-        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 500, // Low buffer for fast startup
-          maxBufferMs: 30000, // Large buffer for higher quality loading
-          bufferForPlaybackMs: 100, // Instant playback threshold
-          bufferForPlaybackAfterRebufferMs: 500,
-        ),
-      );
-
-      _player = BetterPlayerController(
-        const BetterPlayerConfiguration(
-          autoPlay: true,
-          looping: true,
-          fit: BoxFit.cover,
-          expandToFill: true,
-          aspectRatio: 9 / 16,
-          handleLifecycle: false,
-          autoDispose: false,
-          allowedScreenSleep: false,
-          controlsConfiguration: BetterPlayerControlsConfiguration(
-            showControls: false,
-            loadingWidget: SizedBox.shrink(),
-          ),
-        ),
-        betterPlayerDataSource: dataSource,
-      );
-
-      _player!.addEventsListener((event) {
-        if (!mounted || _isDisposed) return;
-        if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
+      _player = AppVideoController(index: 0, videoUrl: videoUrl);
+      await _player!.initialize(
+        onInitialized: () {
+          if (!mounted || _isDisposed || _player == null) return;
           if (!_isInitialized) {
-            final videoPlayerController = _player?.videoPlayerController;
-            if (videoPlayerController != null) {
-              try {
-                videoPlayerController.addListener(_videoListener);
-              } catch (_) {}
-            }
+            try {
+              _player!.addListener(_videoListener);
+            } catch (_) {}
+            try {
+              _player!.play();
+            } catch (_) {}
             if (mounted && !_isDisposed) {
               setState(() {
                 _isInitialized = true;
               });
             }
           }
-        }
-      });
+        },
+      );
     } catch (e) {
       debugPrint('Video init error: $e');
     }
@@ -219,16 +183,19 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
   void _videoListener() {
     if (!mounted || _isDisposed || !_isInitialized || _player == null) return;
 
-    final videoPlayerController = _player?.videoPlayerController;
-    if (videoPlayerController == null) return;
-
     try {
-      if (!videoPlayerController.value.initialized) return;
+      if (!_player!.isInitialized) return;
 
-      final value = videoPlayerController.value;
+      final duration = _player!.duration;
+      final position = _player!.position;
 
-      final duration = value.duration;
-      final position = value.position;
+      if (position > Duration.zero && !_firstFrameRendered) {
+        if (mounted && !_isDisposed) {
+          setState(() {
+            _firstFrameRendered = true;
+          });
+        }
+      }
 
       if (duration != null && duration.inMilliseconds > 0) {
         final newProgress = position.inMilliseconds / duration.inMilliseconds;
@@ -273,6 +240,46 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
     await videoController.getVideoPoints();
   }
 
+  Widget _buildThumbnailPlaceholder() {
+    final String? thumbnail = widget.videosData.thumbnail;
+    final String videoThumbnail = thumbnail != null && thumbnail.isNotEmpty
+        ? (thumbnail.startsWith('http')
+              ? thumbnail
+              : '${ApiRoutes.baseUrl}$thumbnail')
+        : '';
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (videoThumbnail.isNotEmpty)
+          CachedNetworkImage(
+            imageUrl: videoThumbnail,
+            fit: BoxFit.contain,
+            placeholder: (_, __) => Container(color: AppColors.darkText),
+            errorWidget: (_, __, ___) => Container(color: AppColors.darkText),
+          )
+        else
+          Container(color: AppColors.darkText),
+        Positioned(
+          top: 0,
+          left: 10,
+          right: 10,
+          child: SafeArea(
+            child: Row(
+              children: [
+                BlurBackButton(
+                  onTap: () {
+                    context.pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     videoController = context.watch<VideoController>();
@@ -288,7 +295,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
           switch (videoController.videoByIdData.status) {
             case Status.INITIAL:
             case Status.LOADING:
-              return CustomLoadingIndicator();
+              return _buildThumbnailPlaceholder();
             case Status.COMPLETED:
               if (videoController.videoByIdData.data == null) {
                 return EmptyDataContainer(
@@ -305,7 +312,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                 );
               }
               if (_player == null || !_isInitialized) {
-                return Container(color: AppColors.darkText);
+                return _buildThumbnailPlaceholder();
               }
               return Stack(
                 fit: StackFit.expand,
@@ -315,37 +322,78 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     onTap: () {
                       if (_player == null || !_isInitialized) return;
                       final controller = _player!;
-                      final videoPlayerController =
-                          controller.videoPlayerController;
-                      if (videoPlayerController == null) return;
                       try {
-                        videoPlayerController.value.isPlaying
+                        controller.isPlaying
                             ? controller.pause()
                             : controller.play();
                       } catch (_) {}
                       setState(() {});
                     },
                     child: _player != null && _isInitialized
-                        ? FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width:
-                                  _player!
-                                      .videoPlayerController
-                                      ?.value
-                                      .size
-                                      ?.width ??
-                                  1080,
-                              height:
-                                  _player!
-                                      .videoPlayerController
-                                      ?.value
-                                      .size
-                                      ?.height ??
-                                  1920,
-                              child: BetterPlayer(controller: _player!),
-                            ),
-                          )
+                        ? () {
+                            final size = _player!.size;
+                            final videoWidth = size.width;
+                            final videoHeight = size.height;
+                            final bool isVertical = videoHeight > videoWidth;
+
+                            if (Platform.isIOS) {
+                              if (isVertical) {
+                                return SizedBox.expand(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: SizedBox(
+                                      width: videoWidth,
+                                      height: videoHeight,
+                                      child: VideoPlayer(
+                                        _player!.videoPlayerController!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Center(
+                                  child: AspectRatio(
+                                    aspectRatio:
+                                        videoWidth > 0 && videoHeight > 0
+                                        ? videoWidth / videoHeight
+                                        : 16 / 9,
+                                    child: VideoPlayer(
+                                      _player!.videoPlayerController!,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              if (isVertical) {
+                                return SizedBox.expand(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: SizedBox(
+                                      width: videoWidth,
+                                      height: videoHeight,
+                                      child: BetterPlayer(
+                                        controller:
+                                            _player!.betterPlayerController!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Center(
+                                  child: AspectRatio(
+                                    aspectRatio:
+                                        videoWidth > 0 && videoHeight > 0
+                                        ? videoWidth / videoHeight
+                                        : 16 / 9,
+                                    child: BetterPlayer(
+                                      controller:
+                                          _player!.betterPlayerController!,
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          }()
                         : Container(
                             color: AppColors.scaffoldBackgroundDark,
                             child: const Center(
@@ -356,11 +404,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                   if (_player != null && _isInitialized) ...[
                     Center(
                       child: AnimatedOpacity(
-                        opacity:
-                            (_player!.videoPlayerController?.value.isPlaying ??
-                                false)
-                            ? 0.0
-                            : 1.0,
+                        opacity: _player!.isPlaying ? 0.0 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         child: Container(
                           height: 50,
@@ -374,10 +418,7 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                             ),
                           ),
                           child: Icon(
-                            (_player!.videoPlayerController?.value.isPlaying ??
-                                    false)
-                                ? Icons.pause
-                                : Icons.play_arrow,
+                            _player!.isPlaying ? Icons.pause : Icons.play_arrow,
                             size: 30,
                             color: AppColors.whiteText,
                           ),
@@ -418,8 +459,6 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                           //         isEarnCoins: true,
                           //       );
                           //     },
-                          //   ),
-                          // ],
                         ],
                       ),
                     ),
@@ -429,221 +468,197 @@ class _NotificationVideoScreenState extends State<NotificationVideoScreen>
                     left: 0,
                     right: 0,
                     child: BottomBar(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          LinearProgressIndicator(
-                            value: _progress.clamp(0.0, 1.0),
-                            minHeight: 4,
-                            backgroundColor: Colors.grey.shade300,
-                            valueColor: AlwaysStoppedAnimation(
-                              GenericColors.darkGreen,
-                            ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.6),
+                            ],
                           ),
-                          ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                              child: Container(
-                                padding: EdgeInsets.all(15),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                      color: AppColors.whiteText.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      width: 1.0,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 15,
+                                      bottom: 15,
+                                      right: 10,
                                     ),
-                                  ),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      AppColors.whiteText.withValues(
-                                        alpha: 0.10,
-                                      ),
-                                      GenericColors.lightPrimary.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Flexible(
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    if (_player != null &&
-                                                        _isInitialized) {
-                                                      _player!.pause();
-                                                    }
-                                                    context.pushNamed(
-                                                      AppRoutes.shopDetail,
-                                                      extra: videosData.shopId,
-                                                    );
-                                                  },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Flexible(
+                                              child: InkWell(
+                                                onTap: () {
+                                                  if (_player != null &&
+                                                      _isInitialized) {
+                                                    _player!.pause();
+                                                  }
+                                                  context.pushNamed(
+                                                    AppRoutes.shopDetail,
+                                                    extra: videosData.shopId,
+                                                  );
+                                                },
+                                                child: BodyTextColors(
+                                                  title:
+                                                      videosData.shopName
+                                                          ?.capitalize() ??
+                                                      '',
+                                                  fontSize: 16,
+                                                  color: AppColors.whiteText,
+                                                  fontWeight: FontWeight.w600,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            if (videosData.watched == true &&
+                                                !isMyVideos)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: const Center(
                                                   child: BodyTextColors(
-                                                    title:
-                                                        videosData.shopName
-                                                            ?.capitalize() ??
-                                                        '',
-                                                    fontSize: 16,
-                                                    color: AppColors.whiteText,
+                                                    title: 'Watched',
+                                                    fontSize: 12,
                                                     fontWeight: FontWeight.w400,
-                                                    textDecoration:
-                                                        TextDecoration
-                                                            .underline,
-                                                    decorationColor:
-                                                        AppColors.whiteText,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.visible,
+                                                    color: AppColors.whiteText,
                                                   ),
                                                 ),
                                               ),
-                                              SizedBox(width: 10),
-                                              if (videosData.watched == true &&
-                                                  !isMyVideos)
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.primary,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          20,
-                                                        ),
-                                                  ),
-                                                  child: Center(
-                                                    child: BodyTextColors(
-                                                      title: 'Watched',
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color:
-                                                          AppColors.whiteText,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 8),
-                                          BodyTextColors(
-                                            title:
-                                                videosData.description
-                                                    ?.capitalize() ??
-                                                '',
-                                            fontSize: 12,
-                                            color: AppColors.whiteText,
-                                            fontWeight: FontWeight.w400,
-                                            maxLines: 1,
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        ExpandableDescription(
+                                          description:
+                                              videosData.description
+                                                  ?.capitalize() ??
+                                              '',
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 8),
-                                    if (!isMyVideos) ...[
-                                      Row(
-                                        children: [
-                                          CircleContainer(
-                                            onTap: () async {
-                                              if (_player != null &&
-                                                  _isInitialized) {
-                                                _player!.pause();
-                                              }
-                                              context.pushNamed(
-                                                AppRoutes.shopDetail,
-                                                extra: videosData.shopId,
-                                              );
-                                            },
-                                            child: Icon(
-                                              Icons.info,
-                                              color: AppColors.primary,
-                                              size: 25,
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          ValueListenableBuilder<bool>(                                            valueListenable: bookMarkNotifier,
-                                            builder: (context, isBookmarked, _) {
-                                              return CircleContainer(
-                                                onTap: () async {
-                                                  final bool updatedStatus =
-                                                      !isBookmarked;
-
-                                                  // Optimistic UI update
-                                                  bookMarkNotifier.value =
-                                                      updatedStatus;
-
-                                                  final profileController =
-                                                      context
-                                                          .read<
-                                                            ProfileController
-                                                          >();
-
-                                                  try {
-                                                    await videoController
-                                                        .addSavedVideos(
-                                                          videoId:
-                                                              videosData.id ??
-                                                              0,
-                                                          status: updatedStatus
-                                                              ? 'active'
-                                                              : 'inactive',
-                                                        );
-
-                                                    await profileController
-                                                        .saveShop(
-                                                          shopId:
-                                                              videosData
-                                                                  .shopId ??
-                                                              0,
-                                                          status: updatedStatus
-                                                              ? 'active'
-                                                              : 'inactive',
-                                                        );
-                                                  } catch (e) {
-                                                    bookMarkNotifier.value =
-                                                        isBookmarked;
-                                                  }
-                                                },
-                                                child: isBookmarked
-                                                    ? Image.asset(
-                                                        AppIcons.bookmarkP,
-                                                        height: 25,
-                                                        width: 25,
-                                                      )
-                                                    : const Icon(
-                                                        Icons
-                                                            .bookmark_border_outlined,
-                                                        size: 25,
-                                                        color:
-                                                            AppColors.darkGrey,
-                                                      ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
+                                if (!isMyVideos)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 10,
+                                      bottom: 15,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleContainer(
+                                          onTap: () async {
+                                            if (_player != null &&
+                                                _isInitialized) {
+                                              _player!.pause();
+                                            }
+                                            context.pushNamed(
+                                              AppRoutes.shopDetail,
+                                              extra: videosData.shopId,
+                                            );
+                                          },
+                                          child: const Icon(
+                                            Icons.info,
+                                            color: AppColors.primary,
+                                            size: 25,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 15),
+                                        ValueListenableBuilder<bool>(
+                                          valueListenable: bookMarkNotifier,
+                                          builder: (context, isBookmarked, _) {
+                                            return CircleContainer(
+                                              onTap: () async {
+                                                final bool updatedStatus =
+                                                    !isBookmarked;
+                                                bookMarkNotifier.value =
+                                                    updatedStatus;
+                                                final profileController =
+                                                    context
+                                                        .read<
+                                                          ProfileController
+                                                        >();
+                                                try {
+                                                  await videoController
+                                                      .addSavedVideos(
+                                                        videoId:
+                                                            videosData.id ?? 0,
+                                                        status: updatedStatus
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                  await profileController
+                                                      .saveShop(
+                                                        shopId:
+                                                            videosData.shopId ??
+                                                            0,
+                                                        status: updatedStatus
+                                                            ? 'active'
+                                                            : 'inactive',
+                                                      );
+                                                } catch (e) {
+                                                  bookMarkNotifier.value =
+                                                      isBookmarked;
+                                                }
+                                              },
+                                              child: isBookmarked
+                                                  ? Image.asset(
+                                                      AppIcons.bookmarkP,
+                                                      height: 25,
+                                                      width: 25,
+                                                    )
+                                                  : const Icon(
+                                                      Icons
+                                                          .bookmark_border_outlined,
+                                                      size: 25,
+                                                      color: AppColors.darkGrey,
+                                                    ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            LinearProgressIndicator(
+                              value: _progress.clamp(0.0, 1.0),
+                              minHeight: 2,
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.3,
+                              ),
+                              valueColor: const AlwaysStoppedAnimation(
+                                Colors.white,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
