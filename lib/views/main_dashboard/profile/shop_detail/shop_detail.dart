@@ -383,88 +383,186 @@ class ShopDetailContainer extends StatelessWidget {
 
     return Column(
       children: [
-        Container(
-          margin: EdgeInsets.fromLTRB(10, 15, 10, 10),
-          height: 150,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadiusGeometry.circular(10),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Stack(
-            children: [
-              CustomNetworkImage(
-                imageUrl:
-                    shop.shopImage ??
-                    getUnKnownShopImages(shop.shopImage ?? ''),
-              ),
-              if (isShopClosed()) ...[
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: GenericColors.darkRed,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          AppIcons.videoShop,
-                          height: 16,
-                          width: 16,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.whiteText,
-                            BlendMode.srcIn,
-                          ),
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierColor: Colors.black,
+              builder: (context) {
+                return StatefulBuilder(
+                  builder: (context, setState) {
+                    return GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: Stack(
+                          children: [
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {},
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 130,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    color: Colors.black,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.6),
+                                        blurRadius: 20,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: InteractiveViewer(
+                                      minScale: 0.8,
+                                      maxScale: 4,
+                                      child: Hero(
+                                        tag: shop.shopImage ?? '',
+                                        child: CustomNetworkImage(
+                                          imageUrl:
+                                              shop.shopImage ??
+                                              getUnKnownShopImages(
+                                                shop.shopImage ?? '',
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            Positioned(
+                              top: 50,
+                              right: 20,
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 6),
-                        BodyTextColors(
-                          title: 'Shop Closed',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.whiteText,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else ...[
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: GenericColors.darkGreen,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          AppIcons.videoShop,
-                          height: 16,
-                          width: 16,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.whiteText,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        BodyTextColors(
-                          title: 'Shop Open',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.whiteText,
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+          child: Container(
+            margin: EdgeInsets.fromLTRB(10, 15, 10, 10),
+            height: 150,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadiusGeometry.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black,
+                  blurRadius: 1,
+                  spreadRadius: 0,
+                  offset: const Offset(-2, 2),
                 ),
               ],
-            ],
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: Stack(
+              children: [
+                CustomNetworkImage(
+                  imageUrl:
+                      shop.shopImage ??
+                      getUnKnownShopImages(shop.shopImage ?? ''),
+                ),
+                if (isShopClosed()) ...[
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GenericColors.darkRed,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppIcons.videoShop,
+                            height: 16,
+                            width: 16,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.whiteText,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          BodyTextColors(
+                            title: 'Shop Closed',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.whiteText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GenericColors.darkGreen,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppIcons.videoShop,
+                            height: 16,
+                            width: 16,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.whiteText,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          BodyTextColors(
+                            title: 'Shop Open',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.whiteText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
         SizedBox(

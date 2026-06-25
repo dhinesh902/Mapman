@@ -266,6 +266,7 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                 title: 'Location',
                 hintText: 'Drop Your Location',
                 inputAction: TextInputAction.done,
+                isReadOnly: true,
                 onTap: () async {
                   final result = await context.pushNamed(
                     AppRoutes.enterLocation,
@@ -401,7 +402,9 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       },
                       onTap: () async {
                         TimeOfDay? pickedTime =
-                            await CustomTimePicker.pickReturnTime(context);
+                            await CustomTimePicker.showScrollableTimePicker(
+                              context,
+                            );
                         if (pickedTime != null) {
                           openTimeController.text = formatTimeOfDay(pickedTime);
                         }
@@ -433,7 +436,9 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                           return;
                         }
                         TimeOfDay? pickedTime =
-                            await CustomTimePicker.pickReturnTime(context);
+                            await CustomTimePicker.showScrollableTimePicker(
+                              context,
+                            );
                         if (pickedTime != null) {
                           closeTimeController.text = formatTimeOfDay(
                             pickedTime,

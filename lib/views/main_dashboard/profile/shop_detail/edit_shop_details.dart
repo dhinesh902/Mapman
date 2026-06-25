@@ -547,6 +547,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                   controller: locationController,
                   title: 'Location',
                   hintText: 'Drop Your Location',
+                  isReadOnly: true,
                   inputAction: TextInputAction.done,
                   onTap: () async {
                     final result = await context.pushNamed(
@@ -680,7 +681,9 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         },
                         onTap: () async {
                           TimeOfDay? pickedTime =
-                              await CustomTimePicker.pickReturnTime(context);
+                              await CustomTimePicker.showScrollableTimePicker(
+                                context,
+                              );
                           if (pickedTime != null) {
                             openTimeController.text = formatTimeOfDay(
                               pickedTime,
@@ -706,7 +709,9 @@ class _EditShopDetailState extends State<EditShopDetail> {
                         },
                         onTap: () async {
                           TimeOfDay? pickedTime =
-                              await CustomTimePicker.pickReturnTime(context);
+                              await CustomTimePicker.showScrollableTimePicker(
+                                context,
+                              );
                           if (pickedTime != null) {
                             closeTimeController.text = formatTimeOfDay(
                               pickedTime,

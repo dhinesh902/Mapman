@@ -950,8 +950,6 @@ class _MapsState extends State<Maps> {
                                         height: 24,
                                         onTap: () {
                                           tapNotifier.value = null;
-                                          homeController.setSearchCategory =
-                                              'all';
                                           homeController.setIsShowAddNearBy =
                                               false;
                                           if (sheetController.isAttached) {

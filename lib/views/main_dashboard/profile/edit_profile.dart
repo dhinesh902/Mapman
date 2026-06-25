@@ -249,7 +249,12 @@ class _EditProfileState extends State<EditProfile> {
                           width: 160,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
+                            color: AppColors.whiteText,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5),
+                            ],
                           ),
+                          padding: EdgeInsets.all(4),
                           clipBehavior: Clip.hardEdge,
                           child: ValueListenableBuilder(
                             valueListenable: profileImageNotifier,
@@ -260,8 +265,11 @@ class _EditProfileState extends State<EditProfile> {
                                   fit: BoxFit.cover,
                                 );
                               }
-                              return CustomNetworkImage(
-                                imageUrl: widget.profileData.profilePic ?? '',
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: CustomNetworkImage(
+                                  imageUrl: widget.profileData.profilePic ?? '',
+                                ),
                               );
                             },
                           ),

@@ -96,10 +96,6 @@ class _ProfileState extends State<Profile> {
                             AppIcons.shopP,
                             height: 60,
                             width: 60,
-                            // colorFilter: const ColorFilter.mode(
-                            //   AppColors.primary,
-                            //   BlendMode.srcIn,
-                            // ),
                           ),
                         ),
                       ),
@@ -410,9 +406,19 @@ class ProfileImage extends StatelessWidget {
         Container(
           height: 125,
           width: 160,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: AppColors.whiteText,
+            boxShadow: [
+              BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5),
+            ],
+          ),
+          padding: EdgeInsets.all(4),
           clipBehavior: Clip.hardEdge,
-          child: CustomNetworkImage(imageUrl: profileData.profilePic ?? ''),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: CustomNetworkImage(imageUrl: profileData.profilePic ?? ''),
+          ),
         ),
         const SizedBox(height: 10),
         HeaderTextBlack(

@@ -436,120 +436,148 @@ class HomeTopCard extends StatelessWidget {
                   itemBuilder: (context, index, realIndex) {
                     final banner = homeBanners[index];
 
+                    // return Container(
+                    //   margin: const EdgeInsets.fromLTRB(4, 15, 4, 10),
+                    //   decoration: BoxDecoration(
+                    //     borderRadius: BorderRadius.circular(20),
+                    //     color: AppColors.whiteText,
+                    //     image: DecorationImage(
+                    //       image: NetworkImage(
+                    //         banner.backgroundImage?.startsWith('https') ?? false
+                    //             ? banner.backgroundImage!
+                    //             : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ''}',
+                    //       ),
+                    //       fit: BoxFit.cover,
+                    //     ),
+                    //   ),
+                    //
+                    //   padding: EdgeInsets.all(4),
+                    //   clipBehavior: Clip.hardEdge,
+                    //   child: Row(
+                    //     children: [
+                    //       /// LEFT CONTENT
+                    //       Expanded(
+                    //         flex: 5,
+                    //         child: Padding(
+                    //           padding: const EdgeInsets.symmetric(
+                    //             horizontal: 16,
+                    //             vertical: 5,
+                    //           ),
+                    //           child: Column(
+                    //             crossAxisAlignment: CrossAxisAlignment.start,
+                    //             mainAxisAlignment: MainAxisAlignment.center,
+                    //             children: [
+                    //               BodyTextColors(
+                    //                 title: banner.title?.capitalize() ?? '',
+                    //                 fontSize: 16,
+                    //                 fontWeight: FontWeight.w700,
+                    //                 color: AppColors.whiteText,
+                    //               ),
+                    //
+                    //               const SizedBox(height: 5),
+                    //
+                    //               BodyTextColors(
+                    //                 title: banner.subtitle?.capitalize() ?? '',
+                    //                 fontSize: 12,
+                    //                 fontWeight: FontWeight.w300,
+                    //                 color: AppColors.whiteText,
+                    //               ),
+                    //
+                    //               const SizedBox(height: 20),
+                    //               if (banner.title != null &&
+                    //                   banner.title!.isNotEmpty) ...[
+                    //                 InkWell(
+                    //                   borderRadius: BorderRadius.circular(8),
+                    //                   onTap: () async {
+                    //                     final token = SessionManager.getToken();
+                    //
+                    //                     if (token == null) {
+                    //                       await LoginBottomSheet.showLoginBottomSheet(
+                    //                         context,
+                    //                       );
+                    //                       return;
+                    //                     }
+                    //
+                    //                     await showAddShopDetail(context);
+                    //                   },
+                    //                   child: Container(
+                    //                     height: 28,
+                    //                     width: 120,
+                    //                     decoration: BoxDecoration(
+                    //                       color: index == 1
+                    //                           ? AppColors.darkText
+                    //                           : AppColors.primary,
+                    //                       borderRadius: BorderRadius.circular(
+                    //                         8,
+                    //                       ),
+                    //                     ),
+                    //                     child: Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.center,
+                    //                       children: [
+                    //                         BodyTextColors(
+                    //                           title: 'Register Now',
+                    //                           fontSize: 12,
+                    //                           fontWeight: FontWeight.w500,
+                    //                           color: AppColors.whiteText,
+                    //                         ),
+                    //
+                    //                         const SizedBox(width: 6),
+                    //
+                    //                         const Icon(
+                    //                           Icons.arrow_forward_rounded,
+                    //                           size: 16,
+                    //                           color: AppColors.whiteText,
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //               ],
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       ),
+                    //
+                    //       /// RIGHT IMAGE
+                    //       if (banner.image != null &&
+                    //           banner.image!.isNotEmpty) ...[
+                    //         SizedBox(
+                    //           width: 130,
+                    //           height: 170,
+                    //           child: Image.network(
+                    //             banner.image!.startsWith('https')
+                    //                 ? '${banner.image}'
+                    //                 : '${ApiRoutes.baseUrl}${banner.image ?? ""}',
+                    //             fit: BoxFit.contain,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ],
+                    //   ),
+                    // );
                     return Container(
-                      margin: const EdgeInsets.fromLTRB(0, 15, 0, 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            banner.backgroundImage?.startsWith('https') ?? false
-                                ? banner.backgroundImage!
-                                : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ''}',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
+                        color: AppColors.whiteText,
                       ),
+                      padding: EdgeInsets.all(4),
                       clipBehavior: Clip.hardEdge,
-                      child: Row(
-                        children: [
-                          /// LEFT CONTENT
-                          Expanded(
-                            flex: 5,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 5,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  BodyTextColors(
-                                    title: banner.title?.capitalize() ?? '',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.whiteText,
-                                  ),
-
-                                  const SizedBox(height: 5),
-
-                                  BodyTextColors(
-                                    title: banner.subtitle?.capitalize() ?? '',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w300,
-                                    color: AppColors.whiteText,
-                                  ),
-
-                                  const SizedBox(height: 20),
-
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(8),
-                                    onTap: () async {
-                                      final token = SessionManager.getToken();
-
-                                      if (token == null) {
-                                        await LoginBottomSheet.showLoginBottomSheet(
-                                          context,
-                                        );
-                                        return;
-                                      }
-
-                                      await showAddShopDetail(context);
-                                    },
-                                    child: Container(
-                                      height: 28,
-                                      width: 120,
-                                      decoration: BoxDecoration(
-                                        color: index == 1
-                                            ? AppColors.darkText
-                                            : AppColors.primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          BodyTextColors(
-                                            title: 'Register Now',
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: AppColors.whiteText,
-                                          ),
-
-                                          const SizedBox(width: 6),
-
-                                          const Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: 16,
-                                            color: AppColors.whiteText,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          /// RIGHT IMAGE
-                          SizedBox(
-                            width: 130,
-                            height: 170,
-                            child: Image.network(
-                              '${ApiRoutes.baseUrl}${banner.image ?? ""}',
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadiusGeometry.circular(20),
+                        child: CustomNetworkImage(
+                          imageUrl: banner.backgroundImage!.startsWith('https')
+                              ? '${banner.backgroundImage}'
+                              : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ""}',
+                        ),
                       ),
                     );
                   },
                   options: CarouselOptions(
-                    height: 180,
+                    height: 170,
                     viewportFraction: 1.0,
                     autoPlay: true,
-                    autoPlayInterval: const Duration(seconds: 3),
+                    autoPlayInterval: const Duration(seconds: 5),
                     autoPlayAnimationDuration: const Duration(
                       milliseconds: 800,
                     ),
