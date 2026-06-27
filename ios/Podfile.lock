@@ -220,7 +220,6 @@ DEPENDENCIES:
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - get_thumbnail_video (from `.symlinks/plugins/get_thumbnail_video/ios`)
   - google_maps_flutter_ios_sdk9 (from `.symlinks/plugins/google_maps_flutter_ios_sdk9/ios`)
-  - GoogleMaps (~> 9.0)
   - image_cropper (from `.symlinks/plugins/image_cropper/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -350,6 +349,6 @@ SPEC CHECKSUMS:
   wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: 2eb860fe8c8510131377edd831c4f3f03c0fe78d
+PODFILE CHECKSUM: 308da1fb59ac26af48802ce809302ccb5d143161
 
 COCOAPODS: 1.16.2

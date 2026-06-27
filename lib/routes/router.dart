@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/main.dart';
@@ -36,13 +37,25 @@ import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/upload_video.dart';
 
 class AppRouter {
-  static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-  static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
-    analytics: analytics,
-  );
+  static FirebaseAnalytics? get analytics {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseAnalytics.instance;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static FirebaseAnalyticsObserver? get observer {
+    final analyticsInstance = analytics;
+    if (analyticsInstance != null) {
+      return FirebaseAnalyticsObserver(analytics: analyticsInstance);
+    }
+    return null;
+  }
 
   static final router = GoRouter(
-    observers: [observer],
+    observers: [if (observer != null) observer!],
     navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     routes: [

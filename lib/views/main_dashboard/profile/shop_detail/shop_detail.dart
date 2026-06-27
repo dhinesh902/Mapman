@@ -24,7 +24,6 @@ import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:provider/provider.dart';
 
 class ShopDetail extends StatefulWidget {
