@@ -569,6 +569,7 @@ class HomeTopCard extends StatelessWidget {
                           imageUrl: banner.backgroundImage!.startsWith('https')
                               ? '${banner.backgroundImage}'
                               : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ""}',
+                          boxFit: BoxFit.fill,
                         ),
                       ),
                     );

@@ -15,12 +15,14 @@ class CustomNetworkImage extends StatelessWidget {
     this.placeHolderHeight = 36,
     this.isProfile = false,
     this.showProgressIndicator = true,
+    this.boxFit=BoxFit.cover,
   });
 
   final String imageUrl;
   final double placeHolderHeight;
   final bool isProfile;
   final bool showProgressIndicator;
+  final BoxFit boxFit;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class CustomNetworkImage extends StatelessWidget {
       imageUrl: imageUrl.startsWith('https')
           ? imageUrl
           : ApiRoutes.baseUrl + imageUrl,
-      fit: BoxFit.cover,
+      fit: boxFit,
       width: double.infinity,
       height: double.infinity,
       progressIndicatorBuilder: showProgressIndicator
