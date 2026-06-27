@@ -45,7 +45,7 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  pod 'GoogleMaps', '8.4.0'
+  pod 'GoogleMaps', '~> 9.0'
 
   target 'RunnerTests' do
     inherit! :search_paths

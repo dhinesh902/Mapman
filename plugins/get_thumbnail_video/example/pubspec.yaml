@@ -1,0 +1,25 @@
+name: get_thumbnail_video_example
+description: "Demonstrates how to use the get_thumbnail_video plugin."
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
+  get_thumbnail_video:
+    path: ../
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
