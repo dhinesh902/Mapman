@@ -69,7 +69,7 @@ class ProfileController extends ChangeNotifier {
 
   ApiResponse<ProfileData> get profileData => _profileData;
 
-  ApiResponse<ShopDetailData> _shopDetailData = ApiResponse.initial(
+  final ApiResponse<ShopDetailData> _shopDetailData = ApiResponse.initial(
     Strings.noDataFound,
   );
 

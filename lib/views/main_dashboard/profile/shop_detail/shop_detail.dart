@@ -410,7 +410,9 @@ class ShopDetailContainer extends StatelessWidget {
                                     color: Colors.black,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.6),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.6,
+                                        ),
                                         blurRadius: 20,
                                         spreadRadius: 2,
                                       ),
@@ -445,7 +447,7 @@ class ShopDetailContainer extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
+                                    color: Colors.white.withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.white24),
                                   ),
@@ -870,7 +872,7 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
                             color: Colors.black,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 blurRadius: 20,
                                 spreadRadius: 2,
                               ),
@@ -946,7 +948,7 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white24),
                           ),
@@ -972,7 +974,7 @@ class _ImageSliderWithArrowsState extends State<ImageSliderWithArrows> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white24),
       ),

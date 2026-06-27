@@ -64,10 +64,10 @@ class _MainDashboardState extends State<MainDashboard> {
 
       try {
         _apiResponse = await context.read<HomeController>().getVersion();
-        
+
         final forceUpdateStr = _apiResponse.data?.forceUpdate?.toLowerCase();
         forceUpdate = forceUpdateStr == 'true' || forceUpdateStr == '1';
-        
+
         if (_apiResponse.status == Status.COMPLETED) {
           latestVersion = Platform.isIOS
               ? _apiResponse.data?.iosVersion?.toString()
@@ -76,10 +76,8 @@ class _MainDashboardState extends State<MainDashboard> {
       } catch (e) {
         debugPrint('Failed to fetch latest version: $e');
       }
-      print('----------------------------------${currentVersion}');
-      print(
-        '----------------------------------${latestVersion}',
-      );
+      print('----------------------------------$currentVersion');
+      print('----------------------------------$latestVersion');
       if (currentVersion != latestVersion && mounted) {
         showDialog(
           context: context,

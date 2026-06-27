@@ -18,7 +18,6 @@ import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
-import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:skeletonizer/skeletonizer.dart';

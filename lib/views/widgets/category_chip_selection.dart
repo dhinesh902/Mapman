@@ -59,14 +59,14 @@ class CategoryChipSelection extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected
-                            ? AppColors.primary.withOpacity(0.05)
-                            : const Color(0XFFEFF3FD),
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.05)
+                        : const Color(0XFFEFF3FD),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color:
-                          isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
@@ -74,11 +74,12 @@ class CategoryChipSelection extends StatelessWidget {
                     cat.capitalize(),
                     style: GoogleFonts.outfit(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color:
-                          isSelected
-                              ? AppColors.primary
-                              : const Color(0XFF617193),
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: isSelected
+                          ? AppColors.primary
+                          : const Color(0XFF617193),
                     ),
                   ),
                 ),

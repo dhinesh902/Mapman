@@ -2,25 +2,24 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:video_player/video_player.dart';
-import 'package:mapman/routes/api_routes.dart';
 
 class AppVideoController {
   final int index;
   final String videoUrl;
-  
+
   BetterPlayerController? betterPlayerController;
   VideoPlayerController? videoPlayerController;
-  
+
   bool get isIOS => Platform.isIOS;
-  
+
   AppVideoController({required this.index, required this.videoUrl});
-  
-  Future<void> initialize({
-    required VoidCallback onInitialized,
-  }) async {
+
+  Future<void> initialize({required VoidCallback onInitialized}) async {
     if (isIOS) {
       try {
-        videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+        videoPlayerController = VideoPlayerController.networkUrl(
+          Uri.parse(videoUrl),
+        );
         await videoPlayerController!.initialize();
         videoPlayerController!.setLooping(true);
         onInitialized();
@@ -30,7 +29,7 @@ class AppVideoController {
     } else {
       final isHls = videoUrl.contains('.m3u8');
       final isDash = videoUrl.contains('.mpd');
-      
+
       final dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         videoUrl,
@@ -83,7 +82,8 @@ class AppVideoController {
     if (isIOS) {
       return videoPlayerController?.value.isInitialized ?? false;
     } else {
-      return betterPlayerController?.videoPlayerController?.value.initialized ?? false;
+      return betterPlayerController?.videoPlayerController?.value.initialized ??
+          false;
     }
   }
 
@@ -91,7 +91,8 @@ class AppVideoController {
     if (isIOS) {
       return videoPlayerController?.value.isPlaying ?? false;
     } else {
-      return betterPlayerController?.videoPlayerController?.value.isPlaying ?? false;
+      return betterPlayerController?.videoPlayerController?.value.isPlaying ??
+          false;
     }
   }
 
@@ -99,7 +100,8 @@ class AppVideoController {
     if (isIOS) {
       return videoPlayerController?.value.position ?? Duration.zero;
     } else {
-      return betterPlayerController?.videoPlayerController?.value.position ?? Duration.zero;
+      return betterPlayerController?.videoPlayerController?.value.position ??
+          Duration.zero;
     }
   }
 
@@ -115,7 +117,8 @@ class AppVideoController {
     if (isIOS) {
       return videoPlayerController?.value.size ?? const Size(1080, 1920);
     } else {
-      return betterPlayerController?.videoPlayerController?.value.size ?? const Size(1080, 1920);
+      return betterPlayerController?.videoPlayerController?.value.size ??
+          const Size(1080, 1920);
     }
   }
 
