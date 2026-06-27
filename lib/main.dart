@@ -173,8 +173,14 @@ Future<void> main() async {
 
     /// FCM token refresh
     firebaseMessaging.onTokenRefresh.listen((fcmToken) async {
-      await sharedPrefs.setString(Keys.fcmToken, fcmToken);
-      await AuthController().addFcmToken();
+      try {
+        await sharedPrefs.setString(Keys.fcmToken, fcmToken);
+        await AuthController().addFcmToken();
+      } catch (e) {
+        if (kDebugMode) print("Error updating refresh token: $e");
+      }
+    }, onError: (error) {
+      if (kDebugMode) print("Token refresh stream error: $error");
     });
 
     /// Initial token fetch (iOS retry after small delay)
