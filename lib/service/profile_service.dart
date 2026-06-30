@@ -93,7 +93,7 @@ class ProfileService extends ApiRoutes {
   }) async {
     try {
       final Map<String, dynamic> data = {
-        'shopId':shopDetail.id,
+        'shopId': shopDetail.id,
         'shopName': shopDetail.shopName,
         'category': shopDetail.category,
         'lat': shopDetail.lat,
@@ -103,7 +103,7 @@ class ProfileService extends ApiRoutes {
         'openTime': shopDetail.openTime,
         'closeTime': shopDetail.closeTime,
         'address': shopDetail.address,
-        'type':shopDetail.type,
+        'type': shopDetail.type,
         'registerNumber': shopDetail.registerNumber,
         'whatsappNumber': shopDetail.whatsappNumber,
         'shopNumber': shopDetail.shopNumber,

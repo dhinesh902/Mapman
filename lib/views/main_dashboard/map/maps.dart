@@ -200,8 +200,11 @@ class _MapsState extends State<Maps> {
     _customMarkers.clear();
     _circularMarkers.clear();
     _markersLoaded = false;
+    final inputCategory = homeController.searchCategory?.toLowerCase() == 'others'
+        ? 'all'
+        : (homeController.searchCategory ?? 'all');
     final response = await homeController.getSearchShops(
-      input: homeController.searchCategory ?? 'all',
+      input: inputCategory,
     );
 
     if (!mounted) return;
@@ -834,41 +837,12 @@ class _MapsState extends State<Maps> {
                     ),
                   ),
 
-                  if (homeController.searchCategory == null ||
-                      homeController.searchCategory == 'all') ...[
-                    Positioned(
-                      top: 15,
-                      left: 5,
-                      right: 5,
-                      child: shopAutoComplete(),
-                    ),
-                  ] else ...[
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: GestureDetector(
-                        onTap: () {
-                          homeController.setCurrentPage = 0;
-                        },
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: SvgPicture.asset(
-                              AppIcons.arrowBack,
-                              height: 24,
-                              width: 24,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  Positioned(
+                    top: 15,
+                    left: 5,
+                    right: 5,
+                    child: shopAutoComplete(),
+                  ),
 
                   ValueListenableBuilder<ShopSearchData?>(
                     valueListenable: tapNotifier,

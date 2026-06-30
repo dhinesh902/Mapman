@@ -102,8 +102,12 @@ class _EditProfileState extends State<EditProfile> {
 
     emailAddressController.text = profileData.email ?? '';
     stateController.text = profileData.state ?? '';
-    selectedState = (profileData.state?.isNotEmpty ?? false) ? profileData.state : null;
-    selectedDistrict = (profileData.district?.isNotEmpty ?? false) ? profileData.district : null;
+    selectedState = (profileData.state?.isNotEmpty ?? false)
+        ? profileData.state
+        : null;
+    selectedDistrict = (profileData.district?.isNotEmpty ?? false)
+        ? profileData.district
+        : null;
     districtController.text = profileData.district ?? '';
 
     if (selectedState != null && stateData.containsKey(selectedState)) {
@@ -251,7 +255,11 @@ class _EditProfileState extends State<EditProfile> {
                             borderRadius: BorderRadius.circular(10),
                             color: AppColors.whiteText,
                             boxShadow: [
-                              BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5),
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                spreadRadius: 5,
+                              ),
                             ],
                           ),
                           padding: EdgeInsets.all(4),

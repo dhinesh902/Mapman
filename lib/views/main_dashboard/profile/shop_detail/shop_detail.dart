@@ -405,18 +405,17 @@ class ShopDetailContainer extends StatelessWidget {
                                     vertical: 130,
                                   ),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: AppColors.whiteText,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
+                                        color: Colors.black12,
+                                        blurRadius: 10,
+                                        spreadRadius: 5,
                                       ),
                                     ],
                                   ),
+                                  padding: EdgeInsets.all(4),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
                                     child: InteractiveViewer(
@@ -472,22 +471,26 @@ class ShopDetailContainer extends StatelessWidget {
             height: 150,
             decoration: BoxDecoration(
               borderRadius: BorderRadiusGeometry.circular(10),
+              color: AppColors.whiteText,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
+                  color: Colors.black12,
+                  spreadRadius: 1,
                   blurRadius: 1,
-                  spreadRadius: 0,
-                  offset: const Offset(-2, 2),
                 ),
               ],
             ),
+            padding: EdgeInsets.all(4),
             clipBehavior: Clip.hardEdge,
             child: Stack(
               children: [
-                CustomNetworkImage(
-                  imageUrl:
-                      shop.shopImage ??
-                      getUnKnownShopImages(shop.shopImage ?? ''),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CustomNetworkImage(
+                    imageUrl:
+                        shop.shopImage ??
+                        getUnKnownShopImages(shop.shopImage ?? ''),
+                  ),
                 ),
                 if (isShopClosed()) ...[
                   Positioned(

@@ -479,6 +479,7 @@ class _EditShopDetailState extends State<EditShopDetail> {
                 SizedBox(height: 20),
                 CustomTextField(
                   controller: shopNameController,
+                  maxLength: 35,
                   title: 'Shop Name / Business Name',
                   hintText: 'Enter shop name / business name or service name',
                   inputAction: TextInputAction.next,

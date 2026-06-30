@@ -14,14 +14,14 @@ abstract class ApiRoutes {
   final Dio dio;
 
   ApiRoutes()
-    : dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          contentType: 'application/json',
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      ) {
+      : dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      contentType: 'application/json',
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+    ),
+  ) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();

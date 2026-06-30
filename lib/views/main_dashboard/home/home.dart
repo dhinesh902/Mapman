@@ -93,7 +93,7 @@ class _HomeState extends State<Home> {
         builder: (context) {
           final isLoading =
               homeController.homeData.status == Status.INITIAL ||
-              homeController.homeData.status == Status.LOADING;
+                  homeController.homeData.status == Status.LOADING;
 
           if (homeController.homeData.status == Status.ERROR) {
             return CustomErrorTextWidget(
@@ -103,40 +103,40 @@ class _HomeState extends State<Home> {
 
           final categories = isLoading
               ? List.generate(
-                  8,
-                  (index) =>
-                      Category(id: index, categoryName: 'Category $index'),
-                )
+            8,
+                (index) =>
+                Category(id: index, categoryName: 'Category $index'),
+          )
               : homeController.homeCategories;
 
           final topBanner = isLoading
               ? List.generate(
-                  3,
-                  (index) => TopBanners(
-                    id: index,
-                    title: 'Banner Title $index',
-                    subtitle: 'Subtitle $index',
-                  ),
-                )
+            3,
+                (index) => TopBanners(
+              id: index,
+              title: 'Banner Title $index',
+              subtitle: 'Subtitle $index',
+            ),
+          )
               : (homeController.homeData.data?.topBanners ?? []);
 
           final categoryBanners = isLoading
               ? List.generate(
-                  3,
-                  (index) => CategoryBanners(
-                    id: index,
-                    title: 'Category Banner $index',
-                  ),
-                )
+            3,
+                (index) => CategoryBanners(
+              id: index,
+              title: 'Category Banner $index',
+            ),
+          )
               : (homeController.homeData.data?.categoryBanners ?? []);
 
           final homeData = isLoading
               ? HomeData(
-                  userName: 'Profile Name',
-                  profile: '',
-                  topBanners: topBanner,
-                  categoryBanners: categoryBanners,
-                )
+            userName: 'Profile Name',
+            profile: '',
+            topBanners: topBanner,
+            categoryBanners: categoryBanners,
+          )
               : (homeController.homeData.data ?? HomeData());
 
           return Skeletonizer(
@@ -144,237 +144,237 @@ class _HomeState extends State<Home> {
             child: isLoading
                 ? const HomeSkeleton()
                 : Column(
-                    children: [
-                      HomeTopCard(
-                        homeBanners: topBanner,
-                        homeController: homeController,
-                        homeData: homeData,
-                      ),
-                      SizedBox(height: 5),
-                      Container(
-                        height: 55,
-                        margin: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          gradient: LinearGradient(
-                            colors: [Colors.white, const Color(0xFFF4FFF5)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          border: Border.all(
-                            color: const Color(
-                              0xFF4CAF50,
-                            ).withValues(alpha: .18),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF4CAF50,
-                              ).withValues(alpha: .10),
-                              blurRadius: 15,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: AnimatedTextField(
-                          animationType: Animationtype.typer,
-                          readOnly: true,
-                          onTap: () {
-                            homeController.setFocusSearchOnMap = true;
-                            homeController.setSearchCategory = 'all';
-                            homeController.setIsShowAddNearBy = false;
-                            homeController.setCurrentPage = 1;
-                          },
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 16,
-                            ),
-                            prefixIcon: Container(
-                              margin: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: GenericColors.darkGreen.withValues(
-                                  alpha: .12,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.search_rounded,
-                                color: GenericColors.darkGreen,
-                                size: 18,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          hintTextStyle: AppTextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkText.withValues(alpha: .7),
-                          ).textStyle,
-                          hintTexts: const [
-                            'Search for " restaurants "',
-                            'Search for " mechanic shops "',
-                            'Search for " grocery stores "',
-                            'Search for " electricians "',
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  HeaderTextBlack(
-                                    title: 'Category',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  SizedBox(width: 50),
-                                  Expanded(
-                                    child: Divider(color: Color(0XFFE0E0E0)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.symmetric(horizontal: 10),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 4,
-                                    mainAxisSpacing: 12,
-                                    crossAxisSpacing: 3,
-                                    mainAxisExtent: 110,
-                                  ),
-                              itemCount: categories.length,
-                              itemBuilder: (context, index) {
-                                bool isFurniture =
-                                    categories[index].categoryName ==
-                                    "furniture";
-                                return GestureDetector(
-                                  onTap: () {
-                                    homeController.setCurrentPage = 1;
-                                    homeController.setIsShowAddNearBy = true;
-                                    homeController.setSearchCategory =
-                                        categories[index].categoryName
-                                            .toString()
-                                            .toLowerCase();
-                                  },
-                                  child: Card(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Expanded(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    AppColors.whiteText,
-                                                    GenericColors.lightPrimary
-                                                        .withValues(alpha: .6),
-                                                  ],
-                                                ),
-                                                borderRadius:
-                                                    const BorderRadius.vertical(
-                                                      top: Radius.circular(6),
-                                                    ),
-                                              ),
-                                              child: Center(
-                                                child: isLoading
-                                                    ? const SizedBox.shrink()
-                                                    : Image.network(
-                                                        '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
-                                                        height: isFurniture
-                                                            ? 55
-                                                            : 40,
-                                                        width: isFurniture
-                                                            ? 55
-                                                            : 40,
-                                                        filterQuality:
-                                                            FilterQuality.high,
-                                                      ),
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            height: 32,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  AppColors.scaffoldBackground,
-                                              borderRadius:
-                                                  const BorderRadius.vertical(
-                                                    bottom: Radius.circular(6),
-                                                  ),
-                                            ),
-                                            child: Center(
-                                              child: BodyTextColors(
-                                                title:
-                                                    categories[index]
-                                                        .categoryName
-                                                        ?.capitalize() ??
-                                                    '',
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w400,
-                                                color: const Color(0XFF1F1F1F),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * .18,
-                            ),
-                            BottomCarousalSlider(
-                              images: categoryBanners,
-                              homeController: homeController,
-                              height: 100,
-                            ),
-                            Container(
-                              height: 153,
-                              color: AppColors.scaffoldBackgroundDark,
-                              padding: EdgeInsets.symmetric(horizontal: 30),
-                              child: EndMessageSection(title: 'MAP MAN'),
-                            ),
-                          ],
-                        ),
+              children: [
+                HomeTopCard(
+                  homeBanners: topBanner,
+                  homeController: homeController,
+                  homeData: homeData,
+                ),
+                SizedBox(height: 5),
+                Container(
+                  height: 55,
+                  margin: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    gradient: LinearGradient(
+                      colors: [Colors.white, const Color(0xFFF4FFF5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(
+                      color: const Color(
+                        0xFF4CAF50,
+                      ).withValues(alpha: .18),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(
+                          0xFF4CAF50,
+                        ).withValues(alpha: .10),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
+                  child: AnimatedTextField(
+                    animationType: Animationtype.typer,
+                    readOnly: true,
+                    onTap: () {
+                      homeController.setFocusSearchOnMap = true;
+                      homeController.setSearchCategory = 'all';
+                      homeController.setIsShowAddNearBy = false;
+                      homeController.setCurrentPage = 1;
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
+                      prefixIcon: Container(
+                        margin: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: GenericColors.darkGreen.withValues(
+                            alpha: .12,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.search_rounded,
+                          color: GenericColors.darkGreen,
+                          size: 18,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    hintTextStyle: AppTextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkText.withValues(alpha: .7),
+                    ).textStyle,
+                    hintTexts: const [
+                      'Search for " restaurants "',
+                      'Search for " mechanic shops "',
+                      'Search for " grocery stores "',
+                      'Search for " electricians "',
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            HeaderTextBlack(
+                              title: 'Category',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            SizedBox(width: 50),
+                            Expanded(
+                              child: Divider(color: Color(0XFFE0E0E0)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 3,
+                          mainAxisExtent: 110,
+                        ),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          bool isFurniture =
+                              categories[index].categoryName ==
+                                  "furniture";
+                          return GestureDetector(
+                            onTap: () {
+                              homeController.setCurrentPage = 1;
+                              homeController.setIsShowAddNearBy = true;
+                              homeController.setSearchCategory =
+                                  categories[index].categoryName
+                                      .toString()
+                                      .toLowerCase();
+                            },
+                            child: Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              AppColors.whiteText,
+                                              GenericColors.lightPrimary
+                                                  .withValues(alpha: .6),
+                                            ],
+                                          ),
+                                          borderRadius:
+                                          const BorderRadius.vertical(
+                                            top: Radius.circular(6),
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: isLoading
+                                              ? const SizedBox.shrink()
+                                              : Image.network(
+                                            '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
+                                            height: isFurniture
+                                                ? 55
+                                                : 40,
+                                            width: isFurniture
+                                                ? 55
+                                                : 40,
+                                            filterQuality:
+                                            FilterQuality.high,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color:
+                                        AppColors.scaffoldBackground,
+                                        borderRadius:
+                                        const BorderRadius.vertical(
+                                          bottom: Radius.circular(6),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: BodyTextColors(
+                                          title:
+                                          categories[index]
+                                              .categoryName
+                                              ?.capitalize() ??
+                                              '',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: const Color(0XFF1F1F1F),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * .18,
+                      ),
+                      BottomCarousalSlider(
+                        images: categoryBanners,
+                        homeController: homeController,
+                        height: 100,
+                      ),
+                      Container(
+                        height: 153,
+                        color: AppColors.scaffoldBackgroundDark,
+                        padding: EdgeInsets.symmetric(horizontal: 30),
+                        child: EndMessageSection(title: 'MAP MAN'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -713,15 +713,15 @@ class HomeTopListTile extends StatelessWidget {
                             case Status.COMPLETED:
                               return BodyTextColors(
                                 title:
-                                    homeController
-                                            .notificationCountResponse
-                                            .data ==
-                                        0
+                                homeController
+                                    .notificationCountResponse
+                                    .data ==
+                                    0
                                     ? ''
                                     : homeController
-                                          .notificationCountResponse
-                                          .data
-                                          .toString(),
+                                    .notificationCountResponse
+                                    .data
+                                    .toString(),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                                 textAlign: TextAlign.center,
@@ -807,7 +807,7 @@ class BottomCarousalSlider extends StatelessWidget {
                   image: DecorationImage(
                     image: NetworkImage(
                       images[index].backgroundImage?.startsWith('https') ??
-                              false
+                          false
                           ? images[index].backgroundImage!
                           : '${ApiRoutes.baseUrl}${images[index].backgroundImage ?? ''}',
                     ),
@@ -924,7 +924,7 @@ class CustomIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         itemCount,
-        (index) => AnimatedContainer(
+            (index) => AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           height: borderHeight,
           width: currentIndex == index ? activeWidth : inactiveWidth,
