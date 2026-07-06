@@ -19,6 +19,7 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
+import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
@@ -93,7 +94,7 @@ class _HomeState extends State<Home> {
         builder: (context) {
           final isLoading =
               homeController.homeData.status == Status.INITIAL ||
-                  homeController.homeData.status == Status.LOADING;
+              homeController.homeData.status == Status.LOADING;
 
           if (homeController.homeData.status == Status.ERROR) {
             return CustomErrorTextWidget(
@@ -103,278 +104,294 @@ class _HomeState extends State<Home> {
 
           final categories = isLoading
               ? List.generate(
-            8,
-                (index) =>
-                Category(id: index, categoryName: 'Category $index'),
-          )
+                  8,
+                  (index) =>
+                      Category(id: index, categoryName: 'Category $index'),
+                )
               : homeController.homeCategories;
 
           final topBanner = isLoading
               ? List.generate(
-            3,
-                (index) => TopBanners(
-              id: index,
-              title: 'Banner Title $index',
-              subtitle: 'Subtitle $index',
-            ),
-          )
+                  3,
+                  (index) => TopBanners(
+                    id: index,
+                    title: 'Banner Title $index',
+                    subtitle: 'Subtitle $index',
+                  ),
+                )
               : (homeController.homeData.data?.topBanners ?? []);
 
           final categoryBanners = isLoading
               ? List.generate(
-            3,
-                (index) => CategoryBanners(
-              id: index,
-              title: 'Category Banner $index',
-            ),
-          )
+                  3,
+                  (index) => CategoryBanners(
+                    id: index,
+                    title: 'Category Banner $index',
+                  ),
+                )
               : (homeController.homeData.data?.categoryBanners ?? []);
 
           final homeData = isLoading
               ? HomeData(
-            userName: 'Profile Name',
-            profile: '',
-            topBanners: topBanner,
-            categoryBanners: categoryBanners,
-          )
+                  userName: 'Profile Name',
+                  profile: '',
+                  topBanners: topBanner,
+                  categoryBanners: categoryBanners,
+                )
               : (homeController.homeData.data ?? HomeData());
-
+          final homeShops = homeController.homeData.data?.shops ?? [];
           return Skeletonizer(
             enabled: isLoading,
             child: isLoading
                 ? const HomeSkeleton()
                 : Column(
-              children: [
-                HomeTopCard(
-                  homeBanners: topBanner,
-                  homeController: homeController,
-                  homeData: homeData,
-                ),
-                SizedBox(height: 5),
-                Container(
-                  height: 55,
-                  margin: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    gradient: LinearGradient(
-                      colors: [Colors.white, const Color(0xFFF4FFF5)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(
-                      color: const Color(
-                        0xFF4CAF50,
-                      ).withValues(alpha: .18),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(
-                          0xFF4CAF50,
-                        ).withValues(alpha: .10),
-                        blurRadius: 15,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: AnimatedTextField(
-                    animationType: Animationtype.typer,
-                    readOnly: true,
-                    onTap: () {
-                      homeController.setFocusSearchOnMap = true;
-                      homeController.setSearchCategory = 'all';
-                      homeController.setIsShowAddNearBy = false;
-                      homeController.setCurrentPage = 1;
-                    },
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.transparent,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 16,
-                      ),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: GenericColors.darkGreen.withValues(
-                            alpha: .12,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.search_rounded,
-                          color: GenericColors.darkGreen,
-                          size: 18,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    hintTextStyle: AppTextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkText.withValues(alpha: .7),
-                    ).textStyle,
-                    hintTexts: const [
-                      'Search for " restaurants "',
-                      'Search for " mechanic shops "',
-                      'Search for " grocery stores "',
-                      'Search for " electricians "',
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ListView(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            HeaderTextBlack(
-                              title: 'Category',
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
+                      HomeTopCard(
+                        homeBanners: topBanner,
+                        homeController: homeController,
+                        homeData: homeData,
+                      ),
+                      SizedBox(height: 5),
+                      Container(
+                        height: 55,
+                        margin: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          gradient: LinearGradient(
+                            colors: [Colors.white, const Color(0xFFF4FFF5)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          border: Border.all(
+                            color: const Color(
+                              0xFF4CAF50,
+                            ).withValues(alpha: .18),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF4CAF50,
+                              ).withValues(alpha: .10),
+                              blurRadius: 15,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 6),
                             ),
-                            SizedBox(width: 50),
-                            Expanded(
-                              child: Divider(color: Color(0XFFE0E0E0)),
+                          ],
+                        ),
+                        child: AnimatedTextField(
+                          animationType: Animationtype.typer,
+                          readOnly: true,
+                          onTap: () {
+                            homeController.setFocusSearchOnMap = true;
+                            homeController.setSearchCategory = 'all';
+                            homeController.setIsShowAddNearBy = false;
+                            homeController.setCurrentPage = 1;
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 16,
+                            ),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: GenericColors.darkGreen.withValues(
+                                  alpha: .12,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.search_rounded,
+                                color: GenericColors.darkGreen,
+                                size: 18,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          hintTextStyle: AppTextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.darkText.withValues(alpha: .7),
+                          ).textStyle,
+                          hintTexts: const [
+                            'Search for " restaurants "',
+                            'Search for " mechanic shops "',
+                            'Search for " grocery stores "',
+                            'Search for " electricians "',
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: ListView(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Row(
+                                children: [
+                                  HeaderTextBlack(
+                                    title: 'Category',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  SizedBox(width: 50),
+                                  Expanded(
+                                    child: Divider(color: Color(0XFFE0E0E0)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 4,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 3,
+                                    mainAxisExtent: 110,
+                                  ),
+                              itemCount: categories.length,
+                              itemBuilder: (context, index) {
+                                bool isFurniture =
+                                    categories[index].categoryName ==
+                                    "furniture";
+                                return GestureDetector(
+                                  onTap: () {
+                                    homeController.setCurrentPage = 1;
+                                    homeController.setIsShowAddNearBy = true;
+                                    homeController.setSearchCategory =
+                                        categories[index].categoryName
+                                            .toString()
+                                            .toLowerCase();
+                                  },
+                                  child: Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    AppColors.whiteText,
+                                                    GenericColors.lightPrimary
+                                                        .withValues(alpha: .6),
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    const BorderRadius.vertical(
+                                                      top: Radius.circular(6),
+                                                    ),
+                                              ),
+                                              child: Center(
+                                                child: isLoading
+                                                    ? const SizedBox.shrink()
+                                                    : Image.network(
+                                                        '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
+                                                        height: isFurniture
+                                                            ? 55
+                                                            : 40,
+                                                        width: isFurniture
+                                                            ? 55
+                                                            : 40,
+                                                        filterQuality:
+                                                            FilterQuality.high,
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 32,
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  AppColors.scaffoldBackground,
+                                              borderRadius:
+                                                  const BorderRadius.vertical(
+                                                    bottom: Radius.circular(6),
+                                                  ),
+                                            ),
+                                            child: Center(
+                                              child: BodyTextColors(
+                                                title:
+                                                    categories[index]
+                                                        .categoryName
+                                                        ?.capitalize() ??
+                                                    '',
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w400,
+                                                color: const Color(0XFF1F1F1F),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 50),
+                            Padding(
+                              padding: EdgeInsets.only(left: 10),
+                              child: HeaderTextBlack(
+                                title: 'Featured Locations',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            ListView.builder(
+                              itemCount: homeShops.length,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                return ShopCard(shop: homeShops[index]);
+                              },
+                            ),
+                            SizedBox(height: 100),
+                            BottomCarousalSlider(
+                              images: categoryBanners,
+                              homeController: homeController,
+                              height: 100,
+                            ),
+                            Container(
+                              height: 153,
+                              color: AppColors.scaffoldBackgroundDark,
+                              padding: EdgeInsets.symmetric(horizontal: 30),
+                              child: EndMessageSection(title: 'MAP MAN'),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 10),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 3,
-                          mainAxisExtent: 110,
-                        ),
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          bool isFurniture =
-                              categories[index].categoryName ==
-                                  "furniture";
-                          return GestureDetector(
-                            onTap: () {
-                              homeController.setCurrentPage = 1;
-                              homeController.setIsShowAddNearBy = true;
-                              homeController.setSearchCategory =
-                                  categories[index].categoryName
-                                      .toString()
-                                      .toLowerCase();
-                            },
-                            child: Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              AppColors.whiteText,
-                                              GenericColors.lightPrimary
-                                                  .withValues(alpha: .6),
-                                            ],
-                                          ),
-                                          borderRadius:
-                                          const BorderRadius.vertical(
-                                            top: Radius.circular(6),
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: isLoading
-                                              ? const SizedBox.shrink()
-                                              : Image.network(
-                                            '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
-                                            height: isFurniture
-                                                ? 55
-                                                : 40,
-                                            width: isFurniture
-                                                ? 55
-                                                : 40,
-                                            filterQuality:
-                                            FilterQuality.high,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color:
-                                        AppColors.scaffoldBackground,
-                                        borderRadius:
-                                        const BorderRadius.vertical(
-                                          bottom: Radius.circular(6),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: BodyTextColors(
-                                          title:
-                                          categories[index]
-                                              .categoryName
-                                              ?.capitalize() ??
-                                              '',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: const Color(0XFF1F1F1F),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * .18,
-                      ),
-                      BottomCarousalSlider(
-                        images: categoryBanners,
-                        homeController: homeController,
-                        height: 100,
-                      ),
-                      Container(
-                        height: 153,
-                        color: AppColors.scaffoldBackgroundDark,
-                        padding: EdgeInsets.symmetric(horizontal: 30),
-                        child: EndMessageSection(title: 'MAP MAN'),
-                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
           );
         },
       ),
@@ -454,7 +471,7 @@ class HomeTopCard extends StatelessWidget {
                     //   clipBehavior: Clip.hardEdge,
                     //   child: Row(
                     //     children: [
-                    //       /// LEFT CONTENT
+                    //
                     //       Expanded(
                     //         flex: 5,
                     //         child: Padding(
@@ -538,7 +555,7 @@ class HomeTopCard extends StatelessWidget {
                     //         ),
                     //       ),
                     //
-                    //       /// RIGHT IMAGE
+                    //
                     //       if (banner.image != null &&
                     //           banner.image!.isNotEmpty) ...[
                     //         SizedBox(
@@ -713,15 +730,15 @@ class HomeTopListTile extends StatelessWidget {
                             case Status.COMPLETED:
                               return BodyTextColors(
                                 title:
-                                homeController
-                                    .notificationCountResponse
-                                    .data ==
-                                    0
+                                    homeController
+                                            .notificationCountResponse
+                                            .data ==
+                                        0
                                     ? ''
                                     : homeController
-                                    .notificationCountResponse
-                                    .data
-                                    .toString(),
+                                          .notificationCountResponse
+                                          .data
+                                          .toString(),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                                 textAlign: TextAlign.center,
@@ -807,7 +824,7 @@ class BottomCarousalSlider extends StatelessWidget {
                   image: DecorationImage(
                     image: NetworkImage(
                       images[index].backgroundImage?.startsWith('https') ??
-                          false
+                              false
                           ? images[index].backgroundImage!
                           : '${ApiRoutes.baseUrl}${images[index].backgroundImage ?? ''}',
                     ),
@@ -924,7 +941,7 @@ class CustomIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         itemCount,
-            (index) => AnimatedContainer(
+        (index) => AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           height: borderHeight,
           width: currentIndex == index ? activeWidth : inactiveWidth,
@@ -935,6 +952,252 @@ class CustomIndicator extends StatelessWidget {
                 ? AppColors.whiteText
                 : GenericColors.borderGrey,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShopCard extends StatelessWidget {
+  final HomeShops shop;
+
+  const ShopCard({super.key, required this.shop});
+
+  @override
+  Widget build(BuildContext context) {
+    final image =
+        shop.shopImage ??
+        shop.image1 ??
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(AppRoutes.shopDetail, extra: shop.id ?? 0);
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.whiteText,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: GenericColors.borderGrey.withValues(alpha: .5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: GenericColors.darkGreen.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: image.isNotEmpty
+                    ? CustomNetworkImage(
+                        imageUrl: image.startsWith('http')
+                            ? image
+                            : '${ApiRoutes.baseUrl}$image',
+                        boxFit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: AppColors.scaffoldBackgroundDark,
+                        child: const Center(
+                          child: Icon(
+                            Icons.storefront,
+                            size: 50,
+                            color: GenericColors.borderGrey,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: GenericColors.lightPrimary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: BodyTextColors(
+                      title: shop.category?.capitalize() ?? 'Shop',
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  HeaderTextBlack(
+                    title: shop.shopName ?? 'Unknown Shop',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  if (shop.description != null &&
+                      shop.description!.isNotEmpty) ...[
+                    BodyTextColors(
+                      title: shop.description!,
+                      color: AppColors.darkText.withValues(alpha: 0.6),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: BodyTextColors(
+                          title: shop.address ?? 'Address not available',
+                          color: AppColors.darkText.withValues(alpha: 0.7),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+                  Divider(
+                    color: GenericColors.borderGrey.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 16,
+                        color: GenericColors.darkGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: BodyTextColors(
+                          title:
+                              "${shop.openTime ?? '-'} to ${shop.closeTime ?? '-'}",
+                          color: AppColors.darkText,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            await CustomLaunchers.openGoogleMaps(
+                              latitude: double.parse(shop.lat ?? ''),
+                              longitude: double.parse(shop.long ?? ''),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.directions_rounded,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                BodyTextColors(
+                                  title: 'Direction',
+                                  color: AppColors.primary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            await CustomLaunchers.makePhoneCall(
+                              phoneNumber: shop.registerNumber ?? '',
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.call_rounded,
+                                  size: 16,
+                                  color: AppColors.whiteText,
+                                ),
+                                const SizedBox(width: 6),
+                                BodyTextColors(
+                                  title: 'Call',
+                                  color: AppColors.whiteText,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
