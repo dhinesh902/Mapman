@@ -75,19 +75,7 @@ class LocationIconService {
 
   final Map<String, BitmapDescriptor> _iconCache = {};
 
-  final Map<String, String> _iconMap = {
-    'theater': AppIcons.theatersMap,
-    'restaurant': AppIcons.resortsMap,
-    'hospital': AppIcons.hospitalsMap,
-    'bars': AppIcons.barsMap,
-    'grocery': AppIcons.groceryMap,
-    'textile': AppIcons.textilesMap,
-    'resort': AppIcons.resortsMap,
-    'bunk': AppIcons.petrolBunkMap,
-    'spa': AppIcons.spaMap,
-    'hotel': AppIcons.hotelsMap,
-    'others': AppIcons.othersMap,
-  };
+  final Map<String, String> _iconMap = {};
 
   Future<BitmapDescriptor> getMarkerIcon({required String category}) async {
     final key = category.toLowerCase().trim();
@@ -110,24 +98,28 @@ class LocationIconService {
         85,
       );
 
-      final icon = BitmapDescriptor.fromBytes(resizedBytes);
+      final icon = BitmapDescriptor.bytes(resizedBytes);
       _iconCache[key] = icon;
 
       return icon;
     } catch (e) {
-      final ByteData data = await rootBundle.load(AppIcons.othersMap);
+      try {
+        final ByteData data = await rootBundle.load(AppIcons.locationPinP);
 
-      final Uint8List resizedBytes = _resizeImage(
-        data.buffer.asUint8List(),
-        60,
-        75,
-      );
+        final Uint8List resizedBytes = _resizeImage(
+          data.buffer.asUint8List(),
+          60,
+          75,
+        );
 
-      final BitmapDescriptor icon = BitmapDescriptor.fromBytes(resizedBytes);
+        final BitmapDescriptor icon = BitmapDescriptor.bytes(resizedBytes);
 
-      _iconCache[key] = icon;
+        _iconCache[key] = icon;
 
-      return icon;
+        return icon;
+      } catch (_) {
+        return BitmapDescriptor.defaultMarker;
+      }
     }
   }
 
@@ -150,6 +142,8 @@ class LocationIconService {
 
   /// Preload all icons
   Future<void> preloadAllIcons() async {
-    await Future.wait(_iconMap.keys.map((category) => getMarkerIcon(category: category)));
+    await Future.wait(
+      _iconMap.keys.map((category) => getMarkerIcon(category: category)),
+    );
   }
 }

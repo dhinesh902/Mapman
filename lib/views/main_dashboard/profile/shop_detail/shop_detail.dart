@@ -5,6 +5,7 @@ import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/model/single_shop_detaildata.dart';
 import 'package:mapman/model/video_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -426,8 +427,9 @@ class ShopDetailContainer extends StatelessWidget {
                                         child: CustomNetworkImage(
                                           imageUrl:
                                               shop.shopImage ??
+                                              shop.image1 ??
                                               getUnKnownShopImages(
-                                                shop.shopImage ?? '',
+                                                shop.category ?? '',
                                               ),
                                         ),
                                       ),
@@ -489,7 +491,8 @@ class ShopDetailContainer extends StatelessWidget {
                   child: CustomNetworkImage(
                     imageUrl:
                         shop.shopImage ??
-                        getUnKnownShopImages(shop.shopImage ?? ''),
+                        shop.image1 ??
+                        getUnKnownShopImages(shop.category ?? ''),
                   ),
                 ),
                 if (isShopClosed()) ...[
@@ -732,8 +735,7 @@ class ShopDetailContainer extends StatelessWidget {
   };
 
   String getUnKnownShopImages(String category) {
-    return iconImageMap[category] ??
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
+    return iconImageMap[category] ?? ApiRoutes.defaultShopImageUrl;
   }
 }
 

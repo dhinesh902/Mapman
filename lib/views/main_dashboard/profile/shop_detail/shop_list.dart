@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
@@ -279,6 +280,30 @@ class _ProfessionalShopCardState extends State<ProfessionalShopCard> {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: () async {
+                      CustomDialogues().showDeleteConfirmDialog(
+                        context,
+                        onTap: () async {
+                          await deleteShop(
+                            shopId: widget.shopDetailData.id ?? 0,
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: SvgPicture.asset(AppIcons.deleteFill),
                     ),
                   ),
                 ),

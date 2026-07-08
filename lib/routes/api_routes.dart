@@ -14,19 +14,19 @@ abstract class ApiRoutes {
   final Dio dio;
 
   ApiRoutes()
-      : dio = Dio(
-    BaseOptions(
-      baseUrl: baseUrl,
-      contentType: 'application/json',
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  ) {
+    : dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          contentType: 'application/json',
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      ) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
         // This is the critical fix for Data Saver on mobile networks:
-        // It forces Dart's HttpClient to respect Android's system proxy settings, 
+        // It forces Dart's HttpClient to respect Android's system proxy settings,
         // which Samsung's Data Saver often uses to route and compress traffic.
         client.findProxy = HttpClient.findProxyFromEnvironment;
         return client;
@@ -42,7 +42,11 @@ abstract class ApiRoutes {
     return Options(headers: {Keys.userToken: token});
   }
 
+  static const String defaultShopImageUrl =
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+
   static const String baseUrl = 'https://api.mapman.in';
+
   // static const String baseUrl = 'https://2nb22tn8-3007.inc1.devtunnels.ms';
 
   static const String sendOTP = '/shop/auth/sendOtp';

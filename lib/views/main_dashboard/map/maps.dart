@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/model/shop_search_data.dart';
+import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/service/location_icon_service.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -199,12 +200,11 @@ class _MapsState extends State<Maps> {
     _customMarkers.clear();
     _circularMarkers.clear();
     _markersLoaded = false;
-    final inputCategory = homeController.searchCategory?.toLowerCase() == 'others'
+    final inputCategory =
+        homeController.searchCategory?.toLowerCase() == 'others'
         ? 'all'
         : (homeController.searchCategory ?? 'all');
-    final response = await homeController.getSearchShops(
-      input: inputCategory,
-    );
+    final response = await homeController.getSearchShops(input: inputCategory);
 
     if (!mounted) return;
 
@@ -245,6 +245,22 @@ class _MapsState extends State<Maps> {
     final response = homeController.shopSearchData;
     if (response.status != Status.COMPLETED || response.data == null) return;
 
+    _markersLoaded = true;
+
+    final uniqueCategories = response.data!
+        .map((s) => s.category?.toLowerCase().trim() ?? 'others')
+        .toSet();
+    uniqueCategories.add('others');
+    for (var cat in uniqueCategories) {
+      if (!_circularMarkers.containsKey(cat)) {
+        _circularMarkers[cat] = await createCircularMarker(category: cat);
+      }
+    }
+
+    if (mounted) setState(() {});
+
+    int count = 0;
+
     for (var shop in response.data!) {
       final id = shop.id?.toString();
 
@@ -258,12 +274,13 @@ class _MapsState extends State<Maps> {
         _customMarkers[id] = icon;
       }
 
-      if (!_circularMarkers.containsKey(category)) {
-        final circIcon = await createCircularMarker(category: category);
-        _circularMarkers[category] = circIcon;
+      count++;
+      // Batch processing: yield to UI thread every 15 markers to show them faster
+      if (count % 15 == 0) {
+        if (mounted) setState(() {});
+        await Future.delayed(Duration.zero);
       }
     }
-    _markersLoaded = true;
     if (mounted) setState(() {});
   }
 
@@ -274,142 +291,178 @@ class _MapsState extends State<Maps> {
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
 
-    canvas.translate(2, 2);
+    final String displayText = text.length > 20
+        ? '${text.substring(0, 20)}...'
+        : text;
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       text: TextSpan(
         children: [
-          TextSpan(text: "${text.capitalize()}\n"),
+          TextSpan(text: "${displayText.capitalize()}\n"),
           TextSpan(
             text: category.capitalize(),
             style: AppTextStyle(
-              fontSize: 26,
-              color: Colors.black54,
-              fontWeight: FontWeight.normal,
+              fontSize: 22,
+              color: Colors.blueGrey.shade600,
+              fontWeight: FontWeight.w600,
             ).textStyle,
           ),
         ],
         style: AppTextStyle(
           fontSize: 28,
-          color: Colors.black,
-          fontWeight: FontWeight.w600,
+          color: const Color(0xFF1A1A1A),
+          fontWeight: FontWeight.w700,
         ).textStyle,
       ),
       textDirection: TextDirection.ltr,
     );
-
     textPainter.layout();
 
-    final double labelPadding = 10.0;
-    final double labelWidth = textPainter.width + (labelPadding * 2);
+    // Dimensions
+    final double innerPaddingX = 14.0;
+    final double innerPaddingY = 10.0;
+    final double innerWidth = textPainter.width + (innerPaddingX * 2);
+    final double innerHeight = textPainter.height + (innerPaddingY * 2);
 
-    final double labelHeight = textPainter.height + 8;
+    final double outerGap = 6.0;
+    final double outerWidth = innerWidth + (outerGap * 2);
+    final double outerHeight = innerHeight + (outerGap * 2);
 
-    /// ICON SIZE
-    final double iconWidth = 26.0;
-    final double iconHeight = 26.0;
-    final double circleRadius = 13.0;
+    final double pointerWidth = 18.0;
+    final double pointerHeight = 12.0;
 
-    final double baseWidth = labelWidth > iconWidth ? labelWidth : iconWidth;
+    final double circleRadius = 14.0;
+    final double circleGap = 8.0; // gap between pointer tip and circle
 
-    final double totalWidth = baseWidth + 4;
+    // Padding for shadows
+    final double shadowPadding = 20.0;
 
-    final double totalHeight = labelHeight + iconHeight + 5 + 4;
+    final double totalWidth = outerWidth + (shadowPadding * 2);
+    final double totalHeight =
+        outerHeight +
+        pointerHeight +
+        circleGap +
+        (circleRadius * 2) +
+        (shadowPadding * 2);
 
-    final double labelX = (baseWidth - labelWidth) / 2;
+    // Shift canvas to allow shadow drawing at left/top
+    canvas.translate(shadowPadding, shadowPadding);
 
-    final double iconX = (baseWidth - iconWidth) / 2;
+    final Color categoryColor =
+        _categoryColors[category] ?? const Color(0xFF1F2937);
 
-    /// MAIN BUBBLE PATH
+    /// OUTER BUBBLE PATH
+    final double radiusVal = 8.0;
+    final Radius radius = Radius.circular(radiusVal);
+
     final path = Path();
-
-    final radius = const Radius.circular(8);
-
-    path.moveTo(labelX + 8, 0);
-
-    /// TOP
-    path.lineTo(labelX + labelWidth - 8, 0);
-
-    /// TOP RIGHT CURVE
-    path.arcToPoint(Offset(labelX + labelWidth, 8), radius: radius);
-
-    /// RIGHT
-    path.lineTo(labelX + labelWidth, labelHeight - 8);
-
-    /// BOTTOM RIGHT CURVE
+    path.moveTo(radiusVal, 0);
+    // Top Edge
+    path.lineTo(outerWidth - radiusVal, 0);
+    // Top Right Curve
+    path.arcToPoint(Offset(outerWidth, radiusVal), radius: radius);
+    // Right Edge
+    path.lineTo(outerWidth, outerHeight - radiusVal);
+    // Bottom Right Curve
     path.arcToPoint(
-      Offset(labelX + labelWidth - 8, labelHeight),
+      Offset(outerWidth - radiusVal, outerHeight),
       radius: radius,
     );
 
-    /// POINTER
-    path.lineTo(totalWidth / 2 + 6, labelHeight);
+    // Pointer
+    path.lineTo(outerWidth / 2 + (pointerWidth / 2), outerHeight);
+    path.lineTo(outerWidth / 2, outerHeight + pointerHeight);
+    path.lineTo(outerWidth / 2 - (pointerWidth / 2), outerHeight);
 
-    path.lineTo(totalWidth / 2, labelHeight + 6);
-
-    path.lineTo(totalWidth / 2 - 6, labelHeight);
-
-    /// BOTTOM LEFT
-    path.lineTo(labelX + 8, labelHeight);
-
-    /// BOTTOM LEFT CURVE
-    path.arcToPoint(Offset(labelX, labelHeight - 8), radius: radius);
-
-    /// LEFT
-    path.lineTo(labelX, 8);
-
-    /// TOP LEFT CURVE
-    path.arcToPoint(Offset(labelX + 8, 0), radius: radius);
+    // Bottom Edge
+    path.lineTo(radiusVal, outerHeight);
+    // Bottom Left Curve
+    path.arcToPoint(Offset(0, outerHeight - radiusVal), radius: radius);
+    // Left Edge
+    path.lineTo(0, radiusVal);
+    // Top Left Curve
+    path.arcToPoint(Offset(radiusVal, 0), radius: radius);
 
     path.close();
 
-    /// BACKGROUND
-    final Color baseColor = _categoryColors[category] ?? const Color(0xFF7B1FA2);
-    final fillPaint = Paint()
-      ..color = Color.lerp(baseColor, Colors.white, 0.9)!
-      ..style = PaintingStyle.fill;
+    /// OUTER SHADOW
+    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.25), 8.0, false);
 
+    /// OUTER WHITE FILL
+    final fillPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
 
-    /// NORMAL BORDER
-    final borderPaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+    /// INNER RECTANGLE PATH
+    final innerRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(outerGap, outerGap, innerWidth, innerHeight),
+      const Radius.circular(6),
+    );
 
-    canvas.drawPath(path, borderPaint);
+    /// INNER RECTANGLE FILL (Lightened Category Color)
+    final innerFillPaint = Paint()
+      ..color = Color.lerp(categoryColor, Colors.white, 0.9)!
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(innerRect, innerFillPaint);
+
+    /// INNER RECTANGLE BORDER
+    final innerBorderPaint = Paint()
+      ..color = categoryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+    canvas.drawRRect(innerRect, innerBorderPaint);
 
     /// TEXT
-    textPainter.paint(canvas, Offset(labelX + labelPadding, 4));
+    textPainter.paint(
+      canvas,
+      Offset(outerGap + innerPaddingX, outerGap + innerPaddingY),
+    );
 
-    /// CIRCLE FILL
+    /// SEPARATE CIRCLE
+    final double circleCenterY =
+        outerHeight + pointerHeight + circleGap + circleRadius;
+    final double circleCenterX = outerWidth / 2;
+
+    // Circle shadow
+    final circlePath = Path()
+      ..addOval(
+        Rect.fromCircle(
+          center: Offset(circleCenterX, circleCenterY),
+          radius: circleRadius,
+        ),
+      );
+    canvas.drawShadow(
+      circlePath,
+      Colors.black.withValues(alpha: 0.35),
+      6.0,
+      false,
+    );
+
+    // Circle Fill
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
+      ..color = categoryColor
       ..style = PaintingStyle.fill;
-
     canvas.drawCircle(
-      Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
+      Offset(circleCenterX, circleCenterY),
       circleRadius,
       circlePaint,
     );
 
-    /// CIRCLE BORDER
+    // Circle Border
     final circleBorderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
+      ..strokeWidth = 3.5;
     canvas.drawCircle(
-      Offset(iconX + circleRadius, labelHeight + 5 + circleRadius),
+      Offset(circleCenterX, circleCenterY),
       circleRadius,
       circleBorderPaint,
     );
 
     final picture = pictureRecorder.endRecording();
-
     final img = await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
-
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
@@ -558,11 +611,10 @@ class _MapsState extends State<Maps> {
           ? rawCategory
           : 'others';
 
-      final baseIcon = LocationIconService().getMarkerIconSync(
-        category: category,
-      );
-
-      final circularIcon = _circularMarkers[category] ?? baseIcon;
+      final circularIcon =
+          _circularMarkers[category] ??
+          _circularMarkers['others'] ??
+          BitmapDescriptor.defaultMarker;
 
       try {
         final double? lat = double.tryParse(shop.lat.toString());
@@ -1248,6 +1300,7 @@ class LocationShopContainer extends StatelessWidget {
               child: CustomNetworkImage(
                 imageUrl:
                     searchData.shopImage ??
+                    searchData.image1 ??
                     getUnKnownShopImages(
                       '${searchData.category?.toLowerCase()}',
                     ),
@@ -1312,7 +1365,6 @@ class LocationShopContainer extends StatelessWidget {
   };
 
   String getUnKnownShopImages(String category) {
-    return iconImageMap[category] ??
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_x6m1vACqgzs9-dxIZq-d6JYFbkJHkvdpCw&s";
+    return iconImageMap[category] ?? ApiRoutes.defaultShopImageUrl;
   }
 }

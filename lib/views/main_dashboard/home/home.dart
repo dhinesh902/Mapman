@@ -367,15 +367,19 @@ class _HomeState extends State<Home> {
                               ),
                             ),
                             SizedBox(height: 10),
-                            ListView.builder(
-                              itemCount: homeShops.length,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                return ShopCard(shop: homeShops[index]);
-                              },
+                            SizedBox(
+                              height: 290,
+                              child: ListView.builder(
+                                itemCount: homeShops.length,
+                                scrollDirection: Axis.horizontal,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                itemBuilder: (context, index) {
+                                  return ShopCard(shop: homeShops[index]);
+                                },
+                              ),
                             ),
-                            SizedBox(height: 100),
+                            SizedBox(height: 80),
                             BottomCarousalSlider(
                               images: categoryBanners,
                               homeController: homeController,
@@ -966,234 +970,317 @@ class ShopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image =
-        shop.shopImage ??
-        shop.image1 ??
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        shop.shopImage ?? shop.image1 ?? ApiRoutes.defaultShopImageUrl;
+
+    bool isShopClosed() {
+      try {
+        if ((shop.openTime ?? '').trim().isEmpty ||
+            (shop.closeTime ?? '').trim().isEmpty) {
+          return false;
+        }
+
+        int convertToMinutes(String value) {
+          value = value.trim().toUpperCase();
+
+          bool isPM = value.contains('PM');
+          bool isAM = value.contains('AM');
+
+          value = value.replaceAll('AM', '').replaceAll('PM', '').trim();
+
+          final parts = value.split(':');
+
+          int hour = int.parse(parts[0]);
+
+          int minute = 0;
+          if (parts.length > 1) {
+            minute = int.parse(parts[1]);
+          }
+
+          if (isPM && hour < 12) {
+            hour += 12;
+          }
+
+          if (isAM && hour == 12) {
+            hour = 0;
+          }
+
+          return hour * 60 + minute;
+        }
+
+        final now = TimeOfDay.now();
+        final nowMinutes = now.hour * 60 + now.minute;
+
+        final openMinutes = convertToMinutes(shop.openTime!);
+        final closeMinutes = convertToMinutes(shop.closeTime!);
+
+        bool isOpen;
+
+        if (openMinutes < closeMinutes) {
+          // same day
+          isOpen = nowMinutes >= openMinutes && nowMinutes < closeMinutes;
+        } else {
+          // overnight
+          isOpen = nowMinutes >= openMinutes || nowMinutes < closeMinutes;
+        }
+
+        return !isOpen;
+      } catch (e) {
+        debugPrint('TIME ERROR => $e');
+        debugPrint('OPEN => ${shop.openTime}');
+        debugPrint('CLOSE => ${shop.closeTime}');
+        return false;
+      }
+    }
 
     return GestureDetector(
       onTap: () {
         context.pushNamed(AppRoutes.shopDetail, extra: shop.id ?? 0);
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        width: 160,
+        margin: const EdgeInsets.only(right: 10, bottom: 10, top: 10),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
           color: AppColors.whiteText,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: GenericColors.borderGrey.withValues(alpha: .5),
-          ),
+          // border: Border.all(color: Colors.grey.shade200)
           boxShadow: [
             BoxShadow(
-              color: GenericColors.darkGreen.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black12,
+              blurRadius: 1,
+              spreadRadius: 0,
+              offset: Offset(-3, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 160,
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+            /// IMAGE
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(10),
+                  ),
+                  child: SizedBox(
+                    height: 145,
+                    width: double.infinity,
+                    child: CustomNetworkImage(
+                      imageUrl: image.startsWith("http")
+                          ? image
+                          : "${ApiRoutes.baseUrl}$image",
+                      boxFit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-                child: image.isNotEmpty
-                    ? CustomNetworkImage(
-                        imageUrl: image.startsWith('http')
-                            ? image
-                            : '${ApiRoutes.baseUrl}$image',
-                        boxFit: BoxFit.cover,
-                      )
-                    : Container(
-                        color: AppColors.scaffoldBackgroundDark,
-                        child: const Center(
-                          child: Icon(
-                            Icons.storefront,
-                            size: 50,
-                            color: GenericColors.borderGrey,
-                          ),
+
+                /// Category Badge
+                Positioned(
+                  left: 10,
+                  top: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.storefront,
+                          size: 12,
+                          color: Colors.green,
                         ),
-                      ),
-              ),
+
+                        const SizedBox(width: 4),
+
+                        BodyTextColors(
+                          title: shop.category?.capitalize() ?? "Shop",
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: GenericColors.lightPrimary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: BodyTextColors(
-                      title: shop.category?.capitalize() ?? 'Shop',
-                      color: AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
                   HeaderTextBlack(
-                    title: shop.shopName ?? 'Unknown Shop',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    title: shop.shopName ?? "Unknown Shop",
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
 
                   const SizedBox(height: 6),
 
-                  if (shop.description != null &&
-                      shop.description!.isNotEmpty) ...[
-                    BodyTextColors(
-                      title: shop.description!,
-                      color: AppColors.darkText.withValues(alpha: 0.6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  BodyTextColors(
+                    title: shop.address ?? "Address not available",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  if (isShopClosed()) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GenericColors.darkRed,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppIcons.videoShop,
+                            height: 13,
+                            width: 13,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.whiteText,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          BodyTextColors(
+                            title: 'Shop Closed',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.whiteText,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
+                  ] else ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GenericColors.darkGreen,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppIcons.videoShop,
+                            height: 13,
+                            width: 13,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.whiteText,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          BodyTextColors(
+                            title: 'Shop Open',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.whiteText,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.location_on_rounded,
-                        color: AppColors.primary,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: BodyTextColors(
-                          title: shop.address ?? 'Address not available',
-                          color: AppColors.darkText.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-                  Divider(
-                    color: GenericColors.borderGrey.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time_rounded,
-                        size: 16,
-                        color: GenericColors.darkGreen,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: BodyTextColors(
-                          title:
-                              "${shop.openTime ?? '-'} to ${shop.closeTime ?? '-'}",
-                          color: AppColors.darkText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            await CustomLaunchers.openGoogleMaps(
-                              latitude: double.parse(shop.lat ?? ''),
-                              longitude: double.parse(shop.long ?? ''),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.directions_rounded,
-                                  size: 16,
-                                  color: AppColors.primary,
-                                ),
-                                const SizedBox(width: 6),
-                                BodyTextColors(
-                                  title: 'Direction',
-                                  color: AppColors.primary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            await CustomLaunchers.makePhoneCall(
-                              phoneNumber: shop.registerNumber ?? '',
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.call_rounded,
-                                  size: 16,
-                                  color: AppColors.whiteText,
-                                ),
-                                const SizedBox(width: 6),
-                                BodyTextColors(
-                                  title: 'Call',
-                                  color: AppColors.whiteText,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // const SizedBox(height: 14),
+                  //
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: InkWell(
+                  //         borderRadius: BorderRadius.circular(30),
+                  //         onTap: () async {
+                  //           await CustomLaunchers.openGoogleMaps(
+                  //             latitude: double.parse(shop.lat ?? "0"),
+                  //             longitude: double.parse(shop.long ?? "0"),
+                  //           );
+                  //         },
+                  //         child: Container(
+                  //           height: 34,
+                  //           decoration: BoxDecoration(
+                  //             color: AppColors.primary.withValues(alpha: .08),
+                  //             borderRadius: BorderRadius.circular(30),
+                  //             border: Border.all(
+                  //               color: AppColors.primary.withValues(alpha: .25),
+                  //             ),
+                  //           ),
+                  //           child: Row(
+                  //             mainAxisAlignment: MainAxisAlignment.center,
+                  //             children: [
+                  //               Icon(
+                  //                 Icons.directions,
+                  //                 size: 14,
+                  //                 color: AppColors.primary,
+                  //               ),
+                  //               const SizedBox(width: 4),
+                  //               const HeaderTextPrimary(
+                  //                 title: "Map",
+                  //                 fontSize: 11,
+                  //                 fontWeight: FontWeight.w600,
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //
+                  //     const SizedBox(width: 8),
+                  //
+                  //     Expanded(
+                  //       child: InkWell(
+                  //         borderRadius: BorderRadius.circular(30),
+                  //         onTap: () async {
+                  //           await CustomLaunchers.makePhoneCall(
+                  //             phoneNumber: shop.registerNumber ?? "",
+                  //           );
+                  //         },
+                  //         child: Container(
+                  //           height: 34,
+                  //           decoration: BoxDecoration(
+                  //             color: AppColors.primary,
+                  //             borderRadius: BorderRadius.circular(30),
+                  //           ),
+                  //           child: const Row(
+                  //             mainAxisAlignment: MainAxisAlignment.center,
+                  //             children: [
+                  //               Icon(
+                  //                 Icons.call_rounded,
+                  //                 size: 14,
+                  //                 color: Colors.white,
+                  //               ),
+                  //               SizedBox(width: 4),
+                  //               BodyTextColors(
+                  //                 title: "Call",
+                  //                 color: AppColors.whiteText,
+                  //                 fontSize: 11,
+                  //                 fontWeight: FontWeight.w600,
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
