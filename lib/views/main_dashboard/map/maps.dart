@@ -295,6 +295,9 @@ class _MapsState extends State<Maps> {
         ? '${text.substring(0, 20)}...'
         : text;
 
+    final Color categoryColor =
+        _categoryColors[category] ?? _categoryColors['others']!;
+
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       text: TextSpan(
@@ -304,7 +307,7 @@ class _MapsState extends State<Maps> {
             text: category.capitalize(),
             style: AppTextStyle(
               fontSize: 22,
-              color: Colors.blueGrey.shade600,
+              color: categoryColor,
               fontWeight: FontWeight.w600,
             ).textStyle,
           ),
@@ -348,9 +351,6 @@ class _MapsState extends State<Maps> {
 
     // Shift canvas to allow shadow drawing at left/top
     canvas.translate(shadowPadding, shadowPadding);
-
-    final Color categoryColor =
-        _categoryColors[category] ?? const Color(0xFF1F2937);
 
     /// OUTER BUBBLE PATH
     final double radiusVal = 8.0;
@@ -484,7 +484,7 @@ class _MapsState extends State<Maps> {
 
     /// Fill
     final circlePaint = Paint()
-      ..color = _categoryColors[category] ?? const Color(0xFF7B1FA2)
+      ..color = _categoryColors[category] ?? _categoryColors['others']!
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -614,7 +614,7 @@ class _MapsState extends State<Maps> {
       final circularIcon =
           _circularMarkers[category] ??
           _circularMarkers['others'] ??
-          BitmapDescriptor.defaultMarker;
+          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
 
       try {
         final double? lat = double.tryParse(shop.lat.toString());
@@ -625,7 +625,7 @@ class _MapsState extends State<Maps> {
             Marker(
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
-
+              consumeTapEvents: true,
               icon: _customMarkers[shop.id?.toString()] ?? circularIcon,
 
               onTap: () {
@@ -772,6 +772,7 @@ class _MapsState extends State<Maps> {
                     initialCameraPosition: _kGooglePlex,
                     markers: getMarkers(),
                     circles: _getLocationCircle(),
+                    markerType: GoogleMapMarkerType.marker,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,

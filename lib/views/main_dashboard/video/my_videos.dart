@@ -1,7 +1,4 @@
 import 'dart:ui';
-import 'dart:typed_data';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -17,9 +14,6 @@ import 'package:mapman/views/main_dashboard/profile/add_shop_detail.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_bottom_sheet.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/widgets/custom_containers.dart';
-import 'package:get_thumbnail_video/video_thumbnail.dart';
-import 'package:get_thumbnail_video/index.dart';
-import 'package:mapman/utils/storage/video_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mapman/routes/api_routes.dart';
 
@@ -53,12 +47,14 @@ class MyVideos extends StatelessWidget {
     final totalCount = myVideos.length;
     final List<_MyVideosBlockData> blocks = [];
     for (int i = 0; i < totalCount; i += 4) {
-      blocks.add(_MyVideosBlockData(
-        index0: i,
-        index1: i + 1 < totalCount ? i + 1 : null,
-        index2: i + 2 < totalCount ? i + 2 : null,
-        index3: i + 3 < totalCount ? i + 3 : null,
-      ));
+      blocks.add(
+        _MyVideosBlockData(
+          index0: i,
+          index1: i + 1 < totalCount ? i + 1 : null,
+          index2: i + 2 < totalCount ? i + 2 : null,
+          index3: i + 3 < totalCount ? i + 3 : null,
+        ),
+      );
     }
 
     return ListView.separated(
@@ -342,136 +338,6 @@ class MyVideoContainer extends StatefulWidget {
 }
 
 class _MyVideoContainerState extends State<MyVideoContainer> {
-  Uint8List? _thumbnailData;
-  bool _isLoading = false;
-
-  // Static map deduplicates concurrent thumbnail requests for the same URL.
-  // Entries are pruned as soon as the future resolves to prevent accumulation.
-  static final Map<String, Future<Uint8List?>> _thumbnailFutures = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThumbnail();
-  }
-
-  @override
-  void didUpdateWidget(covariant MyVideoContainer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.thumbnail != widget.thumbnail) {
-      _thumbnailData = null;
-      _loadThumbnail();
-    }
-  }
-
-  bool get _isVideoUrl {
-    final lower = widget.thumbnail.toLowerCase();
-    return lower.contains('.mp4') ||
-        lower.contains('.mov') ||
-        lower.contains('.avi') ||
-        lower.contains('.m3u8') ||
-        lower.contains('.mpd');
-  }
-
-  Future<void> _loadThumbnail() async {
-    if (widget.thumbnail.isEmpty || !_isVideoUrl) return;
-
-    /// Already cached in memory
-    final cached = VideoCacheManager.getCachedThumbnail(widget.thumbnail);
-
-    if (cached != null) {
-      if (mounted) {
-        setState(() {
-          _thumbnailData = cached;
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    final url = widget.thumbnail;
-    try {
-      /// Avoid multiple thumbnail generation for the same video.
-      /// Entry is removed after resolution to free the Future reference.
-      _thumbnailFutures[url] ??= _generateThumbnail(url).whenComplete(() {
-        _thumbnailFutures.remove(url);
-      });
-
-      final data = await _thumbnailFutures[url];
-
-      if (!mounted) return;
-
-      // Clean up temporary files generated during thumbnail decoding/processing to ensure no local storage footprint
-      try {
-        final tempDir = await getTemporaryDirectory();
-        if (tempDir.existsSync()) {
-          for (final entity in tempDir.listSync(followLinks: false)) {
-            if (entity is File) {
-              final path = entity.path.toLowerCase();
-              if (path.contains('thumb') ||
-                  path.endsWith('.webp') ||
-                  path.endsWith('.jpg') ||
-                  path.endsWith('.jpeg') ||
-                  path.contains('video') ||
-                  path.endsWith('.tmp')) {
-                try {
-                  entity.deleteSync();
-                } catch (_) {}
-              }
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Temporary thumbnail file cleanup failed: $e');
-      }
-
-      if (data != null) {
-        VideoCacheManager.cacheThumbnail(url, data);
-        setState(() {
-          _thumbnailData = data;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Thumbnail Error => $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<Uint8List?> _generateThumbnail(String videoUrl) async {
-    try {
-      final String fullUrl = videoUrl;
-
-      final data = await VideoThumbnail.thumbnailData(
-        video: fullUrl,
-        headers: const {"Range": "bytes=0-2000000"},
-        imageFormat: ImageFormat.WEBP,
-        maxHeight: 150,
-        quality: 50,
-        timeMs: 0,
-      );
-
-      return data;
-    } catch (e) {
-      debugPrint('Generate Thumbnail Failed => $e');
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
@@ -490,7 +356,7 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
             fit: StackFit.expand,
             children: [
               /// Thumbnail from API (Image URL)
-              if (widget.thumbnail.isNotEmpty && !_isVideoUrl)
+              if (widget.thumbnail.isNotEmpty)
                 Positioned.fill(
                   child: CachedNetworkImage(
                     imageUrl: widget.thumbnail.startsWith('http')
@@ -499,17 +365,6 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
                     fit: BoxFit.cover,
                     placeholder: (_, __) => const SizedBox.shrink(),
                     errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                )
-              /// Fallback dynamically generated thumbnail from video
-              else if (_thumbnailData != null)
-                Positioned.fill(
-                  child: Image.memory(
-                    _thumbnailData!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) {
-                      return const SizedBox.shrink();
-                    },
                   ),
                 ),
 
@@ -529,19 +384,6 @@ class _MyVideoContainerState extends State<MyVideoContainer> {
                   ),
                 ),
               ),
-
-              /// Loading indicator
-              if (_isLoading)
-                const Center(
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white24,
-                    ),
-                  ),
-                ),
 
               /// Play button
               if (widget.isShowPlayButton)

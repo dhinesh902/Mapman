@@ -19,7 +19,6 @@ import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
 import 'package:mapman/utils/storage/session_manager.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
-import 'package:mapman/views/widgets/custom_launchers.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
@@ -1041,7 +1040,7 @@ class ShopCard extends StatelessWidget {
         margin: const EdgeInsets.only(right: 10, bottom: 10, top: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: AppColors.whiteText,
+          color: Color(0XFF0f172a),
           // border: Border.all(color: Colors.grey.shade200)
           boxShadow: [
             BoxShadow(
@@ -1115,11 +1114,12 @@ class ShopCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HeaderTextBlack(
+                  BodyTextColors(
                     title: shop.shopName ?? "Unknown Shop",
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     maxLines: 1,
+                    color: AppColors.whiteText,
                     overflow: TextOverflow.ellipsis,
                   ),
 
@@ -1130,7 +1130,7 @@ class ShopCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     fontSize: 11,
-                    color: Colors.grey.shade600,
+                    color: Colors.grey.shade400,
                   ),
 
                   const SizedBox(height: 15),
@@ -1150,8 +1150,8 @@ class ShopCard extends StatelessWidget {
                         children: [
                           SvgPicture.asset(
                             AppIcons.videoShop,
-                            height: 13,
-                            width: 13,
+                            height: 10,
+                            width: 10,
                             colorFilter: ColorFilter.mode(
                               AppColors.whiteText,
                               BlendMode.srcIn,
@@ -1182,8 +1182,8 @@ class ShopCard extends StatelessWidget {
                         children: [
                           SvgPicture.asset(
                             AppIcons.videoShop,
-                            height: 13,
-                            width: 13,
+                            height: 10,
+                            width: 10,
                             colorFilter: ColorFilter.mode(
                               AppColors.whiteText,
                               BlendMode.srcIn,

@@ -1,9 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
-import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
@@ -20,10 +20,6 @@ import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
-import 'dart:typed_data';
-import 'package:get_thumbnail_video/video_thumbnail.dart';
-import 'package:get_thumbnail_video/index.dart';
-import 'package:mapman/utils/storage/video_cache_manager.dart';
 
 class ViewedVideos extends StatefulWidget {
   const ViewedVideos({super.key});
@@ -239,8 +235,7 @@ class _ViewedVideosState extends State<ViewedVideos> {
                               child: Stack(
                                 children: [
                                   ViewedVideoCard(
-                                    videoUrl:
-                                        '${ApiRoutes.baseUrl}${video.video ?? ''}',
+                                    thumbnail: video.thumbnail??'',
                                     isBookMark:
                                         videoController.bookmarked[index],
                                     bookMarkOnTap: () async {
@@ -299,14 +294,14 @@ class _ViewedVideosState extends State<ViewedVideos> {
 class ViewedVideoCard extends StatefulWidget {
   const ViewedVideoCard({
     super.key,
-    required this.videoUrl,
+    required this.thumbnail,
     this.isViews = true,
     required this.isBookMark,
     required this.bookMarkOnTap,
     required this.onTap,
   });
 
-  final String videoUrl;
+  final String thumbnail;
   final bool isViews, isBookMark;
   final VoidCallback bookMarkOnTap, onTap;
 
@@ -315,72 +310,6 @@ class ViewedVideoCard extends StatefulWidget {
 }
 
 class _ViewedVideoCardState extends State<ViewedVideoCard> {
-  Uint8List? _thumbnailData;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThumbnail();
-  }
-
-  @override
-  void didUpdateWidget(covariant ViewedVideoCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl) {
-      _loadThumbnail();
-    }
-  }
-
-  Future<void> _loadThumbnail() async {
-    if (widget.videoUrl.isEmpty) return;
-
-    final cached = VideoCacheManager.getCachedThumbnail(widget.videoUrl);
-    if (cached != null) {
-      if (mounted) {
-        setState(() {
-          _thumbnailData = cached;
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _thumbnailData = null;
-      });
-    }
-
-    try {
-      final String fullUrl = widget.videoUrl.startsWith('http')
-          ? widget.videoUrl
-          : '${ApiRoutes.baseUrl}${widget.videoUrl}';
-
-      final data = await VideoThumbnail.thumbnailData(
-        video: fullUrl,
-        imageFormat: ImageFormat.WEBP,
-        maxHeight: 150,
-        quality: 50,
-        timeMs: 0,
-      );
-
-      VideoCacheManager.cacheThumbnail(widget.videoUrl, data);
-      if (mounted) {
-        setState(() {
-          _thumbnailData = data;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error generating thumbnail: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -402,29 +331,10 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Static background linear gradient with watermark
-                Center(
-                  child: Opacity(
-                    opacity: 0.12,
-                    child: Image.asset(
-                      AppIcons.videoClipP,
-                      height: 80,
-                      width: 80,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-
                 // Video Thumbnail
-                if (_thumbnailData != null)
+                if (widget.thumbnail.isNotEmpty)
                   Positioned.fill(
-                    child: Image.memory(
-                      _thumbnailData!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox.shrink();
-                      },
-                    ),
+                    child: CachedNetworkImage(imageUrl: widget.thumbnail)
                   ),
 
                 // Gradient glow overlay
@@ -441,19 +351,7 @@ class _ViewedVideoCardState extends State<ViewedVideoCard> {
                     ),
                   ),
                 ),
-
-                // Loading state indicator
-                if (_isLoading)
-                  const Center(
-                    child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white24,
-                      ),
-                    ),
-                  ),
+                
 
                 // Play circle button icon
                 const Center(child: VideoPausePlayGradientCircleContainer()),

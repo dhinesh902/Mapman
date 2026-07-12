@@ -199,7 +199,7 @@ class CustomSearchField extends StatelessWidget {
                   color: const Color(0xFFB3B5B7),
                 ).textStyle,
                 prefixIcon: Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 12, 0, 12),
+                  padding: const EdgeInsets.fromLTRB(15, 12, 0, 10),
                   child: SvgPicture.asset(
                     AppIcons.search,
                     colorFilter: ColorFilter.mode(

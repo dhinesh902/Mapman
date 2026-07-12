@@ -590,7 +590,7 @@ class SavedVideoCard extends StatelessWidget {
         child: Stack(
           children: [
             ViewedVideoCard(
-              videoUrl:  videosData.video ?? '',
+              thumbnail:  videosData.thumbnail ?? '',
               isBookMark: isBookMark,
               bookMarkOnTap: bookMarkOnTap,
               onTap: () {

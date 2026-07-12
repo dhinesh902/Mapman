@@ -601,14 +601,14 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                       isDialogue: true,
                       onTap: () async {
                         if (formKey.currentState!.validate()) {
-                          // if (shopImageNotifier.value == null) {
-                          //   CustomToast.show(
-                          //     context,
-                          //     title: 'Please select shop image',
-                          //     isError: true,
-                          //   );
-                          //   return;
-                          // }
+                          if (shopImageNotifier.value == null) {
+                            CustomToast.show(
+                              context,
+                              title: 'Please select shop image',
+                              isError: true,
+                            );
+                            return;
+                          }
                           if (shopNameController.text.isEmpty) {
                             CustomToast.show(
                               context,
@@ -622,6 +622,14 @@ class _RegisterShopDetailState extends State<RegisterShopDetail> {
                             CustomToast.show(
                               context,
                               title: 'Please select category',
+                              isError: true,
+                            );
+                            return;
+                          }
+                          if (locationController.text.isEmpty) {
+                            CustomToast.show(
+                              context,
+                              title: 'Please select address',
                               isError: true,
                             );
                             return;
