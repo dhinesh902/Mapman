@@ -611,10 +611,8 @@ class _MapsState extends State<Maps> {
           ? rawCategory
           : 'others';
 
-      final circularIcon =
-          _circularMarkers[category] ??
-          _circularMarkers['others'] ??
-          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+      final customIcon = _customMarkers[shop.id?.toString()];
+      if (customIcon == null) continue;
 
       try {
         final double? lat = double.tryParse(shop.lat.toString());
@@ -626,7 +624,7 @@ class _MapsState extends State<Maps> {
               markerId: MarkerId(shop.id?.toString() ?? 'marker_$i'),
               position: LatLng(lat, long),
               consumeTapEvents: true,
-              icon: _customMarkers[shop.id?.toString()] ?? circularIcon,
+              icon: customIcon,
 
               onTap: () {
                 setState(() {

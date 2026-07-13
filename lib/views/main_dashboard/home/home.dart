@@ -1040,7 +1040,7 @@ class ShopCard extends StatelessWidget {
         margin: const EdgeInsets.only(right: 10, bottom: 10, top: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Color(0XFF0f172a),
+          color: AppColors.whiteText,
           // border: Border.all(color: Colors.grey.shade200)
           boxShadow: [
             BoxShadow(
@@ -1114,12 +1114,11 @@ class ShopCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  BodyTextColors(
+                  HeaderTextBlack(
                     title: shop.shopName ?? "Unknown Shop",
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     maxLines: 1,
-                    color: AppColors.whiteText,
                     overflow: TextOverflow.ellipsis,
                   ),
 
@@ -1130,7 +1129,7 @@ class ShopCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     fontSize: 11,
-                    color: Colors.grey.shade400,
+                    color: Colors.grey.shade600,
                   ),
 
                   const SizedBox(height: 15),
