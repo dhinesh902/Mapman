@@ -274,8 +274,8 @@ class EndMessageSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 40),
-        OutlineText(title: title, fontSize: titleSize),
-        const SizedBox(height: 20),
+        // OutlineText(title: title, fontSize: titleSize),
+        // const SizedBox(height: 20),
         Row(
           children: [
             Icon(CupertinoIcons.heart_fill, size: 14, color: iconColor),

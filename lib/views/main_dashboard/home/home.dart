@@ -360,10 +360,29 @@ class _HomeState extends State<Home> {
                             Padding(
                               padding: EdgeInsets.only(left: 10),
                               child: HeaderTextBlack(
-                                title: 'Featured Locations',
+                                title: 'Featured Businesses',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
                               ),
+                            ),
+                            SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 160,
+                                  height: 2,
+                                  margin: EdgeInsets.only(left: 10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.violet,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             SizedBox(height: 10),
                             SizedBox(

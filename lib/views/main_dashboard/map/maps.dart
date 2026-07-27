@@ -307,7 +307,7 @@ class _MapsState extends State<Maps> {
             text: category.capitalize(),
             style: AppTextStyle(
               fontSize: 22,
-              color: categoryColor,
+              color: AppColors.darkGrey,
               fontWeight: FontWeight.w600,
             ).textStyle,
           ),
