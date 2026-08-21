@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/controller/profile_controller.dart';
@@ -139,349 +140,373 @@ class _SavedVideosState extends State<SavedVideos> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(50),
-                  bottomLeft: Radius.circular(50),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundDark,
+        body: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    bottomRight: Radius.circular(50),
+                    bottomLeft: Radius.circular(50),
+                  ),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Image.asset(
+                  AppIcons.notificationTopCardP,
+                  fit: BoxFit.cover,
+                  cacheWidth: 600,
                 ),
               ),
-              clipBehavior: Clip.hardEdge,
-              child: Image.asset(
-                AppIcons.notificationTopCardP,
-                fit: BoxFit.cover,
-                cacheWidth: 600,
-              ),
             ),
-          ),
-          Positioned.fill(
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const ActionBarComponent(title: 'Saved Videos'),
-                  TopPromoBanner(),
-                  SizedBox(height: 20),
-
-                  // Tab Selection
-                  Selector<VideoController, int>(
-                    selector: (_, controller) => controller.savedVideoIndex,
-                    builder: (context, savedVideoIndex, child) {
-                      return Container(
-                        height: 44,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: AppColors.bgGrey,
+            Positioned.fill(
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ActionBarComponent(
+                      title: 'Saved Videos',
+                      action: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRoutes.allOffers);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.scaffoldBackground,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.local_offer_outlined,
+                            color: AppColors.darkText,
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: VideoHeadingContainer(
-                                title: 'Shop Details',
-                                icon: AppIcons.shopP,
-                                isActive: savedVideoIndex == 0,
-                                isLeft: true,
-                                onTap: () {
-                                  context
-                                          .read<VideoController>()
-                                          .setSavedVideoIndex =
-                                      0;
-                                },
+                      ),
+                    ),
+                    TopPromoBanner(),
+                    SizedBox(height: 20),
+                    Selector<VideoController, int>(
+                      selector: (_, controller) => controller.savedVideoIndex,
+                      builder: (context, savedVideoIndex, child) {
+                        return Container(
+                          height: 44,
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.bgGrey,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: VideoHeadingContainer(
+                                  title: 'Shop Details',
+                                  icon: AppIcons.shopP,
+                                  isActive: savedVideoIndex == 0,
+                                  isLeft: true,
+                                  onTap: () {
+                                    context
+                                            .read<VideoController>()
+                                            .setSavedVideoIndex =
+                                        0;
+                                  },
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: VideoHeadingContainer(
-                                title: 'Videos',
-                                icon: AppIcons.videoAppP,
-                                isActive: savedVideoIndex == 1,
-                                isLeft: false,
-                                onTap: () {
-                                  context
-                                          .read<VideoController>()
-                                          .setSavedVideoIndex =
-                                      1;
-                                },
+                              Expanded(
+                                child: VideoHeadingContainer(
+                                  title: 'Videos',
+                                  icon: AppIcons.videoAppP,
+                                  isActive: savedVideoIndex == 1,
+                                  isLeft: false,
+                                  onTap: () {
+                                    context
+                                            .read<VideoController>()
+                                            .setSavedVideoIndex =
+                                        1;
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Counts
-                  Selector<VideoController, int>(
-                    selector: (_, controller) => controller.savedVideoIndex,
-                    builder: (context, savedVideoIndex, _) {
-                      if (savedVideoIndex == 1) {
-                        return Selector<VideoController, int>(
-                          selector: (_, controller) =>
-                              controller.savedVideoData.data?.length ?? 0,
-                          builder: (_, count, __) {
-                            if (count == 0) return const SizedBox.shrink();
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 10,
-                                top: 15,
-                                bottom: 15,
-                              ),
-                              child: HeaderTextBlack(
-                                title: 'Total Saved Videos ($count)',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        return Selector<ProfileController, int>(
-                          selector: (_, controller) =>
-                              controller.fetchSavedShop.data?.length ?? 0,
-                          builder: (_, count, __) {
-                            if (count == 0) return const SizedBox.shrink();
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 10,
-                                top: 15,
-                                bottom: 15,
-                              ),
-                              child: HeaderTextBlack(
-                                title: 'Total Saved Shops ($count)',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
-
-                  // Content Body
-                  Selector<VideoController, int>(
-                    selector: (_, controller) => controller.savedVideoIndex,
-                    builder: (context, savedVideoIndex, _) {
-                      if (savedVideoIndex == 0) {
-                        return Flexible(
-                          child: Consumer<ProfileController>(
-                            builder: (context, profileCtrl, child) {
-                              switch (profileCtrl.fetchSavedShop.status) {
-                                case Status.INITIAL:
-                                case Status.LOADING:
-                                  return CustomLoadingIndicator();
-                                case Status.COMPLETED:
-                                  final shops =
-                                      profileCtrl.fetchSavedShop.data ?? [];
-                                  if (shops.isEmpty) {
-                                    return EmptyDataContainer(
-                                      children: [
-                                        Image.asset(
-                                          AppIcons.shopP,
-                                          height: 120,
-                                          width: 120,
-                                        ),
-                                        SizedBox(height: 20),
-                                        BodyTextHint(
-                                          title: 'No Data Found here',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    );
-                                  }
-                                  return NotificationListener<
-                                    ScrollNotification
-                                  >(
-                                    onNotification:
-                                        (ScrollNotification scrollInfo) {
-                                          if (scrollInfo
-                                                  is ScrollEndNotification &&
-                                              scrollInfo.metrics.pixels >=
-                                                  scrollInfo
-                                                          .metrics
-                                                          .maxScrollExtent -
-                                                      200 &&
-                                              profileCtrl.hasMoreData &&
-                                              !profileCtrl.isFetchingMore) {
-                                            profileCtrl.loadMoreShops();
-                                          }
-                                          return false;
-                                        },
-                                    child: RefreshIndicator(
-                                      onRefresh: () async {
-                                        profileCtrl.resetShopPagination();
-                                        await profileCtrl.getFetchSavedShops(
-                                          page: 1,
-                                        );
-                                      },
-                                      child: ListView.builder(
-                                        controller: shopScrollController,
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        padding: const EdgeInsets.fromLTRB(
-                                          10,
-                                          0,
-                                          10,
-                                          10,
-                                        ),
-                                        itemCount:
-                                            shops.length +
-                                            (profileCtrl.isFetchingMore
-                                                ? 1
-                                                : 0),
-                                        itemBuilder: (context, index) {
-                                          if (index < shops.length) {
-                                            return SavedShopCard(
-                                              shopDetailData: shops[index],
-                                              bookMarkOnTap: () async {
-                                                await savedShops(
-                                                  shopId: shops[index].id ?? 0,
-                                                  status: 'inactive',
-                                                );
-                                              },
-                                            );
-                                          }
-                                          return MoreLoadingContainer();
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                case Status.ERROR:
-                                  return CustomErrorTextWidget(
-                                    title:
-                                        '${profileCtrl.fetchSavedShop.message}',
-                                  );
-                              }
-                            },
+                            ],
                           ),
                         );
-                      } else {
-                        return Flexible(
-                          child: Consumer<VideoController>(
-                            builder: (context, videoCtrl, child) {
-                              switch (videoCtrl.savedVideoData.status) {
-                                case Status.INITIAL:
-                                case Status.LOADING:
-                                  return CustomLoadingIndicator();
-                                case Status.COMPLETED:
-                                  final savedVideos =
-                                      videoCtrl.savedVideoData.data ?? [];
-                                  if (savedVideos.isEmpty) {
-                                    return EmptyDataContainer(
-                                      children: [
-                                        Image.asset(
-                                          AppIcons.savedVideoEmptyP,
-                                          height: 140,
-                                          width: 140,
-                                        ),
-                                        SizedBox(height: 20),
-                                        BodyTextHint(
-                                          title: 'No Data Found here',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    );
-                                  }
-                                  return NotificationListener<
-                                    ScrollNotification
-                                  >(
-                                    onNotification:
-                                        (ScrollNotification notification) {
-                                          if (notification
-                                              is ScrollUpdateNotification) {
-                                            final metrics =
-                                                notification.metrics;
+                      },
+                    ),
 
-                                            final isScrollingDown =
-                                                notification.scrollDelta !=
-                                                    null &&
-                                                notification.scrollDelta! > 0;
+                    // Counts
+                    Selector<VideoController, int>(
+                      selector: (_, controller) => controller.savedVideoIndex,
+                      builder: (context, savedVideoIndex, _) {
+                        if (savedVideoIndex == 1) {
+                          return Selector<VideoController, int>(
+                            selector: (_, controller) =>
+                                controller.savedVideoData.data?.length ?? 0,
+                            builder: (_, count, __) {
+                              if (count == 0) return const SizedBox.shrink();
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  left: 10,
+                                  top: 15,
+                                  bottom: 15,
+                                ),
+                                child: HeaderTextBlack(
+                                  title: 'Total Saved Videos ($count)',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          return Selector<ProfileController, int>(
+                            selector: (_, controller) =>
+                                controller.fetchSavedShop.data?.length ?? 0,
+                            builder: (_, count, __) {
+                              if (count == 0) return const SizedBox.shrink();
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  left: 10,
+                                  top: 15,
+                                  bottom: 15,
+                                ),
+                                child: HeaderTextBlack(
+                                  title: 'Total Saved Shops ($count)',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
 
-                                            final isNearBottom =
-                                                metrics.pixels >=
-                                                metrics.maxScrollExtent - 200;
-
-                                            if (isScrollingDown &&
-                                                isNearBottom &&
-                                                videoCtrl.hasMoreData &&
-                                                !videoCtrl.isFetchingMore) {
-                                              videoCtrl.loadMoreSavedVideos();
+                    // Content Body
+                    Selector<VideoController, int>(
+                      selector: (_, controller) => controller.savedVideoIndex,
+                      builder: (context, savedVideoIndex, _) {
+                        if (savedVideoIndex == 0) {
+                          return Flexible(
+                            child: Consumer<ProfileController>(
+                              builder: (context, profileCtrl, child) {
+                                switch (profileCtrl.fetchSavedShop.status) {
+                                  case Status.INITIAL:
+                                  case Status.LOADING:
+                                    return CustomLoadingIndicator();
+                                  case Status.COMPLETED:
+                                    final shops =
+                                        profileCtrl.fetchSavedShop.data ?? [];
+                                    if (shops.isEmpty) {
+                                      return EmptyDataContainer(
+                                        children: [
+                                          Image.asset(
+                                            AppIcons.shopP,
+                                            height: 120,
+                                            width: 120,
+                                          ),
+                                          SizedBox(height: 20),
+                                          BodyTextHint(
+                                            title: 'No Data Found here',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return NotificationListener<
+                                      ScrollNotification
+                                    >(
+                                      onNotification:
+                                          (ScrollNotification scrollInfo) {
+                                            if (scrollInfo
+                                                    is ScrollEndNotification &&
+                                                scrollInfo.metrics.pixels >=
+                                                    scrollInfo
+                                                            .metrics
+                                                            .maxScrollExtent -
+                                                        200 &&
+                                                profileCtrl.hasMoreData &&
+                                                !profileCtrl.isFetchingMore) {
+                                              profileCtrl.loadMoreShops();
                                             }
-                                          }
-                                          return false;
+                                            return false;
+                                          },
+                                      child: RefreshIndicator(
+                                        onRefresh: () async {
+                                          profileCtrl.resetShopPagination();
+                                          await profileCtrl.getFetchSavedShops(
+                                            page: 1,
+                                          );
                                         },
-                                    child: RefreshIndicator(
-                                      onRefresh: () async {
-                                        videoCtrl.resetSavedVideoPagination();
-                                        await videoCtrl.getMySavedVideos(
-                                          page: 1,
-                                        );
-                                      },
-                                      child: ListView.builder(
-                                        controller: videoScrollController,
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        padding: const EdgeInsets.fromLTRB(
-                                          10,
-                                          0,
-                                          10,
-                                          10,
+                                        child: ListView.builder(
+                                          controller: shopScrollController,
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
+                                          padding: const EdgeInsets.fromLTRB(
+                                            10,
+                                            0,
+                                            10,
+                                            10,
+                                          ),
+                                          itemCount:
+                                              shops.length +
+                                              (profileCtrl.isFetchingMore
+                                                  ? 1
+                                                  : 0),
+                                          itemBuilder: (context, index) {
+                                            if (index < shops.length) {
+                                              return SavedShopCard(
+                                                shopDetailData: shops[index],
+                                                bookMarkOnTap: () async {
+                                                  await savedShops(
+                                                    shopId:
+                                                        shops[index].id ?? 0,
+                                                    status: 'inactive',
+                                                  );
+                                                },
+                                              );
+                                            }
+                                            return MoreLoadingContainer();
+                                          },
                                         ),
-                                        itemCount:
-                                            savedVideos.length +
-                                            (videoCtrl.isFetchingMore ? 1 : 0),
-                                        itemBuilder: (context, index) {
-                                          if (index < savedVideos.length) {
-                                            return SavedVideoCard(
-                                              videosData: savedVideos[index],
-                                              isBookMark: true,
-                                              allVideos: savedVideos,
-                                              currentIndex: index,
-                                              bookMarkOnTap: () async {
-                                                await addSavedVideos(
-                                                  videoId:
-                                                      savedVideos[index].id ??
-                                                      0,
-                                                  status: 'inactive',
-                                                );
-                                              },
-                                            );
-                                          }
-                                          return const MoreLoadingContainer();
-                                        },
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  case Status.ERROR:
+                                    return CustomErrorTextWidget(
+                                      title:
+                                          '${profileCtrl.fetchSavedShop.message}',
+                                    );
+                                }
+                              },
+                            ),
+                          );
+                        } else {
+                          return Flexible(
+                            child: Consumer<VideoController>(
+                              builder: (context, videoCtrl, child) {
+                                switch (videoCtrl.savedVideoData.status) {
+                                  case Status.INITIAL:
+                                  case Status.LOADING:
+                                    return CustomLoadingIndicator();
+                                  case Status.COMPLETED:
+                                    final savedVideos =
+                                        videoCtrl.savedVideoData.data ?? [];
+                                    if (savedVideos.isEmpty) {
+                                      return EmptyDataContainer(
+                                        children: [
+                                          Image.asset(
+                                            AppIcons.savedVideoEmptyP,
+                                            height: 140,
+                                            width: 140,
+                                          ),
+                                          SizedBox(height: 20),
+                                          BodyTextHint(
+                                            title: 'No Data Found here',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w400,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return NotificationListener<
+                                      ScrollNotification
+                                    >(
+                                      onNotification:
+                                          (ScrollNotification notification) {
+                                            if (notification
+                                                is ScrollUpdateNotification) {
+                                              final metrics =
+                                                  notification.metrics;
 
-                                case Status.ERROR:
-                                  return CustomErrorTextWidget(
-                                    title:
-                                        '${videoCtrl.savedVideoData.message}',
-                                  );
-                              }
-                            },
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
+                                              final isScrollingDown =
+                                                  notification.scrollDelta !=
+                                                      null &&
+                                                  notification.scrollDelta! > 0;
+
+                                              final isNearBottom =
+                                                  metrics.pixels >=
+                                                  metrics.maxScrollExtent - 200;
+
+                                              if (isScrollingDown &&
+                                                  isNearBottom &&
+                                                  videoCtrl.hasMoreData &&
+                                                  !videoCtrl.isFetchingMore) {
+                                                videoCtrl.loadMoreSavedVideos();
+                                              }
+                                            }
+                                            return false;
+                                          },
+                                      child: RefreshIndicator(
+                                        onRefresh: () async {
+                                          videoCtrl.resetSavedVideoPagination();
+                                          await videoCtrl.getMySavedVideos(
+                                            page: 1,
+                                          );
+                                        },
+                                        child: ListView.builder(
+                                          controller: videoScrollController,
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
+                                          padding: const EdgeInsets.fromLTRB(
+                                            10,
+                                            0,
+                                            10,
+                                            10,
+                                          ),
+                                          itemCount:
+                                              savedVideos.length +
+                                              (videoCtrl.isFetchingMore
+                                                  ? 1
+                                                  : 0),
+                                          itemBuilder: (context, index) {
+                                            if (index < savedVideos.length) {
+                                              return SavedVideoCard(
+                                                videosData: savedVideos[index],
+                                                isBookMark: true,
+                                                allVideos: savedVideos,
+                                                currentIndex: index,
+                                                bookMarkOnTap: () async {
+                                                  await addSavedVideos(
+                                                    videoId:
+                                                        savedVideos[index].id ??
+                                                        0,
+                                                    status: 'inactive',
+                                                  );
+                                                },
+                                              );
+                                            }
+                                            return const MoreLoadingContainer();
+                                          },
+                                        ),
+                                      ),
+                                    );
+
+                                  case Status.ERROR:
+                                    return CustomErrorTextWidget(
+                                      title:
+                                          '${videoCtrl.savedVideoData.message}',
+                                    );
+                                }
+                              },
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -590,7 +615,7 @@ class SavedVideoCard extends StatelessWidget {
         child: Stack(
           children: [
             ViewedVideoCard(
-              thumbnail:  videosData.thumbnail ?? '',
+              thumbnail: videosData.thumbnail ?? '',
               isBookMark: isBookMark,
               bookMarkOnTap: bookMarkOnTap,
               onTap: () {
@@ -652,24 +677,26 @@ class SavedShopCard extends StatelessWidget {
                   bottom: 5,
                   right: 5,
                   child: InkWell(
-                  onTap: () {
-                    final double? lat =
-                        double.tryParse(shopDetailData.lat ?? '');
-                    final double? long =
-                        double.tryParse(shopDetailData.long ?? '');
-                    if (lat == null || long == null) {
-                      CustomToast.show(
-                        context,
-                        title: 'Invalid coordinates for directions',
-                        isError: true,
+                    onTap: () {
+                      final double? lat = double.tryParse(
+                        shopDetailData.lat ?? '',
                       );
-                      return;
-                    }
-                    CustomLaunchers.openGoogleMaps(
-                      latitude: lat,
-                      longitude: long,
-                    );
-                  },
+                      final double? long = double.tryParse(
+                        shopDetailData.long ?? '',
+                      );
+                      if (lat == null || long == null) {
+                        CustomToast.show(
+                          context,
+                          title: 'Invalid coordinates for directions',
+                          isError: true,
+                        );
+                        return;
+                      }
+                      CustomLaunchers.openGoogleMaps(
+                        latitude: lat,
+                        longitude: long,
+                      );
+                    },
                     child: Container(
                       height: 24,
                       width: 24,

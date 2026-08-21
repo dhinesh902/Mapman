@@ -282,7 +282,7 @@ class AttachScreenshotWidget extends StatelessWidget {
                           height: 18,
                           width: 18,
                           colorFilter: const ColorFilter.mode(
-                            Color(0Xff1f1f1f1f),
+                            AppColors.hintColor,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -292,7 +292,7 @@ class AttachScreenshotWidget extends StatelessWidget {
                             title: 'Png Or Jpeg Upto 5Mb',
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Color(0Xff1f1f1f1f),
+                            color: AppColors.hintColor,
                           ),
                         ),
                       ],

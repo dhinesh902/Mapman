@@ -10,11 +10,13 @@ class CustomTextFieldContainer extends StatelessWidget {
     required this.title,
     required this.child,
     this.onTap,
+    this.padding = const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
   });
 
   final String title;
   final Widget child;
   final VoidCallback? onTap;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +51,7 @@ class CustomTextFieldContainer extends StatelessWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              child: child,
-            ),
+            Padding(padding: padding, child: child),
           ],
         ),
       ),

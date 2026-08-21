@@ -99,4 +99,19 @@ abstract class ApiRoutes {
   static const String notificationOpenStatus = '/shop/notificationOpenStatus';
   static const String fetchNotificationPreference =
       '/shop/fetchNotificationPreference';
+
+  /* Offers */
+  static const String manageBannerImage = '/shop/manageBannerImage';
+  static const String manageBannerText = '/shop/manageBannerText';
+  static const String fetchShopBanners = '/shop/fetchShopBanners';
+  static const String deleteBanner = '/shop/deleteBanner';
+  static const String manageOffers = '/shop/manageOffers';
+  static const String fetchShopOffers = '/shop/fetchShopOffers';
+  static const String deleteOffers = '/shop/deleteOffers';
+  static const String fetchColors = '/shop/fetchColors';
+  static const String fetchIllustrations = '/shop/fetchIllustrations';
+  static const String fetchAllOffers = '/shop/fetchAllOffers';
+  static const String offerStatusOpen = '/shop/offerStatusOpen';
+  static const String fetchMonthlyBanners = '/shop/fetchMonthlyBanners';
+  static const String fetchDayBanners = '/shop/fetchDayBanners';
 }

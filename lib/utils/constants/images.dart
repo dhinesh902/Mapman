@@ -13,6 +13,7 @@ class AppIcons {
   static const String galleryPlaceholder =
       'assets/images/svg/gallery_placeholder.svg';
   static const String search = 'assets/images/svg/search.svg';
+  static const String doubleCheck = 'assets/images/svg/doublecheck.svg';
   static const String deleteFill = 'assets/images/svg/delete_fill.svg';
   static const String clearOutline = 'assets/images/svg/clear_outline.svg';
   static const String locationArrow = 'assets/images/svg/location_arrow.svg';
@@ -24,6 +25,9 @@ class AppIcons {
   static const String backIcon = 'assets/images/svg/back_icon.svg';
   static const String directionLine = 'assets/images/svg/direction_line.svg';
   static const String add = 'assets/images/svg/add.svg';
+  static const String create = 'assets/images/svg/create.svg';
+  static const String exchange = 'assets/images/svg/exchange.svg';
+  static const String offerStar = 'assets/images/svg/offer_star.svg';
 
   /// home bottom icons
   static const String homeFill = 'assets/images/svg/home/home_fill.svg';
@@ -44,6 +48,7 @@ class AppIcons {
   static const String emailP = 'assets/images/png/email.png';
   static const String padMailP = 'assets/images/png/padmail.png';
   static const String padLockP = 'assets/images/png/padlock.png';
+  static const String warningP = 'assets/images/png/warning.png';
   static const String padCallP = 'assets/images/png/padcall.png';
   static const String checkedP = 'assets/images/png/checked.png';
   static const String bookmarkP = 'assets/images/png/bookmark.png';
@@ -57,6 +62,15 @@ class AppIcons {
   static const String happyBg3P = 'assets/images/png/banner/happy_bg3.jpg';
   static const String happy3p = 'assets/images/png/banner/happy3.png';
   static const String shopP = 'assets/images/png/shop.png';
+  static const String bannerP = 'assets/images/png/banner.png';
+  static const String offerP = 'assets/images/png/offer.png';
+  static const String discountP = 'assets/images/png/discount.png';
+  static const String bannerUploadP = 'assets/images/png/upload.png';
+  static const String bannerCreateP = 'assets/images/png/create.png';
+  static const String galleryP = 'assets/images/png/gallery.png';
+  static const String layerP = 'assets/images/png/layer.png';
+  static const String colorsP = 'assets/images/png/colors.png';
+  static const String adsP = 'assets/images/png/ads.png';
   static const String chatP = 'assets/images/png/chat.png';
   static const String helpP = 'assets/images/png/help.png';
   static const String alertP = 'assets/images/png/alert.png';
@@ -109,6 +123,7 @@ class AppIcons {
   static const String appLogoP = 'assets/images/png/app_logo.png';
   static const String analyticsP = 'assets/images/png/analytics.png';
   static const String privacyPolicyP = 'assets/images/png/privacy_policy.png';
+  static const String cardP = 'assets/images/png/card.jpg';
   static const String termsAndConditionsP =
       'assets/images/png/terms_and_conditions.png';
   static const String profilePlaceholderP =

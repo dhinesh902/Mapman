@@ -117,7 +117,7 @@ class CustomTextField extends StatelessWidget {
               hintStyle: AppTextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0Xff1f1f1f1f),
+                color: AppColors.hintColor,
               ).textStyle,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 15,
@@ -276,7 +276,7 @@ class CategoryTextField extends StatelessWidget {
         hintStyle: AppTextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Color(0Xff1f1f1f1f),
+          color: AppColors.hintColor,
         ).textStyle,
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: GenericColors.borderGrey),

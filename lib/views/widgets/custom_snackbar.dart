@@ -111,3 +111,17 @@ class NoDataText extends StatelessWidget {
     );
   }
 }
+
+class CustomDivider extends StatelessWidget {
+  const CustomDivider({super.key, this.padding = EdgeInsets.zero});
+
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: Divider(color: GenericColors.borderGrey, height: 1),
+    );
+  }
+}

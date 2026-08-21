@@ -9,6 +9,7 @@ class AppColors {
   static const Color darkText = Color(0XFF000000);
   static const Color lightDarkText = Color(0XFF1F1F1F);
   static const Color darkGrey = Color(0XFF8D8D8D);
+  static const Color hintColor = Color(0Xff1f1f1f1f);
   static const Color lightGreyHint = Color(0XFFC2C4C5);
   static const Color violet = Color(0XFFA868FC);
   static const Color lightViolet = Color(0xFFE2D1FF);
@@ -30,4 +31,7 @@ class GenericColors {
   static const Color lightGreen = Color(0XFF00D715);
   static const Color lightOrange = Color(0XFFF8BD00);
   static const Color darkAmber = Color(0XFFF8BD00);
+  static const Color bannerBlue1 = Color(0XFF0BF1FF);
+  static const Color bannerBlue2 = Color(0XFF08A1FF);
+  static const Color bannerBlue3 = Color(0XFF0682FF);
 }

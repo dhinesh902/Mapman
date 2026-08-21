@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mapman/controller/auth_controller.dart';
 import 'package:mapman/controller/home_controller.dart';
+import 'package:mapman/controller/offer_controller.dart';
 import 'package:mapman/controller/place_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/controller/video_controller.dart';
@@ -133,6 +134,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: VideoController()),
         ChangeNotifierProvider.value(value: ProfileController()),
         ChangeNotifierProvider.value(value: PlaceController()),
+        ChangeNotifierProvider.value(value: OfferController()),
       ],
       child: const MyApp(),
     ),

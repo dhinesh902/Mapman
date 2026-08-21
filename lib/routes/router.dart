@@ -11,6 +11,14 @@ import 'package:mapman/views/auth_screens/login.dart';
 import 'package:mapman/views/auth_screens/login_profile.dart';
 import 'package:mapman/views/auth_screens/onboard.dart';
 import 'package:mapman/views/auth_screens/splash.dart';
+import 'package:mapman/model/offers_model.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/banner_schedule.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/banners_offers.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/create_make_your_banner.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/make_your_banner.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/make_your_offer.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/upload_make_your_banner.dart';
+import 'package:mapman/views/main_dashboard/profile/payment_screen.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/edit_shop_details.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/shop_list.dart';
 import 'package:mapman/views/main_dashboard/home/saved_videos.dart';
@@ -35,6 +43,7 @@ import 'package:mapman/views/main_dashboard/video/all_videos.dart';
 import 'package:mapman/views/main_dashboard/video/replace_video.dart';
 import 'package:mapman/views/main_dashboard/video/single_video_screen.dart';
 import 'package:mapman/views/main_dashboard/video/upload_video.dart';
+import 'package:mapman/views/main_dashboard/home/all_offers.dart';
 
 class AppRouter {
   static FirebaseAnalytics? get analytics {
@@ -139,6 +148,11 @@ class AppRouter {
             builder: (context, state) => SavedVideos(),
           ),
           GoRoute(
+            path: '/all_offers',
+            name: AppRoutes.allOffers,
+            builder: (context, state) => const AllOffersPage(),
+          ),
+          GoRoute(
             path: '/upload_video',
             name: AppRoutes.uploadVideo,
             builder: (context, state) =>
@@ -223,6 +237,50 @@ class AppRouter {
             path: '/report_issue',
             name: AppRoutes.reportIssue,
             builder: (context, state) => const ReportIssue(),
+          ),
+          GoRoute(
+            path: '/payment_screen',
+            name: AppRoutes.paymentScreen,
+            builder: (context, state) => const PaymentScreen(),
+          ),
+          GoRoute(
+            path: '/banners_offers',
+            name: AppRoutes.bannersOffers,
+            builder: (context, state) => BannersOffers(),
+            routes: [
+              GoRoute(
+                path: '/make_your_offer',
+                name: AppRoutes.makeYourOffer,
+                builder: (context, state) =>
+                    MakeYourOffer(offerData: state.extra as OfferData?),
+              ),
+              GoRoute(
+                path: '/make_your_own_banner',
+                name: AppRoutes.makeYourOwnBanner,
+                builder: (context, state) => MakeYourOwnBanner(),
+                routes: [
+                  GoRoute(
+                    path: '/create_make_your_own_banner',
+                    name: AppRoutes.createMakeYourOwnBanner,
+                    builder: (context, state) => CreateMakeYourBanner(
+                      banner: state.extra as BannerData?,
+                    ),
+                  ),
+                  GoRoute(
+                    path: '/upload_make_your_own_banner',
+                    name: AppRoutes.uploadMakeYourOwnBanner,
+                    builder: (context, state) => UploadMakeYourBanner(
+                      banner: state.extra as BannerData?,
+                    ),
+                  ),
+                  GoRoute(
+                    path: '/bannerSchedule',
+                    name: AppRoutes.bannerSchedule,
+                    builder: (context, state) => BannerSchedule(),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/add_shop_detail',

@@ -262,7 +262,11 @@ class _ShopDetailState extends State<ShopDetail> {
 
                 if (shopDetailData != null) ...[
                   if (videoController.currentShopDetailIndex == 0)
-                    ShopDetailContainer(shop: shopDetailData.shop ?? Shop())
+                    Expanded(
+                      child: ShopDetailContainer(
+                        shop: shopDetailData.shop ?? Shop(),
+                      ),
+                    )
                   else ...[
                     if (shopVideos.isEmpty && !isLoading)
                       EmptyDataContainer(
@@ -572,13 +576,12 @@ class ShopDetailContainer extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * .6,
+
+        Expanded(
           child: ListView(
             shrinkWrap: true,
             padding: EdgeInsets.fromLTRB(10, 0, 10, 15),
             children: [
-              SizedBox(height: 15),
               CustomTextFieldContainer(
                 title: 'Shop Name',
                 child: HeaderTextBlack(

@@ -8,6 +8,13 @@ class AppRoutes {
   static String editProfile = 'edit_profile';
   static String helpAndSupport = 'help_and_support';
   static String addShopDetail = 'add_shop_detail';
+  static String paymentScreen = 'payment_screen';
+  static String bannersOffers = 'banners_offers';
+  static String makeYourOwnBanner = 'make_your_own_banner';
+  static String bannerSchedule = 'banner_schedule';
+  static String createMakeYourOwnBanner = 'create_make_your_own_banner';
+  static String uploadMakeYourOwnBanner = 'upload_make_your_own_banner';
+  static String makeYourOffer = 'make_your_offer';
   static String editShopDetail = 'edit_shop_detail';
   static String analytics = 'analytics';
   static String shopDetail = 'shop_detail';
@@ -30,4 +37,5 @@ class AppRoutes {
   static String termsAndConditions = 'terms_and_conditions';
   static String reportIssue = 'report_issue';
   static String shopList = 'shop_list';
+  static String allOffers = 'all_offers';
 }
