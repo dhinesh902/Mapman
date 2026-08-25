@@ -40,7 +40,9 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
   final formKey = GlobalKey<FormState>();
   List<Color> bannerColors = [AppColors.whiteText, AppColors.whiteText];
   String illustration = "";
-  final ValueNotifier<ShopDetailData?> selectedShopNotifier = ValueNotifier(null);
+  final ValueNotifier<ShopDetailData?> selectedShopNotifier = ValueNotifier(
+    null,
+  );
   final ValueNotifier<List<DateTime>> selectedDatesNotifier = ValueNotifier([]);
   final ValueNotifier<DateTime?> focusedDateNotifier = ValueNotifier(null);
 
@@ -286,7 +288,8 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
               ValueListenableBuilder<List<DateTime>>(
                 valueListenable: selectedDatesNotifier,
                 builder: (context, selectedDates, _) {
-                  final monthlyData = offerController.monthlyBannersData.data ?? [];
+                  final monthlyData =
+                      offerController.monthlyBannersData.data ?? [];
                   return _CustomCalendarWidget(
                     fullDates: monthlyData,
                     selectedDates: selectedDates,
@@ -296,7 +299,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                     onDateTapped: (date) {
                       final dateStr = DateFormat('yyyy-MM-dd').format(date);
                       if (monthlyData.contains(dateStr)) return;
-                      
+
                       List<DateTime> newDates = List.from(selectedDates);
                       bool exists = false;
                       for (var d in newDates) {
@@ -324,7 +327,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                   int bookedSlots = dayData?.data?.count ?? 0;
                   int totalSlots = 6;
                   int freeSlots = totalSlots - bookedSlots;
-                  
+
                   return Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
@@ -335,12 +338,45 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const BodyTextHint(title: 'Selected Date', fontSize: 14),
-                            HeaderTextBlack(
-                              title: focusedDate != null ? DateFormat('MMM dd, yyyy').format(focusedDate) : 'Today',
+                            const BodyTextHint(
+                              title: 'Selected Date',
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            ),
+                            const SizedBox(width: 15),
+                            ValueListenableBuilder<List<DateTime>>(
+                              valueListenable: selectedDatesNotifier,
+                              builder: (context, selectedDates, _) {
+                                String dateText = 'Today';
+                                if (selectedDates.isNotEmpty) {
+                                  var sorted = List<DateTime>.from(
+                                    selectedDates,
+                                  )..sort();
+                                  dateText = sorted
+                                      .map(
+                                        (d) => DateFormat(
+                                          'MMM dd, yyyy',
+                                        ).format(d),
+                                      )
+                                      .join('\n');
+                                } else if (focusedDate != null) {
+                                  dateText = DateFormat(
+                                    'MMM dd, yyyy',
+                                  ).format(focusedDate);
+                                }
+                                return Expanded(
+                                  child: Text(
+                                    dateText,
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -349,20 +385,27 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const BodyTextHint(title: 'Slots free', fontSize: 14),
+                            const BodyTextHint(
+                              title: 'Slots free',
+                              fontSize: 14,
+                            ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 BodyTextColors(
                                   title: '$freeSlots of $totalSlots',
                                   fontSize: 14,
-                                  color: freeSlots > 0 ? GenericColors.darkGreen : GenericColors.darkRed,
+                                  color: freeSlots > 0
+                                      ? GenericColors.darkGreen
+                                      : GenericColors.darkRed,
                                 ),
                                 const SizedBox(height: 5),
                                 BodyTextColors(
                                   title: 'out of 6 home page banner slots',
                                   fontSize: 12,
-                                  color: AppColors.darkGrey.withValues(alpha: .5),
+                                  color: AppColors.darkGrey.withValues(
+                                    alpha: .5,
+                                  ),
                                   fontWeight: FontWeight.w300,
                                 ),
                               ],
@@ -397,21 +440,10 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       colorStr = "[\"$hex1\", \"$hex2\"]";
                     }
 
-                    List<String> alreadyScheduled = [];
-                    final dayBanners = context.read<OfferController>().dayBannersData.data?.data?.banners;
-                    if (dayBanners != null) {
-                      for (var b in dayBanners) {
-                        if (b.bannerSchedule != null) {
-                          alreadyScheduled.addAll(b.bannerSchedule!);
-                        }
-                      }
-                    }
                     List<String> finalDatesToSend = [];
                     for (var d in selectedDatesNotifier.value) {
                       String dStr = DateFormat('yyyy-MM-dd').format(d);
-                      if (!alreadyScheduled.contains(dStr)) {
-                        finalDatesToSend.add(dStr);
-                      }
+                      finalDatesToSend.add(dStr);
                     }
 
                     final body = <String, dynamic>{
@@ -424,10 +456,8 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       "cta": ctaController.text,
                       "color": colorStr,
                       "bannerId": widget.banner?.id ?? 0,
+                      "bannerSchedule": finalDatesToSend,
                     };
-                    if (finalDatesToSend.isNotEmpty) {
-                      body["bannerSchedule"] = finalDatesToSend;
-                    }
 
                     CustomDialogues.showLoadingDialogue(context);
                     final response = await Provider.of<OfferController>(
@@ -596,7 +626,9 @@ class _CustomCalendarWidgetState extends State<_CustomCalendarWidget> {
 
               String cellDateStr = DateFormat('yyyy-MM-dd').format(cellDate);
               bool isFull = widget.fullDates.contains(cellDateStr);
-              bool isSelected = widget.selectedDates.any((d) => DateFormat('yyyy-MM-dd').format(d) == cellDateStr);
+              bool isSelected = widget.selectedDates.any(
+                (d) => DateFormat('yyyy-MM-dd').format(d) == cellDateStr,
+              );
 
               Color textColor = AppColors.lightGreyHint;
               Color bgColor = AppColors.whiteText;

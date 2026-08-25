@@ -46,7 +46,6 @@ abstract class ApiRoutes {
       'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
   static const String baseUrl = 'https://api.mapman.in';
-
   // static const String baseUrl = 'https://2nb22tn8-3007.inc1.devtunnels.ms';
 
   static const String sendOTP = '/shop/auth/sendOtp';

@@ -19,6 +19,7 @@ import 'package:mapman/model/offers_model.dart';
 import 'package:mapman/utils/constants/enums.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/shop_detail_model.dart';
+import 'package:mapman/routes/api_routes.dart';
 
 class UploadMakeYourBanner extends StatefulWidget {
   final BannerData? banner;
@@ -32,7 +33,9 @@ class UploadMakeYourBanner extends StatefulWidget {
 class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
   final ValueNotifier<File?> profileImageNotifier = ValueNotifier(null);
   final ValueNotifier<bool> proceedToPaymentNotifier = ValueNotifier(false);
-  final ValueNotifier<ShopDetailData?> selectedShopNotifier = ValueNotifier(null);
+  final ValueNotifier<ShopDetailData?> selectedShopNotifier = ValueNotifier(
+    null,
+  );
   final ValueNotifier<List<DateTime>> selectedDatesNotifier = ValueNotifier([]);
   final ValueNotifier<DateTime?> focusedDateNotifier = ValueNotifier(null);
   late OfferController offerController;
@@ -93,7 +96,19 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                       children: [
                         const SizedBox(height: 20),
                         GestureDetector(
-                          onTap: _pickImage,
+                          onTap: () {
+                            CustomImagePicker.showImagePicker(
+                              context,
+                              cameraOnTap: () {
+                                _pickImage(ImageSource.camera);
+                                Navigator.pop(context);
+                              },
+                              galleryOnTap: () {
+                                _pickImage(ImageSource.gallery);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
                           child: GradientDashedBorderContainer(
                             borderRadius: 10,
                             strokeWidth: 2,
@@ -120,6 +135,22 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                                       child: Image.file(
                                         File(image.path),
                                         fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : (widget.banner?.image != null &&
+                                        widget.banner!.image
+                                            .toString()
+                                            .isNotEmpty)
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: CustomNetworkImage(
+                                        imageUrl:
+                                            widget.banner!.image
+                                                .toString()
+                                                .startsWith('https')
+                                            ? widget.banner!.image.toString()
+                                            : '${ApiRoutes.baseUrl}${widget.banner!.image}',
+                                        boxFit: BoxFit.cover,
                                       ),
                                     )
                                   : Column(
@@ -152,7 +183,8 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
 
                         const SizedBox(height: 20),
 
-                        if (!proceed && image != null)
+                        if (!proceed &&
+                            (image != null || widget.banner?.image != null))
                           GestureDetector(
                             onTap: () => profileImageNotifier.value = null,
                             child: Container(
@@ -254,6 +286,152 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                             },
                           ),
 
+                        ValueListenableBuilder<List<DateTime>>(
+                          valueListenable: selectedDatesNotifier,
+                          builder: (context, selectedDates, _) {
+                            final monthlyData =
+                                offerController.monthlyBannersData.data ?? [];
+                            return _CustomCalendarWidget(
+                              fullDates: monthlyData,
+                              selectedDates: selectedDates,
+                              onMonthChanged: (monthStr) {
+                                offerController.fetchMonthlyBanners(
+                                  month: monthStr,
+                                );
+                              },
+                              onDateTapped: (date) {
+                                final dateStr = DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(date);
+                                if (monthlyData.contains(dateStr)) return;
+
+                                List<DateTime> newDates = List.from(
+                                  selectedDates,
+                                );
+                                bool exists = false;
+                                for (var d in newDates) {
+                                  if (DateFormat('yyyy-MM-dd').format(d) ==
+                                      dateStr) {
+                                    exists = true;
+                                    newDates.remove(d);
+                                    break;
+                                  }
+                                }
+                                if (!exists) {
+                                  newDates.add(date);
+                                }
+                                selectedDatesNotifier.value = newDates;
+                                focusedDateNotifier.value = date;
+                                offerController.fetchDayBanners(date: dateStr);
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        ValueListenableBuilder<DateTime?>(
+                          valueListenable: focusedDateNotifier,
+                          builder: (context, focusedDate, _) {
+                            final dayData = offerController.dayBannersData.data;
+                            int bookedSlots = dayData?.data?.count ?? 0;
+                            int totalSlots = 6;
+                            int freeSlots = totalSlots - bookedSlots;
+
+                            return Container(
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: AppColors.whiteText,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const BodyTextHint(
+                                        title: 'Selected Date',
+                                        fontSize: 14,
+                                      ),
+                                      const SizedBox(width: 15),
+                                      ValueListenableBuilder<List<DateTime>>(
+                                        valueListenable: selectedDatesNotifier,
+                                        builder: (context, selectedDates, _) {
+                                          String dateText = 'Today';
+                                          if (selectedDates.isNotEmpty) {
+                                            var sorted = List<DateTime>.from(
+                                              selectedDates,
+                                            )..sort();
+                                            dateText = sorted
+                                                .map(
+                                                  (d) => DateFormat(
+                                                    'MMM dd, yyyy',
+                                                  ).format(d),
+                                                )
+                                                .join('\n');
+                                          } else if (focusedDate != null) {
+                                            dateText = DateFormat(
+                                              'MMM dd, yyyy',
+                                            ).format(focusedDate);
+                                          }
+                                          return Expanded(
+                                            child: Text(
+                                              dateText,
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 15),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const BodyTextHint(
+                                        title: 'Slots free',
+                                        fontSize: 14,
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          BodyTextColors(
+                                            title:
+                                                '${freeSlots} of $totalSlots',
+                                            fontSize: 14,
+                                            color: freeSlots > 0
+                                                ? GenericColors.darkGreen
+                                                : GenericColors.darkRed,
+                                          ),
+                                          const SizedBox(height: 5),
+                                          BodyTextColors(
+                                            title:
+                                                'out of 6 home page banner slots',
+                                            fontSize: 12,
+                                            color: AppColors.darkGrey
+                                                .withValues(alpha: .5),
+                                            fontWeight: FontWeight.w300,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
                         if (proceed) ...[
                           CustomRowWidget(
                             headerChild: HeaderTextBlack(
@@ -327,205 +505,103 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                           const CustomDivider(),
                           const SizedBox(height: 20),
                         ],
-
-                        ValueListenableBuilder<List<DateTime>>(
-                          valueListenable: selectedDatesNotifier,
-                          builder: (context, selectedDates, _) {
-                            final monthlyData = offerController.monthlyBannersData.data ?? [];
-                            return _CustomCalendarWidget(
-                              fullDates: monthlyData,
-                              selectedDates: selectedDates,
-                              onMonthChanged: (monthStr) {
-                                offerController.fetchMonthlyBanners(month: monthStr);
-                              },
-                              onDateTapped: (date) {
-                                final dateStr = DateFormat('yyyy-MM-dd').format(date);
-                                if (monthlyData.contains(dateStr)) return;
-                                
-                                List<DateTime> newDates = List.from(selectedDates);
-                                bool exists = false;
-                                for (var d in newDates) {
-                                  if (DateFormat('yyyy-MM-dd').format(d) == dateStr) {
-                                    exists = true;
-                                    newDates.remove(d);
-                                    break;
-                                  }
-                                }
-                                if (!exists) {
-                                  newDates.add(date);
-                                }
-                                selectedDatesNotifier.value = newDates;
-                                focusedDateNotifier.value = date;
-                                offerController.fetchDayBanners(date: dateStr);
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        ValueListenableBuilder<DateTime?>(
-                          valueListenable: focusedDateNotifier,
-                          builder: (context, focusedDate, _) {
-                            final dayData = offerController.dayBannersData.data;
-                            int bookedSlots = dayData?.data?.count ?? 0;
-                            int totalSlots = 6;
-                            int freeSlots = totalSlots - bookedSlots;
-                            
-                            return Container(
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: AppColors.whiteText,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const BodyTextHint(
-                                        title: 'Selected Date',
-                                        fontSize: 14,
-                                      ),
-                                      HeaderTextBlack(
-                                        title: focusedDate != null ? DateFormat('MMM dd, yyyy').format(focusedDate) : 'Today',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 15),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const BodyTextHint(
-                                        title: 'Slots free',
-                                        fontSize: 14,
-                                      ),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          BodyTextColors(
-                                            title: '${freeSlots} of $totalSlots',
-                                            fontSize: 14,
-                                            color: freeSlots > 0 ? GenericColors.darkGreen : GenericColors.darkRed,
-                                          ),
-                                          const SizedBox(height: 5),
-                                          BodyTextColors(
-                                            title: 'out of 6 home page banner slots',
-                                            fontSize: 12,
-                                            color: AppColors.darkGrey.withValues(
-                                              alpha: .5,
-                                            ),
-                                            fontWeight: FontWeight.w300,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
                         const SizedBox(height: 20),
 
                         offerController.apiResponse.status == Status.LOADING
                             ? ButtonProgressBar()
-                          : CustomFullButton(
-                              title: proceed ? "Pay Now" : "Proceed to Payment",
-                              color:
-                                  (image != null &&
-                                      selectedShopNotifier.value != null)
-                                  ? AppColors.primary
-                                  : AppColors.bgGrey,
-                              isDialogue: true,
-                              onTap:
-                                  (image == null ||
-                                      selectedShopNotifier.value == null)
-                                  ? () {
-                                      if (image == null) {
-                                        CustomToast.show(
-                                          context,
-                                          title: "Please upload an image",
-                                          isError: true,
-                                        );
-                                      } else if (selectedShopNotifier.value ==
-                                          null) {
-                                        CustomToast.show(
-                                          context,
-                                          title: "Please select a shop",
-                                          isError: true,
-                                        );
-                                      }
-                                    }
-                                  : () async {
-                                      if (!proceed) {
-                                        proceedToPaymentNotifier.value = true;
-                                      } else {
-                                        List<String> alreadyScheduled = [];
-                                        final dayBanners = offerController.dayBannersData.data?.data?.banners;
-                                        if (dayBanners != null) {
-                                          for (var b in dayBanners) {
-                                            if (b.bannerSchedule != null) {
-                                              alreadyScheduled.addAll(b.bannerSchedule!);
-                                            }
-                                          }
-                                        }
-                                        List<String> finalDatesToSend = [];
-                                        for (var d in selectedDatesNotifier.value) {
-                                          String dStr = DateFormat('yyyy-MM-dd').format(d);
-                                          if (!alreadyScheduled.contains(dStr)) {
-                                            finalDatesToSend.add(dStr);
-                                          }
-                                        }
-
-                                        final response = await offerController
-                                            .manageBannerImage(
-                                              banner: BannerData(
-                                                image: image,
-                                                type: widget.banner != null
-                                                    ? "update"
-                                                    : "add",
-                                                bannerType: "image",
-                                                shopId: selectedShopNotifier
-                                                    .value!
-                                                    .id,
-                                                id: widget.banner?.id ?? 0,
-                                                bannerSchedule: finalDatesToSend.isNotEmpty ? finalDatesToSend : null,
-                                              ),
-                                            );
-
-                                        if (!context.mounted) return;
-
-                                        if (response.status ==
-                                            Status.COMPLETED) {
-                                          offerController.getShopBanners(
-                                            shopId:
-                                                selectedShopNotifier
-                                                    .value!
-                                                    .id ??
-                                                0,
-                                          );
+                            : CustomFullButton(
+                                title: proceed
+                                    ? "Pay Now"
+                                    : "Proceed to Payment",
+                                color:
+                                    ((image != null || widget.banner != null) &&
+                                        selectedShopNotifier.value != null)
+                                    ? AppColors.primary
+                                    : AppColors.bgGrey,
+                                isDialogue: true,
+                                onTap:
+                                    ((image == null && widget.banner == null) ||
+                                        selectedShopNotifier.value == null)
+                                    ? () {
+                                        if (image == null &&
+                                            widget.banner == null) {
                                           CustomToast.show(
                                             context,
-                                            title: widget.banner != null
-                                                ? "Banner updated successfully"
-                                                : "Banner created successfully",
+                                            title: "Please upload an image",
+                                            isError: true,
                                           );
-                                          Navigator.pop(context);
-                                          if (widget.banner == null) {
-                                            Navigator.pop(context);
-                                          }
-                                        } else {
+                                        } else if (selectedShopNotifier.value ==
+                                            null) {
                                           CustomToast.show(
                                             context,
-                                            title: response.message ?? "",
+                                            title: "Please select a shop",
                                             isError: true,
                                           );
                                         }
                                       }
-                                    },
-                            ),
+                                    : () async {
+                                        if (!proceed) {
+                                          proceedToPaymentNotifier.value = true;
+                                        } else {
+                                          List<String> finalDatesToSend = [];
+                                          for (var d
+                                              in selectedDatesNotifier.value) {
+                                            String dStr = DateFormat(
+                                              'yyyy-MM-dd',
+                                            ).format(d);
+                                            finalDatesToSend.add(dStr);
+                                          }
+                                          final response = await offerController
+                                              .manageBannerImage(
+                                                banner: BannerData(
+                                                  image: image,
+                                                  type: widget.banner != null
+                                                      ? "update"
+                                                      : "add",
+                                                  bannerType: "image",
+                                                  shopId: selectedShopNotifier
+                                                      .value!
+                                                      .id,
+                                                  id: widget.banner?.id ?? 0,
+                                                  bannerSchedule:
+                                                      finalDatesToSend
+                                                          .isNotEmpty
+                                                      ? finalDatesToSend
+                                                      : null,
+                                                ),
+                                              );
+
+                                          if (!context.mounted) return;
+
+                                          if (response.status ==
+                                              Status.COMPLETED) {
+                                            offerController.getShopBanners(
+                                              shopId:
+                                                  selectedShopNotifier
+                                                      .value!
+                                                      .id ??
+                                                  0,
+                                            );
+                                            CustomToast.show(
+                                              context,
+                                              title: widget.banner != null
+                                                  ? "Banner updated successfully"
+                                                  : "Banner created successfully",
+                                            );
+                                            Navigator.pop(context);
+                                            if (widget.banner == null) {
+                                              Navigator.pop(context);
+                                            }
+                                          } else {
+                                            CustomToast.show(
+                                              context,
+                                              title: response.message ?? "",
+                                              isError: true,
+                                            );
+                                          }
+                                        }
+                                      },
+                              ),
                       ],
                     );
                   },
@@ -538,10 +614,10 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
     );
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     try {
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      final pickedFile = await picker.pickImage(source: source);
       if (pickedFile != null) {
         final croppedFile = await CustomImageCropper.cropImage(pickedFile.path);
         if (croppedFile != null) {
@@ -806,7 +882,9 @@ class _CustomCalendarWidgetState extends State<_CustomCalendarWidget> {
 
               String cellDateStr = DateFormat('yyyy-MM-dd').format(cellDate);
               bool isFull = widget.fullDates.contains(cellDateStr);
-              bool isSelected = widget.selectedDates.any((d) => DateFormat('yyyy-MM-dd').format(d) == cellDateStr);
+              bool isSelected = widget.selectedDates.any(
+                (d) => DateFormat('yyyy-MM-dd').format(d) == cellDateStr,
+              );
 
               Color textColor = AppColors.lightGreyHint;
               Color bgColor = AppColors.whiteText;

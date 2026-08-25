@@ -6,6 +6,7 @@ class HomeData {
   bool? reviewStatus;
   List<CategoryBanners>? categoryBanners;
   List<HomeShops>? shops;
+  List<ShopBanners>? shopBanners;
 
   HomeData({
     this.profile,
@@ -14,7 +15,7 @@ class HomeData {
     this.reviewStatus,
     this.topBanners,
     this.categoryBanners,
-    this.shops
+    this.shops,
   });
 
   HomeData.fromJson(Map<String, dynamic> json) {
@@ -41,10 +42,17 @@ class HomeData {
     if (json['shops'] != null) {
       shops = <HomeShops>[];
       json['shops'].forEach((v) {
-        shops!.add( HomeShops.fromJson(v));
+        shops!.add(HomeShops.fromJson(v));
       });
     }
     reviewStatus = json['reviewStatus'];
+
+    if (json['shopBanners'] != null) {
+      shopBanners = <ShopBanners>[];
+      json['shopBanners'].forEach((v) {
+        shopBanners!.add(ShopBanners.fromJson(v));
+      });
+    }
   }
 }
 
@@ -244,5 +252,56 @@ class VersionData {
     updateMessage = json['updateMessage']?.toString();
     androidStoreUrl = json['androidStoreUrl']?.toString();
     iosStoreUrl = json['iosStoreUrl']?.toString();
+  }
+}
+
+class ShopBanners {
+  int? id;
+  int? shopId;
+  int? profileId;
+  String? bannerType;
+  String? image;
+  String? headerText;
+  String? description;
+  String? cta;
+  String? illustration;
+  String? color;
+  List<String>? bannerSchedule;
+  String? status;
+  String? createdAt;
+  String? updatedAt;
+
+  ShopBanners({
+    this.id,
+    this.shopId,
+    this.profileId,
+    this.bannerType,
+    this.image,
+    this.headerText,
+    this.description,
+    this.cta,
+    this.illustration,
+    this.color,
+    this.bannerSchedule,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  ShopBanners.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    shopId = json['shopId'];
+    profileId = json['profileId'];
+    bannerType = json['bannerType'];
+    image = json['image'];
+    headerText = json['headerText'];
+    description = json['description'];
+    cta = json['cta'];
+    illustration = json['illustration'];
+    color = json['color'];
+    bannerSchedule = json['bannerSchedule'].cast<String>();
+    status = json['status'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
   }
 }

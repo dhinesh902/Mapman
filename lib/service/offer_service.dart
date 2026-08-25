@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:mapman/model/offers_model.dart';
 import 'package:mapman/routes/api_routes.dart';
 import 'package:mapman/utils/handlers/api_exception.dart';
@@ -25,7 +27,7 @@ class OfferService extends ApiRoutes {
       });
       if (banner.bannerSchedule != null) {
         for (var i = 0; i < banner.bannerSchedule!.length; i++) {
-          formData.fields.add(MapEntry('bannerSchedule[]', banner.bannerSchedule![i]));
+          formData.fields.add(MapEntry('bannerSchedule', banner.bannerSchedule![i]));
         }
       }
       final response = await dio.post(
@@ -152,6 +154,7 @@ class OfferService extends ApiRoutes {
     required Map<String, dynamic> body,
   }) async {
     try {
+      debugPrint('manageBannerText BODY: $body');
       final response = await dio.post(
         ApiRoutes.manageBannerText,
         options: headerWithToken(token),

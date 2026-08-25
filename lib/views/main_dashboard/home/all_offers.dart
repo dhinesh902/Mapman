@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_scratch_card/flutter_scratch_card.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
@@ -849,10 +851,13 @@ class RewardPageWidget extends StatelessWidget {
                     vertical: 10,
                   ),
                   child: CustomFullButton(
-                    title: 'Got It!',
+                    title: 'View shop details',
                     isDialogue: true,
                     onTap: () {
-                      Navigator.pop(context);
+                      context.pushNamed(
+                        AppRoutes.shopDetail,
+                        extra: offer.shopId ?? 0,
+                      );
                     },
                   ),
                 ),

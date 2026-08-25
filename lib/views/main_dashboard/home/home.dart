@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:animated_hint_textfield/animated_hint_textfield.dart';
@@ -139,6 +140,7 @@ class _HomeState extends State<Home> {
                 )
               : (homeController.homeData.data ?? HomeData());
           final homeShops = homeController.homeData.data?.shops ?? [];
+          final shopBanners = homeController.homeData.data?.shopBanners ?? [];
           return Skeletonizer(
             enabled: isLoading,
             child: isLoading
@@ -398,11 +400,13 @@ class _HomeState extends State<Home> {
                               ),
                             ),
                             SizedBox(height: 80),
-                            BottomCarousalSlider(
-                              images: categoryBanners,
-                              homeController: homeController,
-                              height: 100,
-                            ),
+                            if (shopBanners.isNotEmpty) ...[
+                              ShopBannersSlider(
+                                shopBanners: shopBanners,
+                                height: 200,
+                              ),
+                              SizedBox(height: 40),
+                            ],
                             Container(
                               height: 153,
                               color: AppColors.scaffoldBackgroundDark,
@@ -814,135 +818,6 @@ class CircleContainer extends StatelessWidget {
   }
 }
 
-class BottomCarousalSlider extends StatelessWidget {
-  const BottomCarousalSlider({
-    super.key,
-    required this.images,
-    required this.homeController,
-    required this.height,
-  });
-
-  final List<CategoryBanners> images;
-  final HomeController homeController;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    if (images.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 15),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CarouselSlider(
-            items: List.generate(images.length, (index) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      images[index].backgroundImage?.startsWith('https') ??
-                              false
-                          ? images[index].backgroundImage!
-                          : '${ApiRoutes.baseUrl}${images[index].backgroundImage ?? ''}',
-                    ),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 7,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          BodyTextColors(
-                            title: images[index].title?.capitalize() ?? "",
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.whiteText,
-                          ),
-                          SizedBox(height: 10),
-                          InkWell(
-                            onTap: () {
-                              homeController.setCurrentPage = 1;
-                              homeController.setIsShowAddNearBy = true;
-
-                              homeController.setSearchCategory =
-                                  images[index].category?.toLowerCase() ?? "";
-                            },
-                            child: Container(
-                              height: 28,
-                              width: 88,
-                              margin: const EdgeInsets.only(top: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.darkText,
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: const Center(
-                                child: BodyTextColors(
-                                  title: 'Explore Now',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w300,
-                                  color: AppColors.whiteText,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: Image.network(
-                        '${ApiRoutes.baseUrl}${images[index].image ?? ''}',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            options: CarouselOptions(
-              height: height,
-              viewportFraction: 1.0,
-              autoPlay: false,
-              autoPlayInterval: const Duration(seconds: 2),
-              enlargeCenterPage: false,
-              enableInfiniteScroll: true,
-              onPageChanged: (index, reason) {
-                homeController.setCarousalIndex(index);
-              },
-            ),
-          ),
-          Positioned(
-            bottom: 5,
-            left: 0,
-            right: 0,
-            child: CustomIndicator(
-              currentIndex: homeController.carousalCurrentIndex,
-              itemCount: images.length,
-              activeWidth: 8,
-              inactiveWidth: 3,
-              borderHeight: 3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class CustomIndicator extends StatelessWidget {
   const CustomIndicator({
     super.key,
@@ -1305,6 +1180,326 @@ class ShopCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ShopBannersSlider extends StatefulWidget {
+  const ShopBannersSlider({
+    super.key,
+    required this.shopBanners,
+    required this.height,
+  });
+
+  final List<ShopBanners> shopBanners;
+  final double height;
+
+  @override
+  State<ShopBannersSlider> createState() => _ShopBannersSliderState();
+}
+
+class _ShopBannersSliderState extends State<ShopBannersSlider> {
+  int _currentIndex = 0;
+
+  List<String> _getColors(String? color) {
+    if (color == null || color.trim().isEmpty) return [];
+
+    try {
+      final decoded = jsonDecode(color);
+
+      if (decoded is List) {
+        return decoded
+            .map((e) => e.toString())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Color _hexToColor(String hex) {
+    String value = hex.trim().replaceFirst('#', '');
+
+    if (value.length == 3) {
+      value = value.split('').map((char) => '$char$char').join();
+    }
+
+    if (value.length == 6) {
+      value = 'FF$value';
+    }
+
+    if (value.length == 8) {
+      return Color(int.parse(value, radix: 16));
+    }
+
+    return AppColors.darkGrey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.shopBanners.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Stack(
+      children: [
+        CarouselSlider(
+          items: widget.shopBanners.map((banner) {
+            final List<String> colorList = _getColors(banner.color?.toString());
+
+            final List<Color> gradientColors = colorList
+                .map(_hexToColor)
+                .toList();
+
+            final List<Color> overlayColors = gradientColors.isNotEmpty
+                ? [
+                    gradientColors.first.withValues(alpha: 0.88),
+                    if (gradientColors.length > 1)
+                      gradientColors[1].withValues(alpha: 0.78)
+                    else
+                      gradientColors.first.withValues(alpha: 0.60),
+                  ]
+                : [Colors.transparent, Colors.transparent];
+
+            final LinearGradient overlayGradient = LinearGradient(
+              colors: overlayColors,
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
+            );
+
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: AppColors.whiteText,
+              ),
+              padding: EdgeInsets.all(5),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (banner.image != null && banner.image!.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        context.pushNamed(
+                          AppRoutes.shopDetail,
+                          extra: banner.shopId ?? 0,
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: CustomNetworkImage(
+                          imageUrl: banner.image!.startsWith('https')
+                              ? banner.image!
+                              : '${ApiRoutes.baseUrl}${banner.image ?? ''}',
+                          boxFit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: overlayGradient,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+
+                  // IgnorePointer(
+                  //   child: DecoratedBox(
+                  //     decoration: BoxDecoration(
+                  //       borderRadius: BorderRadius.circular(15),
+                  //       gradient: LinearGradient(
+                  //         begin: Alignment.topCenter,
+                  //         end: Alignment.bottomCenter,
+                  //         colors: [
+                  //           Colors.transparent,
+                  //           Colors.black.withValues(alpha: 0.10),
+                  //           Colors.black.withValues(alpha: 0.28),
+                  //         ],
+                  //         stops: const [0.35, 0.70, 1.0],
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                  InkWell(
+                    onTap: () {
+                      context.pushNamed(
+                        AppRoutes.shopDetail,
+                        extra: banner.shopId ?? 0,
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (banner.headerText != null &&
+                                        banner.headerText.toString().isNotEmpty)
+                                      Text(
+                                        banner.headerText.toString(),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          height: 1.15,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                              if (banner.illustration != null &&
+                                  banner.illustration
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                const SizedBox(width: 12),
+                                Container(
+                                  height: 52,
+                                  width: 52,
+                                  padding: const EdgeInsets.all(9),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: CustomNetworkImage(
+                                    imageUrl:
+                                        banner.illustration!
+                                            .toString()
+                                            .startsWith('https')
+                                        ? banner.illustration!.toString()
+                                        : '${ApiRoutes.baseUrl}${banner.illustration ?? ''}',
+                                    boxFit: BoxFit.contain,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const Spacer(),
+                          if (banner.description != null &&
+                              banner.description.toString().isNotEmpty) ...[
+                            Text(
+                              banner.description.toString(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                fontSize: 13.5,
+                                height: 1.45,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          if (banner.cta != null &&
+                              banner.cta.toString().isNotEmpty)
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 9,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        banner.cta.toString(),
+                                        style: TextStyle(
+                                          color: gradientColors.isNotEmpty
+                                              ? gradientColors.first
+                                              : AppColors.darkGrey,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 16,
+                                        color: gradientColors.isNotEmpty
+                                            ? gradientColors.first
+                                            : AppColors.darkGrey,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          options: CarouselOptions(
+            height: widget.height,
+            viewportFraction: 0.92,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 700),
+            autoPlayCurve: Curves.easeOutCubic,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.06,
+            enableInfiniteScroll: widget.shopBanners.length > 1,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+          ),
+        ),
+        Positioned(
+          bottom: 15,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: CustomIndicator(
+              currentIndex: _currentIndex,
+              itemCount: widget.shopBanners.length,
+              activeWidth: 18,
+              inactiveWidth: 6,
+              borderHeight: 4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

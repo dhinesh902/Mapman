@@ -48,10 +48,10 @@ Future<void> showLocalNotification(RemoteMessage message) async {
     );
 
     await flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      platformDetails,
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: platformDetails,
       payload: 'notifications',
     );
   }
@@ -74,7 +74,7 @@ Future<void> initializeLocalNotifications() async {
   );
 
   await flutterLocalNotificationsPlugin.initialize(
-    settings,
+    settings: settings,
     onDidReceiveNotificationResponse: (response) {
       debugPrint("Notification tapped: ${response.payload}");
       _handleNotificationNavigation(response.payload);
