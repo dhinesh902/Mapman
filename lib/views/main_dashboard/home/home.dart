@@ -403,7 +403,7 @@ class _HomeState extends State<Home> {
                             if (shopBanners.isNotEmpty) ...[
                               ShopBannersSlider(
                                 shopBanners: shopBanners,
-                                height: 200,
+                                height: 180,
                               ),
                               SizedBox(height: 40),
                             ],
@@ -477,141 +477,25 @@ class HomeTopCard extends StatelessWidget {
                   itemCount: homeBanners.length,
                   itemBuilder: (context, index, realIndex) {
                     final banner = homeBanners[index];
-
-                    // return Container(
-                    //   margin: const EdgeInsets.fromLTRB(4, 15, 4, 10),
-                    //   decoration: BoxDecoration(
-                    //     borderRadius: BorderRadius.circular(20),
-                    //     color: AppColors.whiteText,
-                    //     image: DecorationImage(
-                    //       image: NetworkImage(
-                    //         banner.backgroundImage?.startsWith('https') ?? false
-                    //             ? banner.backgroundImage!
-                    //             : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ''}',
-                    //       ),
-                    //       fit: BoxFit.cover,
-                    //     ),
-                    //   ),
-                    //
-                    //   padding: EdgeInsets.all(4),
-                    //   clipBehavior: Clip.hardEdge,
-                    //   child: Row(
-                    //     children: [
-                    //
-                    //       Expanded(
-                    //         flex: 5,
-                    //         child: Padding(
-                    //           padding: const EdgeInsets.symmetric(
-                    //             horizontal: 16,
-                    //             vertical: 5,
-                    //           ),
-                    //           child: Column(
-                    //             crossAxisAlignment: CrossAxisAlignment.start,
-                    //             mainAxisAlignment: MainAxisAlignment.center,
-                    //             children: [
-                    //               BodyTextColors(
-                    //                 title: banner.title?.capitalize() ?? '',
-                    //                 fontSize: 16,
-                    //                 fontWeight: FontWeight.w700,
-                    //                 color: AppColors.whiteText,
-                    //               ),
-                    //
-                    //               const SizedBox(height: 5),
-                    //
-                    //               BodyTextColors(
-                    //                 title: banner.subtitle?.capitalize() ?? '',
-                    //                 fontSize: 12,
-                    //                 fontWeight: FontWeight.w300,
-                    //                 color: AppColors.whiteText,
-                    //               ),
-                    //
-                    //               const SizedBox(height: 20),
-                    //               if (banner.title != null &&
-                    //                   banner.title!.isNotEmpty) ...[
-                    //                 InkWell(
-                    //                   borderRadius: BorderRadius.circular(8),
-                    //                   onTap: () async {
-                    //                     final token = SessionManager.getToken();
-                    //
-                    //                     if (token == null) {
-                    //                       await LoginBottomSheet.showLoginBottomSheet(
-                    //                         context,
-                    //                       );
-                    //                       return;
-                    //                     }
-                    //
-                    //                     await showAddShopDetail(context);
-                    //                   },
-                    //                   child: Container(
-                    //                     height: 28,
-                    //                     width: 120,
-                    //                     decoration: BoxDecoration(
-                    //                       color: index == 1
-                    //                           ? AppColors.darkText
-                    //                           : AppColors.primary,
-                    //                       borderRadius: BorderRadius.circular(
-                    //                         8,
-                    //                       ),
-                    //                     ),
-                    //                     child: Row(
-                    //                       mainAxisAlignment:
-                    //                           MainAxisAlignment.center,
-                    //                       children: [
-                    //                         BodyTextColors(
-                    //                           title: 'Register Now',
-                    //                           fontSize: 12,
-                    //                           fontWeight: FontWeight.w500,
-                    //                           color: AppColors.whiteText,
-                    //                         ),
-                    //
-                    //                         const SizedBox(width: 6),
-                    //
-                    //                         const Icon(
-                    //                           Icons.arrow_forward_rounded,
-                    //                           size: 16,
-                    //                           color: AppColors.whiteText,
-                    //                         ),
-                    //                       ],
-                    //                     ),
-                    //                   ),
-                    //                 ),
-                    //               ],
-                    //             ],
-                    //           ),
-                    //         ),
-                    //       ),
-                    //
-                    //
-                    //       if (banner.image != null &&
-                    //           banner.image!.isNotEmpty) ...[
-                    //         SizedBox(
-                    //           width: 130,
-                    //           height: 170,
-                    //           child: Image.network(
-                    //             banner.image!.startsWith('https')
-                    //                 ? '${banner.image}'
-                    //                 : '${ApiRoutes.baseUrl}${banner.image ?? ""}',
-                    //             fit: BoxFit.contain,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ],
-                    //   ),
-                    // );
                     return Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         color: AppColors.whiteText,
                       ),
                       padding: EdgeInsets.all(4),
+                      margin: EdgeInsets.symmetric(horizontal: 2),
                       clipBehavior: Clip.hardEdge,
-                      child: ClipRRect(
-                        borderRadius: BorderRadiusGeometry.circular(20),
-                        child: CustomNetworkImage(
-                          imageUrl: banner.backgroundImage!.startsWith('https')
-                              ? '${banner.backgroundImage}'
-                              : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ""}',
-                          boxFit: BoxFit.fill,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: CustomNetworkImage(
+                            imageUrl:
+                                banner.backgroundImage!.startsWith('https')
+                                ? '${banner.backgroundImage}'
+                                : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ""}',
+                            boxFit: BoxFit.fill,
+                          ),
                         ),
                       ),
                     );
@@ -930,20 +814,11 @@ class ShopCard extends StatelessWidget {
         context.pushNamed(AppRoutes.shopDetail, extra: shop.id ?? 0);
       },
       child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 10, bottom: 10, top: 10),
+        width: 180,
+        margin: const EdgeInsets.only(right: 14, bottom: 12, top: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           color: AppColors.whiteText,
-          // border: Border.all(color: Colors.grey.shade200)
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 1,
-              spreadRadius: 0,
-              offset: Offset(-3, 3),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -953,10 +828,10 @@ class ShopCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(10),
+                    top: Radius.circular(16),
                   ),
                   child: SizedBox(
-                    height: 145,
+                    height: 140,
                     width: double.infinity,
                     child: CustomNetworkImage(
                       imageUrl: image.startsWith("http")
@@ -969,31 +844,36 @@ class ShopCard extends StatelessWidget {
 
                 /// Category Badge
                 Positioned(
-                  left: 10,
+                  right: 10,
                   top: 10,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 5,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
+                      color: AppColors.whiteText.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.storefront,
+                          Icons.storefront_rounded,
                           size: 12,
-                          color: Colors.green,
+                          color: AppColors.primary,
                         ),
-
                         const SizedBox(width: 4),
-
                         BodyTextColors(
                           title: shop.category?.capitalize() ?? "Shop",
                           fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.primary,
                         ),
                       ],
@@ -1003,178 +883,87 @@ class ShopCard extends StatelessWidget {
               ],
             ),
 
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HeaderTextBlack(
-                    title: shop.shopName ?? "Unknown Shop",
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  BodyTextColors(
-                    title: shop.address ?? "Address not available",
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  if (isShopClosed()) ...[
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: GenericColors.darkRed,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            AppIcons.videoShop,
-                            height: 10,
-                            width: 10,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.whiteText,
-                              BlendMode.srcIn,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HeaderTextBlack(
+                          title: shop.shopName ?? "Unknown Shop",
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 13,
+                              color: Colors.grey.shade400,
                             ),
-                          ),
-                          SizedBox(width: 6),
-                          BodyTextColors(
-                            title: 'Shop Closed',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.whiteText,
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: BodyTextColors(
+                                title: shop.address ?? "Address not available",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ] else ...[
+
+                    /// Open/Closed Status
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 4,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: GenericColors.darkGreen,
-                        borderRadius: BorderRadius.circular(30),
+                        color: isShopClosed()
+                            ? GenericColors.darkRed.withValues(alpha: 0.08)
+                            : GenericColors.darkGreen.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SvgPicture.asset(
-                            AppIcons.videoShop,
-                            height: 10,
-                            width: 10,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.whiteText,
-                              BlendMode.srcIn,
+                          Container(
+                            height: 6,
+                            width: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isShopClosed()
+                                  ? GenericColors.darkRed
+                                  : GenericColors.darkGreen,
                             ),
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           BodyTextColors(
-                            title: 'Shop Open',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.whiteText,
+                            title: isShopClosed() ? 'Closed Now' : 'Open Now',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isShopClosed()
+                                ? GenericColors.darkRed
+                                : GenericColors.darkGreen,
                           ),
                         ],
                       ),
                     ),
                   ],
-
-                  // const SizedBox(height: 14),
-                  //
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: InkWell(
-                  //         borderRadius: BorderRadius.circular(30),
-                  //         onTap: () async {
-                  //           await CustomLaunchers.openGoogleMaps(
-                  //             latitude: double.parse(shop.lat ?? "0"),
-                  //             longitude: double.parse(shop.long ?? "0"),
-                  //           );
-                  //         },
-                  //         child: Container(
-                  //           height: 34,
-                  //           decoration: BoxDecoration(
-                  //             color: AppColors.primary.withValues(alpha: .08),
-                  //             borderRadius: BorderRadius.circular(30),
-                  //             border: Border.all(
-                  //               color: AppColors.primary.withValues(alpha: .25),
-                  //             ),
-                  //           ),
-                  //           child: Row(
-                  //             mainAxisAlignment: MainAxisAlignment.center,
-                  //             children: [
-                  //               Icon(
-                  //                 Icons.directions,
-                  //                 size: 14,
-                  //                 color: AppColors.primary,
-                  //               ),
-                  //               const SizedBox(width: 4),
-                  //               const HeaderTextPrimary(
-                  //                 title: "Map",
-                  //                 fontSize: 11,
-                  //                 fontWeight: FontWeight.w600,
-                  //               ),
-                  //             ],
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //
-                  //     const SizedBox(width: 8),
-                  //
-                  //     Expanded(
-                  //       child: InkWell(
-                  //         borderRadius: BorderRadius.circular(30),
-                  //         onTap: () async {
-                  //           await CustomLaunchers.makePhoneCall(
-                  //             phoneNumber: shop.registerNumber ?? "",
-                  //           );
-                  //         },
-                  //         child: Container(
-                  //           height: 34,
-                  //           decoration: BoxDecoration(
-                  //             color: AppColors.primary,
-                  //             borderRadius: BorderRadius.circular(30),
-                  //           ),
-                  //           child: const Row(
-                  //             mainAxisAlignment: MainAxisAlignment.center,
-                  //             children: [
-                  //               Icon(
-                  //                 Icons.call_rounded,
-                  //                 size: 14,
-                  //                 color: Colors.white,
-                  //               ),
-                  //               SizedBox(width: 4),
-                  //               BodyTextColors(
-                  //                 title: "Call",
-                  //                 color: AppColors.whiteText,
-                  //                 fontSize: 11,
-                  //                 fontWeight: FontWeight.w600,
-                  //               ),
-                  //             ],
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                ],
+                ),
               ),
             ),
           ],
@@ -1202,40 +991,58 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
   int _currentIndex = 0;
 
   List<String> _getColors(String? color) {
-    if (color == null || color.trim().isEmpty) return [];
+    if (color == null || color.trim().isEmpty) {
+      return [];
+    }
 
     try {
       final decoded = jsonDecode(color);
 
       if (decoded is List) {
         return decoded
-            .map((e) => e.toString())
-            .where((e) => e.isNotEmpty)
+            .map((item) => item.toString().trim())
+            .where((item) => item.isNotEmpty)
             .toList();
       }
 
       return [];
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
 
   Color _hexToColor(String hex) {
-    String value = hex.trim().replaceFirst('#', '');
+    try {
+      String value = hex.trim().replaceFirst('#', '');
 
-    if (value.length == 3) {
-      value = value.split('').map((char) => '$char$char').join();
+      if (value.length == 3) {
+        value = value.split('').map((char) => '$char$char').join();
+      }
+
+      if (value.length == 6) {
+        value = 'FF$value';
+      }
+
+      if (value.length == 8) {
+        return Color(int.parse(value, radix: 16));
+      }
+
+      return AppColors.darkGrey;
+    } catch (_) {
+      return AppColors.darkGrey;
+    }
+  }
+
+  String _getImageUrl(String image) {
+    if (image.startsWith('https')) {
+      return image;
     }
 
-    if (value.length == 6) {
-      value = 'FF$value';
-    }
+    return '${ApiRoutes.baseUrl}$image';
+  }
 
-    if (value.length == 8) {
-      return Color(int.parse(value, radix: 16));
-    }
-
-    return AppColors.darkGrey;
+  void _openShopDetails(int shopId) {
+    context.pushNamed(AppRoutes.shopDetail, extra: shopId);
   }
 
   @override
@@ -1245,6 +1052,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
     }
 
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         CarouselSlider(
           items: widget.shopBanners.map((banner) {
@@ -1270,70 +1078,42 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
               end: Alignment.topRight,
             );
 
-            return Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-              clipBehavior: Clip.hardEdge,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: AppColors.whiteText,
+            final int shopId = banner.shopId ?? 0;
+
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-              padding: EdgeInsets.all(5),
+              clipBehavior: Clip.hardEdge,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   if (banner.image != null && banner.image!.isNotEmpty)
                     InkWell(
-                      onTap: () {
-                        context.pushNamed(
-                          AppRoutes.shopDetail,
-                          extra: banner.shopId ?? 0,
-                        );
-                      },
+                      onTap: () => _openShopDetails(shopId),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(10),
                         child: CustomNetworkImage(
-                          imageUrl: banner.image!.startsWith('https')
-                              ? banner.image!
-                              : '${ApiRoutes.baseUrl}${banner.image ?? ''}',
+                          imageUrl: _getImageUrl(banner.image!),
                           boxFit: BoxFit.cover,
                         ),
                       ),
                     ),
 
+                  // Colored gradient overlay
                   IgnorePointer(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: overlayGradient,
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
 
-                  // IgnorePointer(
-                  //   child: DecoratedBox(
-                  //     decoration: BoxDecoration(
-                  //       borderRadius: BorderRadius.circular(15),
-                  //       gradient: LinearGradient(
-                  //         begin: Alignment.topCenter,
-                  //         end: Alignment.bottomCenter,
-                  //         colors: [
-                  //           Colors.transparent,
-                  //           Colors.black.withValues(alpha: 0.10),
-                  //           Colors.black.withValues(alpha: 0.28),
-                  //         ],
-                  //         stops: const [0.35, 0.70, 1.0],
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
+                  // Banner content
                   InkWell(
-                    onTap: () {
-                      context.pushNamed(
-                        AppRoutes.shopDetail,
-                        extra: banner.shopId ?? 0,
-                      );
-                    },
+                    onTap: () => _openShopDetails(shopId),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                       child: Column(
@@ -1344,26 +1124,50 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     if (banner.headerText != null &&
-                                        banner.headerText.toString().isNotEmpty)
-                                      Text(
-                                        banner.headerText.toString(),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 22,
-                                          height: 1.15,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.3,
-                                        ),
+                                        banner.headerText
+                                            .toString()
+                                            .isNotEmpty)
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              banner.headerText.toString(),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 22,
+                                                height: 1.15,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: -0.3,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 20),
+                                          Container(
+                                            height: 30,
+                                            width: 30,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                            ),
+                                            clipBehavior: Clip.hardEdge,
+                                            child: CustomNetworkImage(
+                                              imageUrl:
+                                                  banner.illustration ?? '',
+                                              boxFit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                   ],
                                 ),
                               ),
 
+                              // Illustration
                               if (banner.illustration != null &&
                                   banner.illustration
                                       .toString()
@@ -1374,7 +1178,9 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                   width: 52,
                                   padding: const EdgeInsets.all(9),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
+                                    color: Colors.white.withValues(
+                                      alpha: 0.18,
+                                    ),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: Colors.white.withValues(
@@ -1384,19 +1190,19 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                     ),
                                   ),
                                   child: CustomNetworkImage(
-                                    imageUrl:
-                                        banner.illustration!
-                                            .toString()
-                                            .startsWith('https')
-                                        ? banner.illustration!.toString()
-                                        : '${ApiRoutes.baseUrl}${banner.illustration ?? ''}',
+                                    imageUrl: _getImageUrl(
+                                      banner.illustration.toString(),
+                                    ),
                                     boxFit: BoxFit.contain,
                                   ),
                                 ),
                               ],
                             ],
                           ),
+
                           const Spacer(),
+
+                          // Description
                           if (banner.description != null &&
                               banner.description.toString().isNotEmpty) ...[
                             Text(
@@ -1412,6 +1218,8 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                             ),
                             const SizedBox(height: 14),
                           ],
+
+                          // CTA button
                           if (banner.cta != null &&
                               banner.cta.toString().isNotEmpty)
                             Row(
@@ -1440,9 +1248,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                       Text(
                                         banner.cta.toString(),
                                         style: TextStyle(
-                                          color: gradientColors.isNotEmpty
-                                              ? gradientColors.first
-                                              : AppColors.darkGrey,
+                                          color: AppColors.darkText,
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -1469,9 +1275,9 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
             );
           }).toList(),
           options: CarouselOptions(
-            height: widget.height,
-            viewportFraction: 0.92,
-            autoPlay: true,
+            height: widget.height + 16,
+            viewportFraction: 0.9,
+            autoPlay: widget.shopBanners.length > 1,
             autoPlayInterval: const Duration(seconds: 4),
             autoPlayAnimationDuration: const Duration(milliseconds: 700),
             autoPlayCurve: Curves.easeOutCubic,
@@ -1479,12 +1285,15 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
             enlargeFactor: 0.06,
             enableInfiniteScroll: widget.shopBanners.length > 1,
             onPageChanged: (index, reason) {
+              if (!mounted) return;
               setState(() {
                 _currentIndex = index;
               });
             },
           ),
         ),
+
+        // Page indicator
         Positioned(
           bottom: 15,
           left: 0,

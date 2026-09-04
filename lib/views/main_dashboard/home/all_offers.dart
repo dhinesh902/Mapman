@@ -69,27 +69,38 @@ class _AllOffersPageState extends State<AllOffersPage> {
                       return GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 15,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 20,
                         ),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 1.0,
-                            ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 0.82,
+                        ),
                         itemCount: offers.length,
                         itemBuilder: (context, index) {
                           final offer = offers[index];
-                          final List<List<Color>> cardGradients = List.generate(
-                            Colors.primaries.length,
-                            (index) => [
-                              Colors.primaries[index],
-                              Colors.primaries[index].shade300,
-                            ],
-                          );
+                          final List<List<Color>> premiumGradients = [
+                            [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
+                            [const Color(0xFFF5576C), const Color(0xFFF093FB)],
+                            [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
+                            [const Color(0xFFFA709A), const Color(0xFFFEE140)],
+                            [const Color(0xFF30CFD0), const Color(0xFF330867)],
+                            [const Color(0xFFFF512F), const Color(0xFFDD2476)],
+                            [const Color(0xFF00C6FF), const Color(0xFF0072FF)],
+                            [const Color(0xFFFC5C7D), const Color(0xFF6A82FB)],
+                            [const Color(0xFF11998E), const Color(0xFF38EF7D)],
+                            [const Color(0xFFFF8008), const Color(0xFFFFC837)],
+                            [const Color(0xFF8E2DE2), const Color(0xFF4A00E0)],
+                            [const Color(0xFFED213A), const Color(0xFF93291E)],
+                            [const Color(0xFF2193B0), const Color(0xFF6DD5ED)],
+                            [const Color(0xFFB721FF), const Color(0xFF21D4FD)],
+                            [const Color(0xFFFF416C), const Color(0xFFFF4B2B)],
+                          ];
+                          final gradient = premiumGradients[index % premiumGradients.length];
+
                           return GestureDetector(
                             onTap: () {
                               if (offer.isOpened == true) {
@@ -105,37 +116,25 @@ class _AllOffersPageState extends State<AllOffersPage> {
                                 showDialog(
                                   context: context,
                                   barrierDismissible: false,
-                                  builder: (_) =>
-                                      ScratchRewardDialog(offer: offer),
+                                  builder: (_) => ScratchRewardDialog(offer: offer),
                                 );
                               }
                             },
                             child: Builder(
                               builder: (context) {
                                 if (offer.isOpened == true) {
-                                  final baseColor =
-                                      cardGradients[index %
-                                              cardGradients.length]
-                                          .first;
                                   return Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        colors: gradient,
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(24),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.05,
-                                          ),
-                                          blurRadius: 10,
-                                          spreadRadius: 0,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                        BoxShadow(
-                                          color: baseColor.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                          blurRadius: 20,
-                                          spreadRadius: 2,
+                                          color: gradient.first.withValues(alpha: 0.35),
+                                          blurRadius: 15,
                                           offset: const Offset(0, 8),
                                         ),
                                       ],
@@ -143,166 +142,145 @@ class _AllOffersPageState extends State<AllOffersPage> {
                                     clipBehavior: Clip.hardEdge,
                                     child: Stack(
                                       children: [
+                                        // Background decorative icon
                                         Positioned(
-                                          bottom: -20,
                                           right: -20,
+                                          bottom: -20,
                                           child: Icon(
-                                            Icons.stars_rounded,
-                                            size: 140,
-                                            color: baseColor.withValues(
-                                              alpha: 0.08,
-                                            ),
+                                            Icons.card_giftcard_rounded,
+                                            size: 110,
+                                            color: Colors.white.withValues(alpha: 0.15),
                                           ),
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.all(16.0),
+                                          padding: const EdgeInsets.all(18.0),
                                           child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children:
-                                                offer.openStatus == 'opened'
-                                                ? [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 8,
-                                                                vertical: 4,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color: baseColor
-                                                                .withValues(
-                                                                  alpha: 0.1,
-                                                                ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8,
-                                                                ),
-                                                          ),
-                                                          child: BodyTextColors(
-                                                            title: "CLAIMED",
-                                                            color: baseColor,
-                                                            fontSize: 10,
-                                                            fontWeight:
-                                                                FontWeight.w800,
-                                                          ),
-                                                        ),
-                                                        Icon(
-                                                          Icons.check_circle,
-                                                          color: baseColor,
-                                                          size: 24,
-                                                        ),
-                                                      ],
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              // Top row: Status
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6,
                                                     ),
-                                                    Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        BodyTextColors(
-                                                          title:
-                                                              offer
-                                                                  .offerPercentage ??
-                                                              '',
-                                                          color: Colors.black87,
-                                                          fontSize: 34,
-                                                          fontWeight:
-                                                              FontWeight.w900,
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 4,
-                                                        ),
-                                                        BodyTextColors(
-                                                          title:
-                                                              offer
-                                                                  .offerTitle ??
-                                                              '',
-                                                          color: Colors.black54,
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ],
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white.withValues(alpha: 0.25),
+                                                      borderRadius: BorderRadius.circular(20),
                                                     ),
-                                                  ]
-                                                : [
-                                                    Expanded(
-                                                      child: Center(
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Container(
-                                                              padding:
-                                                                  const EdgeInsets.all(
-                                                                    12,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color: baseColor
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.1,
-                                                                    ),
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                              child: Icon(
-                                                                Icons
-                                                                    .touch_app_rounded,
-                                                                color:
-                                                                    baseColor,
-                                                                size: 32,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                              height: 12,
-                                                            ),
-                                                            BodyTextColors(
-                                                              title:
-                                                                  "${offer.offerTitle?.capitalize()}",
-                                                              color: baseColor,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 15,
-                                                            ),
-                                                          ],
-                                                        ),
+                                                    child: const Text(
+                                                      "CLAIMED",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.w800,
+                                                        letterSpacing: 0.5,
                                                       ),
                                                     ),
-                                                  ],
+                                                  ),
+                                                  const Icon(
+                                                    Icons.check_circle_rounded,
+                                                    color: Colors.white,
+                                                    size: 24,
+                                                  ),
+                                                ],
+                                              ),
+                                              
+                                              // Bottom content: Percentage and Title
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    offer.offerPercentage ?? '',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 34,
+                                                      fontWeight: FontWeight.w900,
+                                                      height: 1.1,
+                                                      letterSpacing: -0.5,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    offer.offerTitle ?? '',
+                                                    style: TextStyle(
+                                                      color: Colors.white.withValues(alpha: 0.95),
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                      height: 1.2,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   );
                                 } else {
+                                  // Unopened State
                                   return Container(
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(24),
                                       boxShadow: [
                                         BoxShadow(
-                                          color:
-                                              cardGradients[index %
-                                                      cardGradients.length]
-                                                  .first
-                                                  .withValues(alpha: 0.4),
-                                          blurRadius: 5,
+                                          color: gradient.first.withValues(alpha: 0.35),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 8),
                                         ),
                                       ],
                                     ),
                                     clipBehavior: Clip.hardEdge,
-                                    child: Image.asset(AppIcons.cardP),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Image.asset(
+                                          AppIcons.cardP,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        // Subtle overlay
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.transparent,
+                                                Colors.black.withValues(alpha: 0.6),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.touch_app_rounded,
+                                                color: Colors.white,
+                                                size: 38,
+                                              ),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                "Tap to open",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   );
                                 }
                               },
@@ -627,22 +605,55 @@ class RewardPageWidget extends StatelessWidget {
       color: AppColors.scaffoldBackground,
       child: Stack(
         children: [
+          // Elegant top background with a sleek curve
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 260,
+            height: 320,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [GenericColors.homeTopPrimary, AppColors.primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    GenericColors.homeTopPrimary,
+                    AppColors.primary,
+                  ],
                 ),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
+              ),
+              child: Stack(
+                children: [
+                  // Subtle overlay glow effects
+                  Positioned(
+                    top: -60,
+                    right: -40,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.04),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 40,
+                    left: -50,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.04),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -650,40 +661,35 @@ class RewardPageWidget extends StatelessWidget {
           // Content
           Column(
             children: [
-              // AppBar replacement
+              // Custom AppBar
               SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Material(
-                        color: AppColors.whiteText.withValues(alpha: 0.2),
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () => Navigator.pop(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: AppColors.whiteText,
-                              size: 24,
-                            ),
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                          onPressed: () => Navigator.pop(context),
+                          splashRadius: 24,
                         ),
                       ),
-                      const BodyTextColors(
-                        title: "Congratulations!",
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.whiteText,
+                      const Text(
+                        "Reward Unlocked",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                      const SizedBox(width: 40), // Balance the row
+                      const SizedBox(width: 48), // Balance the row
                     ],
                   ),
                 ),
@@ -691,63 +697,80 @@ class RewardPageWidget extends StatelessWidget {
 
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(15, 10, 15, 30),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                  physics: const BouncingScrollPhysics(),
                   children: [
+                    // Premium Reward Card
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 35,
-                        horizontal: 20,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                       decoration: BoxDecoration(
-                        color: AppColors.whiteText,
-                        borderRadius: BorderRadius.circular(24),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 30,
-                            offset: const Offset(0, 10),
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: GenericColors.lightOrange.withValues(
-                                alpha: 0.15,
+                              gradient: const LinearGradient(
+                                colors: [GenericColors.darkYellow, GenericColors.lightOrange],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: GenericColors.lightOrange.withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
                             child: const Icon(
                               Icons.emoji_events_rounded,
-                              color: GenericColors.lightOrange,
-                              size: 56,
+                              color: Colors.white,
+                              size: 46,
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          const BodyTextColors(
-                            title: "YOU'VE UNLOCKED",
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.darkGrey,
-                            letterSpacing: 1.5,
+                          const SizedBox(height: 32),
+                          const Text(
+                            "CONGRATULATIONS",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black38,
+                              letterSpacing: 2.5,
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          BodyTextColors(
-                            title: offer.offerPercentage ?? "Exclusive",
-                            fontSize: 52,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.darkText,
+                          Text(
+                            offer.offerPercentage ?? "Exclusive",
+                            style: const TextStyle(
+                              fontSize: 54,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87,
+                              height: 1.1,
+                              letterSpacing: -1.5,
+                            ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
-                          BodyTextColors(
-                            title: offer.offerTitle ?? "Special Offer",
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                          const SizedBox(height: 12),
+                          Text(
+                            offer.offerTitle ?? "Special Offer",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black.withValues(alpha: 0.6),
+                              height: 1.3,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -756,82 +779,109 @@ class RewardPageWidget extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
-                    // Divider
+                    // Stylish Divider
                     Row(
                       children: [
-                        const Expanded(
-                          child: Divider(color: AppColors.bgGrey, thickness: 1),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: const BodyTextColors(
-                            title: "HOW IT WORKS",
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.darkGrey,
-                            letterSpacing: 1.5,
+                          child: Text(
+                            "HOW TO USE",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.grey.shade500,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
-                        const Expanded(
-                          child: Divider(color: AppColors.bgGrey, thickness: 1),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
                       ],
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 32),
 
-                    // Details
-                    ...offerDetails.map((detail) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
+                    // Offer Details
+                    if (offerDetails.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            )
+                          ],
+                          border: Border.all(color: Colors.grey.shade100),
+                        ),
+                        child: Column(
+                          children: offerDetails.asMap().entries.map((entry) {
+                            final bool isLast = entry.key == offerDetails.length - 1;
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: isLast ? 0 : 18),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: GenericColors.lightGreen.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_rounded,
+                                      color: GenericColors.darkGreen,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      entry.value,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+
+                    // Expiry
+                    if (offer.offerExpiry != null && offer.offerExpiry!.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        decoration: BoxDecoration(
+                          color: GenericColors.lightOrange.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: GenericColors.lightOrange.withValues(alpha: 0.3)),
+                        ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(
-                              Icons.verified_rounded,
-                              color: GenericColors.lightOrange,
-                              size: 22,
+                              Icons.schedule_rounded,
+                              color: GenericColors.darkAmber,
+                              size: 24,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: BodyTextColors(
-                                title: detail,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.lightDarkText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-
-                    // Expiry
-                    if (offer.offerExpiry != null &&
-                        offer.offerExpiry!.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: GenericColors.placeHolderGrey.withValues(
-                            alpha: 0.3,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.info_outline_rounded,
-                              color: AppColors.darkGrey,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: BodyTextColors(
-                                title: "Valid until ${offer.offerExpiry}",
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.darkText,
+                              child: Text(
+                                "Valid until ${offer.offerExpiry}",
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.darkText,
+                                ),
                               ),
                             ),
                           ],
@@ -842,16 +892,23 @@ class RewardPageWidget extends StatelessWidget {
                 ),
               ),
 
-              // Action Button
+              // Bottom Action Button
               SafeArea(
                 top: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 10,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.scaffoldBackground,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
                   ),
                   child: CustomFullButton(
-                    title: 'View shop details',
+                    title: 'View Shop Details',
                     isDialogue: true,
                     onTap: () {
                       context.pushNamed(
