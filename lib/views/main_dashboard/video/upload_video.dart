@@ -382,10 +382,9 @@ class _UploadVideoState extends State<UploadVideo> {
     if (pickedFile != null) {
       int fileSizeInBytes = await pickedFile.length();
       double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-
-      print("Video Size: ${fileSizeInMB.toStringAsFixed(2)} MB");
       if (fileSizeInMB > 30.0) {
         videoController.setVideoFileSize = true;
+        if (!mounted) return;
         CustomToast.show(
           context,
           title:

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-
 import 'package:animated_hint_textfield/animated_hint_textfield.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/controller/home_controller.dart';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/model/home_model.dart';
@@ -90,157 +90,348 @@ class _HomeState extends State<Home> {
     homeController = context.watch<HomeController>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Builder(
-        builder: (context) {
-          final isLoading =
-              homeController.homeData.status == Status.INITIAL ||
-              homeController.homeData.status == Status.LOADING;
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(AppIcons.homeBgP),
+            opacity: .4,
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Builder(
+          builder: (context) {
+            final isLoading =
+                homeController.homeData.status == Status.INITIAL ||
+                homeController.homeData.status == Status.LOADING;
 
-          if (homeController.homeData.status == Status.ERROR) {
-            return CustomErrorTextWidget(
-              title: '${homeController.homeData.message}',
-            );
-          }
+            if (homeController.homeData.status == Status.ERROR) {
+              return CustomErrorTextWidget(
+                title: '${homeController.homeData.message}',
+              );
+            }
 
-          final categories = isLoading
-              ? List.generate(
-                  8,
-                  (index) =>
-                      Category(id: index, categoryName: 'Category $index'),
-                )
-              : homeController.homeCategories;
+            final categories = isLoading
+                ? List.generate(
+                    8,
+                    (index) =>
+                        Category(id: index, categoryName: 'Category $index'),
+                  )
+                : homeController.homeCategories;
 
-          final topBanner = isLoading
-              ? List.generate(
-                  3,
-                  (index) => TopBanners(
-                    id: index,
-                    title: 'Banner Title $index',
-                    subtitle: 'Subtitle $index',
-                  ),
-                )
-              : (homeController.homeData.data?.topBanners ?? []);
+            final topBanner = isLoading
+                ? List.generate(
+                    3,
+                    (index) => TopBanners(
+                      id: index,
+                      title: 'Banner Title $index',
+                      subtitle: 'Subtitle $index',
+                    ),
+                  )
+                : (homeController.homeData.data?.topBanners ?? []);
 
-          final categoryBanners = isLoading
-              ? List.generate(
-                  3,
-                  (index) => CategoryBanners(
-                    id: index,
-                    title: 'Category Banner $index',
-                  ),
-                )
-              : (homeController.homeData.data?.categoryBanners ?? []);
+            final categoryBanners = isLoading
+                ? List.generate(
+                    3,
+                    (index) => CategoryBanners(
+                      id: index,
+                      title: 'Category Banner $index',
+                    ),
+                  )
+                : (homeController.homeData.data?.categoryBanners ?? []);
 
-          final homeData = isLoading
-              ? HomeData(
-                  userName: 'Profile Name',
-                  profile: '',
-                  topBanners: topBanner,
-                  categoryBanners: categoryBanners,
-                )
-              : (homeController.homeData.data ?? HomeData());
-          final homeShops = homeController.homeData.data?.shops ?? [];
-          final shopBanners = homeController.homeData.data?.shopBanners ?? [];
-          return Skeletonizer(
-            enabled: isLoading,
-            child: isLoading
-                ? const HomeSkeleton()
-                : Column(
-                    children: [
-                      HomeTopCard(
-                        homeBanners: topBanner,
-                        homeController: homeController,
-                        homeData: homeData,
-                      ),
-                      SizedBox(height: 5),
-                      Container(
-                        height: 55,
-                        margin: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          gradient: LinearGradient(
-                            colors: [Colors.white, const Color(0xFFF4FFF5)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          border: Border.all(
-                            color: const Color(
-                              0xFF4CAF50,
-                            ).withValues(alpha: .18),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF4CAF50,
-                              ).withValues(alpha: .10),
-                              blurRadius: 15,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: AnimatedTextField(
-                          animationType: Animationtype.typer,
-                          readOnly: true,
-                          onTap: () {
-                            homeController.setFocusSearchOnMap = true;
-                            homeController.setSearchCategory = 'all';
-                            homeController.setIsShowAddNearBy = false;
-                            homeController.setCurrentPage = 1;
-                          },
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 16,
-                            ),
-                            prefixIcon: Container(
-                              margin: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: GenericColors.darkGreen.withValues(
-                                  alpha: .12,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.search_rounded,
-                                color: GenericColors.darkGreen,
-                                size: 18,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          hintTextStyle: AppTextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkText.withValues(alpha: .7),
-                          ).textStyle,
-                          hintTexts: const [
-                            'Search for " restaurants "',
-                            'Search for " mechanic shops "',
-                            'Search for " grocery stores "',
-                            'Search for " electricians "',
-                          ],
+            final homeData = isLoading
+                ? HomeData(
+                    userName: 'Profile Name',
+                    profile: '',
+                    topBanners: topBanner,
+                    categoryBanners: categoryBanners,
+                  )
+                : (homeController.homeData.data ?? HomeData());
+            final homeShops = homeController.homeData.data?.shops ?? [];
+            final shopBanners = homeController.homeData.data?.shopBanners ?? [];
+            return Skeletonizer(
+              enabled: isLoading,
+              child: isLoading
+                  ? const HomeSkeleton()
+                  : Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(AppIcons.arcBgP),
+                          alignment: Alignment.bottomCenter,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            Padding(
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverLayoutBuilder(
+                            builder:
+                                (
+                                  BuildContext context,
+                                  SliverConstraints constraints,
+                                ) {
+                                  final isCollapsed =
+                                      constraints.scrollOffset > 200;
+
+                                  return SliverAppBar(
+                                    expandedHeight: 320,
+                                    automaticallyImplyLeading: false,
+                                    pinned: true,
+                                    floating: false,
+                                    backgroundColor: isCollapsed
+                                        ? Colors.blue.shade50
+                                        : Colors.transparent,
+                                    surfaceTintColor: isCollapsed
+                                        ? Colors.pink.shade50
+                                        : Colors.transparent,
+                                    elevation: 0,
+                                    titleSpacing: 0,
+                                    title: HomeTopListTile(
+                                      homeController: homeController,
+                                      name: homeData.userName ?? 'Profile Name',
+                                      profileImage: homeData.profile ?? '',
+                                    ),
+                                    flexibleSpace: FlexibleSpaceBar(
+                                      collapseMode: CollapseMode.pin,
+                                      background: Stack(
+                                        alignment: Alignment.bottomCenter,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 75,
+                                            ),
+                                            child: CarouselSlider.builder(
+                                              itemCount: topBanner.length,
+                                              itemBuilder: (context, index, realIndex) {
+                                                final banner = topBanner[index];
+                                                final imageUrl =
+                                                    banner.backgroundImage
+                                                            ?.startsWith(
+                                                              'https',
+                                                            ) ==
+                                                        true
+                                                    ? banner.backgroundImage!
+                                                    : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ''}';
+
+                                                return Container(
+                                                  margin:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 8,
+                                                      ),
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.whiteText,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black12,
+                                                        blurRadius: 1,
+                                                        spreadRadius: 1,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  clipBehavior: Clip.hardEdge,
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    child: CustomNetworkImage(
+                                                      imageUrl: imageUrl,
+                                                      boxFit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              options: CarouselOptions(
+                                                height: 180,
+                                                viewportFraction: 1.0,
+                                                autoPlay: true,
+                                                autoPlayInterval:
+                                                    const Duration(seconds: 5),
+                                                autoPlayAnimationDuration:
+                                                    const Duration(
+                                                      milliseconds: 800,
+                                                    ),
+                                                enlargeCenterPage: false,
+                                                enableInfiniteScroll: true,
+                                                pageSnapping: true,
+                                                pauseAutoPlayOnTouch: true,
+                                                onPageChanged: (index, reason) {
+                                                  homeController
+                                                      .setHomeBannerCurrentIndex(
+                                                        index,
+                                                      );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 12,
+                                            child: CustomIndicator(
+                                              currentIndex: homeController
+                                                  .homeBannerCurrentIndex,
+                                              itemCount: topBanner.length,
+                                              activeWidth: 8,
+                                              inactiveWidth: 3,
+                                              borderHeight: 3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    bottom: PreferredSize(
+                                      preferredSize: Size(double.maxFinite, 70),
+                                      child: Container(
+                                        height: 50,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        padding: const EdgeInsets.all(1.2),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              AppColors.primary,
+                                              AppColors.primaryBorder
+                                                  .withValues(alpha: .55),
+                                              AppColors.primary.withValues(
+                                                alpha: .25,
+                                              ),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.primary
+                                                  .withValues(alpha: .12),
+                                              blurRadius: 14,
+                                              spreadRadius: 0,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: AppColors.whiteText,
+                                            borderRadius: BorderRadius.circular(
+                                              29,
+                                            ),
+                                          ),
+                                          child: AnimatedTextField(
+                                            animationType: Animationtype.typer,
+                                            readOnly: true,
+                                            onTap: () {
+                                              homeController
+                                                      .setFocusSearchOnMap =
+                                                  true;
+                                              homeController.setSearchCategory =
+                                                  'all';
+                                              homeController
+                                                      .setIsShowAddNearBy =
+                                                  false;
+                                              homeController.setCurrentPage = 1;
+                                            },
+                                            decoration: InputDecoration(
+                                              filled: true,
+                                              fillColor: AppColors.whiteText,
+
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 15,
+                                                  ),
+
+                                              prefixIcon: Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8,
+                                                  right: 4,
+                                                  top: 7,
+                                                  bottom: 7,
+                                                ),
+                                                child: Container(
+                                                  width: 38,
+                                                  height: 38,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        GenericColors
+                                                            .lightPrimary
+                                                            .withValues(
+                                                              alpha: .18,
+                                                            ),
+                                                        GenericColors
+                                                            .lightPrimary
+                                                            .withValues(
+                                                              alpha: .08,
+                                                            ),
+                                                      ],
+                                                      begin: Alignment.topLeft,
+                                                      end:
+                                                          Alignment.bottomRight,
+                                                    ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.search_rounded,
+                                                    color: AppColors.primary,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(29),
+                                                borderSide: BorderSide.none,
+                                              ),
+
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(29),
+                                                borderSide: BorderSide.none,
+                                              ),
+
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(29),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+
+                                            hintTextStyle: AppTextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.darkText
+                                                  .withValues(alpha: .62),
+                                            ).textStyle,
+
+                                            hintTexts: const [
+                                              'Search restaurants',
+                                              'Search mechanic shops',
+                                              'Search grocery stores',
+                                              'Search electricians',
+                                              'Search hotels',
+                                              'Search medical shops',
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          ),
+                          SliverToBoxAdapter(child: const SizedBox(height: 10)),
+                          SliverToBoxAdapter(
+                            child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
@@ -258,98 +449,123 @@ class _HomeState extends State<Home> {
                                 ],
                               ),
                             ),
-                            SizedBox(height: 10),
-                            GridView.builder(
+                          ),
+                          SliverToBoxAdapter(child: SizedBox(height: 10)),
+                          SliverToBoxAdapter(
+                            child: GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 4,
-                                    mainAxisSpacing: 12,
-                                    crossAxisSpacing: 3,
-                                    mainAxisExtent: 110,
+                                    mainAxisSpacing: 15,
+                                    crossAxisSpacing: 10,
+                                    mainAxisExtent: 95,
                                   ),
                               itemCount: categories.length,
                               itemBuilder: (context, index) {
-                                bool isFurniture =
-                                    categories[index].categoryName ==
-                                    "furniture";
+                                final category = categories[index];
+
+                                final categoryName =
+                                    category.categoryName?.toLowerCase() ?? '';
+
+                                final isFurniture = categoryName == 'furniture';
+
+                                final categoryColor = Colors
+                                    .primaries[index % Colors.primaries.length];
+
                                 return GestureDetector(
                                   onTap: () {
                                     homeController.setCurrentPage = 1;
                                     homeController.setIsShowAddNearBy = true;
                                     homeController.setSearchCategory =
-                                        categories[index].categoryName
-                                            .toString()
-                                            .toLowerCase();
+                                        categoryName;
                                   },
-                                  child: Card(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.whiteText,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.darkGrey.withValues(
+                                            alpha: .2,
+                                          ),
+                                          blurRadius: 1.0,
+                                          // spreadRadius: 1.0,
+                                          offset: const Offset(0.0, 3.0),
+                                        ),
+                                      ],
                                     ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(6),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 6,
                                       ),
                                       child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          Expanded(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    AppColors.whiteText,
-                                                    GenericColors.lightPrimary
-                                                        .withValues(alpha: .6),
-                                                  ],
-                                                ),
-                                                borderRadius:
-                                                    const BorderRadius.vertical(
-                                                      top: Radius.circular(6),
-                                                    ),
-                                              ),
-                                              child: Center(
-                                                child: isLoading
-                                                    ? const SizedBox.shrink()
-                                                    : Image.network(
-                                                        '${ApiRoutes.baseUrl}${categories[index].categoryImage ?? ''}',
-                                                        height: isFurniture
-                                                            ? 55
-                                                            : 40,
-                                                        width: isFurniture
-                                                            ? 55
-                                                            : 40,
-                                                        filterQuality:
-                                                            FilterQuality.high,
-                                                      ),
-                                              ),
-                                            ),
-                                          ),
+                                          // Category Image
                                           Container(
-                                            height: 32,
+                                            height: 40,
+                                            width: 40,
                                             decoration: BoxDecoration(
-                                              color:
-                                                  AppColors.scaffoldBackground,
+                                              color: categoryColor.withValues(
+                                                alpha: .08,
+                                              ),
                                               borderRadius:
-                                                  const BorderRadius.vertical(
-                                                    bottom: Radius.circular(6),
-                                                  ),
+                                                  BorderRadius.circular(10),
                                             ),
                                             child: Center(
-                                              child: BodyTextColors(
-                                                title:
-                                                    categories[index]
-                                                        .categoryName
-                                                        ?.capitalize() ??
-                                                    '',
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w400,
-                                                color: const Color(0XFF1F1F1F),
-                                              ),
+                                              child: isLoading
+                                                  ? const SizedBox.shrink()
+                                                  : Image.network(
+                                                      '${ApiRoutes.baseUrl}${category.categoryImage ?? ''}',
+                                                      height: isFurniture
+                                                          ? 30
+                                                          : 25,
+                                                      width: isFurniture
+                                                          ? 30
+                                                          : 25,
+                                                      fit: BoxFit.contain,
+                                                      filterQuality:
+                                                          FilterQuality.high,
+                                                      errorBuilder:
+                                                          (
+                                                            context,
+                                                            error,
+                                                            stackTrace,
+                                                          ) {
+                                                            return Icon(
+                                                              Icons
+                                                                  .category_outlined,
+                                                              size: 27,
+                                                              color:
+                                                                  categoryColor,
+                                                            );
+                                                          },
+                                                    ),
                                             ),
+                                          ),
+
+                                          const SizedBox(height: 12),
+
+                                          // Category Name
+                                          BodyTextColors(
+                                            title:
+                                                category.categoryName
+                                                    ?.capitalize() ??
+                                                '',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.darkText,
                                           ),
                                         ],
                                       ),
@@ -358,8 +574,10 @@ class _HomeState extends State<Home> {
                                 );
                               },
                             ),
-                            SizedBox(height: 50),
-                            Padding(
+                          ),
+                          SliverToBoxAdapter(child: SizedBox(height: 50)),
+                          SliverToBoxAdapter(
+                            child: Padding(
                               padding: EdgeInsets.only(left: 10),
                               child: HeaderTextBlack(
                                 title: 'Featured Businesses',
@@ -367,8 +585,10 @@ class _HomeState extends State<Home> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 6),
-                            Row(
+                          ),
+                          SliverToBoxAdapter(child: SizedBox(height: 6)),
+                          SliverToBoxAdapter(
+                            child: Row(
                               children: [
                                 Container(
                                   width: 160,
@@ -386,8 +606,10 @@ class _HomeState extends State<Home> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 10),
-                            SizedBox(
+                          ),
+                          SliverToBoxAdapter(child: SizedBox(height: 10)),
+                          SliverToBoxAdapter(
+                            child: SizedBox(
                               height: 290,
                               child: ListView.builder(
                                 itemCount: homeShops.length,
@@ -399,27 +621,31 @@ class _HomeState extends State<Home> {
                                 },
                               ),
                             ),
-                            SizedBox(height: 80),
-                            if (shopBanners.isNotEmpty) ...[
-                              ShopBannersSlider(
+                          ),
+                          SliverToBoxAdapter(child: SizedBox(height: 80)),
+                          if (shopBanners.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: ShopBannersSlider(
                                 shopBanners: shopBanners,
                                 height: 180,
                               ),
-                              SizedBox(height: 40),
-                            ],
-                            Container(
+                            ),
+                            SliverToBoxAdapter(child: SizedBox(height: 40)),
+                          ],
+                          SliverToBoxAdapter(
+                            child: Container(
                               height: 153,
-                              color: AppColors.scaffoldBackgroundDark,
+                              color: Colors.transparent,
                               padding: EdgeInsets.symmetric(horizontal: 30),
                               child: EndMessageSection(title: 'MAP MAN'),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-          );
-        },
+                    ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -439,102 +665,7 @@ class HomeTopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 240,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 190,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.whiteText, GenericColors.homeTopPrimary],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: HomeTopListTile(
-                homeController: homeController,
-                name: homeData.userName ?? 'Profile Name',
-                profileImage: homeData.profile ?? '',
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 10,
-            right: 10,
-            child: Stack(
-              children: [
-                CarouselSlider.builder(
-                  itemCount: homeBanners.length,
-                  itemBuilder: (context, index, realIndex) {
-                    final banner = homeBanners[index];
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: AppColors.whiteText,
-                      ),
-                      padding: EdgeInsets.all(4),
-                      margin: EdgeInsets.symmetric(horizontal: 2),
-                      clipBehavior: Clip.hardEdge,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: CustomNetworkImage(
-                            imageUrl:
-                                banner.backgroundImage!.startsWith('https')
-                                ? '${banner.backgroundImage}'
-                                : '${ApiRoutes.baseUrl}${banner.backgroundImage ?? ""}',
-                            boxFit: BoxFit.fill,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  options: CarouselOptions(
-                    height: 170,
-                    viewportFraction: 1.0,
-                    autoPlay: true,
-                    autoPlayInterval: const Duration(seconds: 5),
-                    autoPlayAnimationDuration: const Duration(
-                      milliseconds: 800,
-                    ),
-                    enlargeCenterPage: false,
-                    enableInfiniteScroll: true,
-                    pageSnapping: true,
-                    pauseAutoPlayOnTouch: true,
-                    onPageChanged: (index, reason) {
-                      homeController.setHomeBannerCurrentIndex(index);
-                    },
-                  ),
-                ),
-                Positioned(
-                  bottom: 15,
-                  left: 0,
-                  right: 0,
-                  child: CustomIndicator(
-                    currentIndex: homeController.homeBannerCurrentIndex,
-                    itemCount: homeBanners.length,
-                    activeWidth: 8,
-                    inactiveWidth: 3,
-                    borderHeight: 3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return SizedBox(height: 240, child: Stack(children: []));
   }
 }
 
@@ -551,126 +682,120 @@ class HomeTopListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 60,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 10),
-        leading: GestureDetector(
-          onTap: () {
-            homeController.setCurrentPage = 3;
-          },
-          child: SizedBox(
-            height: 42,
-            width: 42,
-            child: ClipRRect(
-              borderRadius: BorderRadiusGeometry.circular(50),
-              child: CustomNetworkImage(
-                isProfile: true,
-                imageUrl: profileImage,
-              ),
-            ),
+    return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+      leading: GestureDetector(
+        onTap: () {
+          homeController.setCurrentPage = 3;
+        },
+        child: SizedBox(
+          height: 42,
+          width: 42,
+          child: ClipRRect(
+            borderRadius: BorderRadiusGeometry.circular(50),
+            child: CustomNetworkImage(isProfile: true, imageUrl: profileImage),
           ),
         ),
-        title: HeaderTextBlack(
-          title: name.capitalize(),
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: BodyTextHint(
-          title: 'Have a nice day',
-          fontSize: 12,
-          fontWeight: FontWeight.w300,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleContainer(
-              onTap: () {
-                final token = SessionManager.getToken();
-                if (token == null || token.isEmpty) {
-                  LoginBottomSheet.showLoginBottomSheet(context);
-                } else {
-                  context.pushNamed(AppRoutes.savedVideos);
-                }
-              },
-              child: Image.asset(AppIcons.bookmarkP, height: 30),
-            ),
-            SizedBox(width: 15),
-            CircleContainer(
-              onTap: () {
-                final token = SessionManager.getToken();
-                if (token == null || token.isEmpty) {
-                  LoginBottomSheet.showLoginBottomSheet(context);
-                } else {
-                  context.pushNamed(AppRoutes.notifications);
-                }
-              },
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 6),
-                    child: SvgPicture.asset(AppIcons.notification),
-                  ),
-                  Positioned(
-                    right: homeController.notificationCountResponse.data == 0
-                        ? 4
-                        : 0,
-                    top: homeController.notificationCountResponse.data == 0
-                        ? 3
-                        : 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Builder(
-                        builder: (context) {
-                          switch (homeController
-                              .notificationCountResponse
-                              .status) {
-                            case Status.INITIAL:
-                            case Status.LOADING:
-                              return HeaderTextBlack(
-                                title: '..',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              );
-                            case Status.COMPLETED:
-                              return BodyTextColors(
-                                title:
-                                    homeController
-                                            .notificationCountResponse
-                                            .data ==
-                                        0
-                                    ? ''
-                                    : homeController
+      ),
+      title: HeaderTextBlack(
+        title: name.capitalize(),
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: BodyTextHint(
+        title: 'Have a nice day',
+        fontSize: 12,
+        fontWeight: FontWeight.w300,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleContainer(
+            onTap: () {
+              final token = SessionManager.getToken();
+              if (token == null || token.isEmpty) {
+                LoginBottomSheet.showLoginBottomSheet(context);
+              } else {
+                context.pushNamed(AppRoutes.savedVideos);
+              }
+            },
+            child: Image.asset(AppIcons.bookmarkP, height: 30),
+          ),
+          SizedBox(width: 15),
+          CircleContainer(
+            onTap: () {
+              final token = SessionManager.getToken();
+              if (token == null || token.isEmpty) {
+                LoginBottomSheet.showLoginBottomSheet(context);
+              } else {
+                context.pushNamed(AppRoutes.notifications);
+              }
+            },
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 6),
+                  child: SvgPicture.asset(AppIcons.notification),
+                ),
+                Positioned(
+                  right: homeController.notificationCountResponse.data == 0
+                      ? 4
+                      : 0,
+                  top: homeController.notificationCountResponse.data == 0
+                      ? 3
+                      : 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        switch (homeController
+                            .notificationCountResponse
+                            .status) {
+                          case Status.INITIAL:
+                          case Status.LOADING:
+                            return HeaderTextBlack(
+                              title: '..',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            );
+                          case Status.COMPLETED:
+                            return BodyTextColors(
+                              title:
+                                  homeController
                                           .notificationCountResponse
-                                          .data
-                                          .toString(),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                textAlign: TextAlign.center,
-                                color: AppColors.whiteText,
-                              );
-                            case Status.ERROR:
-                              return BodyTextColors(
-                                title: '',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.whiteText,
-                              );
-                          }
-                        },
-                      ),
+                                          .data ==
+                                      0
+                                  ? ''
+                                  : homeController
+                                        .notificationCountResponse
+                                        .data
+                                        .toString(),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              textAlign: TextAlign.center,
+                              color: AppColors.whiteText,
+                            );
+                          case Status.ERROR:
+                            return BodyTextColors(
+                              title: '',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.whiteText,
+                            );
+                        }
+                      },
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -819,6 +944,13 @@ class ShopCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: AppColors.whiteText,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.darkGrey.withValues(alpha: .1),
+              spreadRadius: 1,
+              blurRadius: 2,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -990,49 +1122,6 @@ class ShopBannersSlider extends StatefulWidget {
 class _ShopBannersSliderState extends State<ShopBannersSlider> {
   int _currentIndex = 0;
 
-  List<String> _getColors(String? color) {
-    if (color == null || color.trim().isEmpty) {
-      return [];
-    }
-
-    try {
-      final decoded = jsonDecode(color);
-
-      if (decoded is List) {
-        return decoded
-            .map((item) => item.toString().trim())
-            .where((item) => item.isNotEmpty)
-            .toList();
-      }
-
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Color _hexToColor(String hex) {
-    try {
-      String value = hex.trim().replaceFirst('#', '');
-
-      if (value.length == 3) {
-        value = value.split('').map((char) => '$char$char').join();
-      }
-
-      if (value.length == 6) {
-        value = 'FF$value';
-      }
-
-      if (value.length == 8) {
-        return Color(int.parse(value, radix: 16));
-      }
-
-      return AppColors.darkGrey;
-    } catch (_) {
-      return AppColors.darkGrey;
-    }
-  }
-
   String _getImageUrl(String image) {
     if (image.startsWith('https')) {
       return image;
@@ -1043,6 +1132,21 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
 
   void _openShopDetails(int shopId) {
     context.pushNamed(AppRoutes.shopDetail, extra: shopId);
+  }
+
+  Color _parseColor(String? hexString, Color defaultColor) {
+    if (hexString == null || hexString.isEmpty) return defaultColor;
+    final buffer = StringBuffer();
+    final hex = hexString.replaceFirst('#', '');
+    if (hex.length == 6) {
+      buffer.write('FF');
+    }
+    buffer.write(hex);
+    try {
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return defaultColor;
+    }
   }
 
   @override
@@ -1056,227 +1160,181 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
       children: [
         CarouselSlider(
           items: widget.shopBanners.map((banner) {
-            final List<String> colorList = _getColors(banner.color?.toString());
-
-            final List<Color> gradientColors = colorList
-                .map(_hexToColor)
-                .toList();
-
-            final List<Color> overlayColors = gradientColors.isNotEmpty
-                ? [
-                    gradientColors.first.withValues(alpha: 0.88),
-                    if (gradientColors.length > 1)
-                      gradientColors[1].withValues(alpha: 0.78)
-                    else
-                      gradientColors.first.withValues(alpha: 0.60),
-                  ]
-                : [Colors.transparent, Colors.transparent];
-
-            final LinearGradient overlayGradient = LinearGradient(
-              colors: overlayColors,
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
+            final int shopId = banner.shopId ?? 0;
+            final headerColor = _parseColor(banner.fontColor, Colors.white);
+            final descColor = _parseColor(
+              banner.fontColor,
+              Colors.white.withValues(alpha: 0.92),
+            );
+            final btnBgColor = _parseColor(
+              banner.backgroundColor,
+              AppColors.primary,
             );
 
-            final int shopId = banner.shopId ?? 0;
-
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              clipBehavior: Clip.hardEdge,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (banner.image != null && banner.image!.isNotEmpty)
-                    InkWell(
-                      onTap: () => _openShopDetails(shopId),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: CustomNetworkImage(
-                          imageUrl: _getImageUrl(banner.image!),
-                          boxFit: BoxFit.cover,
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                elevation: 2,
+                margin: EdgeInsets.zero,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Background image
+                    if (banner.backgroundImage != null &&
+                        banner.backgroundImage!.isNotEmpty)
+                      IgnorePointer(
+                        child: Image.network(
+                          banner.backgroundImage!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(color: AppColors.primary);
+                          },
+                        ),
+                      )
+                    else
+                      Container(color: AppColors.primary),
+                    if (banner.image != null && banner.image!.isNotEmpty)
+                      InkWell(
+                        onTap: () => _openShopDetails(shopId),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CustomNetworkImage(
+                            imageUrl: _getImageUrl(banner.image!),
+                            boxFit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-
-                  // Colored gradient overlay
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: overlayGradient,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  // Banner content
-                  InkWell(
-                    onTap: () => _openShopDetails(shopId),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    if (banner.headerText != null &&
-                                        banner.headerText
-                                            .toString()
-                                            .isNotEmpty)
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              banner.headerText.toString(),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 22,
-                                                height: 1.15,
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: -0.3,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 20),
-                                          Container(
-                                            height: 30,
-                                            width: 30,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                            ),
-                                            clipBehavior: Clip.hardEdge,
-                                            child: CustomNetworkImage(
-                                              imageUrl:
-                                                  banner.illustration ?? '',
-                                              boxFit: BoxFit.contain,
-                                            ),
-                                          ),
-                                        ],
+                    // Content
+                    InkWell(
+                      onTap: () => _openShopDetails(shopId),
+                      borderRadius: BorderRadius.circular(15),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (banner.shopName != null &&
+                                banner.shopName.toString().trim().isNotEmpty)
+                              Row(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.whiteText,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    padding: EdgeInsets.all(5),
+                                    child: Image.asset(
+                                      AppIcons.shopP,
+                                      height: 13,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    banner.shopName.toString(),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.spaceGrotesk(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.whiteText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const Spacer(),
+                            if (banner.headerText != null &&
+                                banner.headerText
+                                    .toString()
+                                    .trim()
+                                    .isNotEmpty) ...[
+                              SizedBox(height: 5),
+                              Text(
+                                banner.headerText.toString(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.getFont(
+                                  banner.font ?? 'Roboto',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.3,
+                                  color: headerColor,
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: 15),
+                            if (banner.description != null &&
+                                banner.description
+                                    .toString()
+                                    .trim()
+                                    .isNotEmpty) ...[
+                              BodyTextColors(
+                                title: banner.description.toString(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                color: descColor,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+                            if (banner.cta != null &&
+                                banner.cta.toString().trim().isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: btnBgColor,
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.20),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.18,
                                       ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    BodyTextColors(
+                                      title: banner.cta.toString(),
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: Colors.white,
+                                      size: 15,
+                                    ),
                                   ],
                                 ),
                               ),
-
-                              // Illustration
-                              if (banner.illustration != null &&
-                                  banner.illustration
-                                      .toString()
-                                      .isNotEmpty) ...[
-                                const SizedBox(width: 12),
-                                Container(
-                                  height: 52,
-                                  width: 52,
-                                  padding: const EdgeInsets.all(9),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(
-                                      alpha: 0.18,
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.28,
-                                      ),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: CustomNetworkImage(
-                                    imageUrl: _getImageUrl(
-                                      banner.illustration.toString(),
-                                    ),
-                                    boxFit: BoxFit.contain,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-
-                          const Spacer(),
-
-                          // Description
-                          if (banner.description != null &&
-                              banner.description.toString().isNotEmpty) ...[
-                            Text(
-                              banner.description.toString(),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.92),
-                                fontSize: 13.5,
-                                height: 1.45,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
                           ],
-
-                          // CTA button
-                          if (banner.cta != null &&
-                              banner.cta.toString().isNotEmpty)
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 9,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(30),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        banner.cta.toString(),
-                                        style: TextStyle(
-                                          color: AppColors.darkText,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 7),
-                                      Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 16,
-                                        color: gradientColors.isNotEmpty
-                                            ? gradientColors.first
-                                            : AppColors.darkGrey,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }).toList(),
           options: CarouselOptions(
             height: widget.height + 16,
-            viewportFraction: 0.9,
+            viewportFraction: 0.95,
             autoPlay: widget.shopBanners.length > 1,
             autoPlayInterval: const Duration(seconds: 4),
             autoPlayAnimationDuration: const Duration(milliseconds: 700),

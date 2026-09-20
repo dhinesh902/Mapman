@@ -107,8 +107,7 @@ abstract class ApiRoutes {
   static const String manageOffers = '/shop/manageOffers';
   static const String fetchShopOffers = '/shop/fetchShopOffers';
   static const String deleteOffers = '/shop/deleteOffers';
-  static const String fetchColors = '/shop/fetchColors';
-  static const String fetchIllustrations = '/shop/fetchIllustrations';
+  static const String fetchBackgroundImage = '/shop/fetchBackgroundImage';
   static const String fetchAllOffers = '/shop/fetchAllOffers';
   static const String offerStatusOpen = '/shop/offerStatusOpen';
   static const String fetchMonthlyBanners = '/shop/fetchMonthlyBanners';

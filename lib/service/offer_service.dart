@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mapman/model/offers_model.dart';
@@ -123,24 +121,10 @@ class OfferService extends ApiRoutes {
     }
   }
 
-  Future<Map<String, dynamic>> fetchColors({required String token}) async {
+  Future<Map<String, dynamic>> fetchBackgroundImageData({required String token}) async {
     try {
       final response = await dio.get(
-        ApiRoutes.fetchColors,
-        options: headerWithToken(token),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      throw ExceptionHandler.handleApiException(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> fetchIllustrations({
-    required String token,
-  }) async {
-    try {
-      final response = await dio.get(
-        ApiRoutes.fetchIllustrations,
+        ApiRoutes.fetchBackgroundImage,
         options: headerWithToken(token),
       );
       return response.data;

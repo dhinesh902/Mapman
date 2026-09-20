@@ -17,6 +17,7 @@ import 'package:mapman/views/main_dashboard/profile/banner_offers/banners_offers
 import 'package:mapman/views/main_dashboard/profile/banner_offers/create_make_your_banner.dart';
 import 'package:mapman/views/main_dashboard/profile/banner_offers/make_your_banner.dart';
 import 'package:mapman/views/main_dashboard/profile/banner_offers/make_your_offer.dart';
+import 'package:mapman/views/main_dashboard/profile/banner_offers/select_banners.dart';
 import 'package:mapman/views/main_dashboard/profile/banner_offers/upload_make_your_banner.dart';
 import 'package:mapman/views/main_dashboard/profile/payment_screen.dart';
 import 'package:mapman/views/main_dashboard/profile/shop_detail/edit_shop_details.dart';
@@ -265,6 +266,13 @@ class AppRouter {
                     builder: (context, state) => CreateMakeYourBanner(
                       banner: state.extra as BannerData?,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: '/select_banner',
+                        name: AppRoutes.selectBanner,
+                        builder: (context, state) => SelectBanners(),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: '/upload_make_your_own_banner',

@@ -625,11 +625,8 @@ class _MapsState extends State<Maps> {
               position: LatLng(lat, long),
               consumeTapEvents: true,
               icon: customIcon,
-
               onTap: () {
-                setState(() {
-                  _currentZoom = 18.5;
-                });
+                setState(() => _currentZoom = 18.5);
                 if (sheetController.isAttached) {
                   sheetController.animateTo(
                     0.0,

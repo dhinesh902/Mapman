@@ -262,14 +262,17 @@ class ShopBanners {
   String? bannerType;
   String? image;
   String? headerText;
+  String? font;
   String? description;
   String? cta;
-  String? illustration;
-  String? color;
+  String? backgroundImage;
   List<String>? bannerSchedule;
   String? status;
+  String? shopName;
   String? createdAt;
   String? updatedAt;
+  String? fontColor;
+  String? backgroundColor;
 
   ShopBanners({
     this.id,
@@ -278,14 +281,17 @@ class ShopBanners {
     this.bannerType,
     this.image,
     this.headerText,
+    this.font,
     this.description,
     this.cta,
-    this.illustration,
-    this.color,
+    this.backgroundImage,
     this.bannerSchedule,
     this.status,
+    this.shopName,
     this.createdAt,
     this.updatedAt,
+    this.fontColor,
+    this.backgroundColor,
   });
 
   ShopBanners.fromJson(Map<String, dynamic> json) {
@@ -295,13 +301,16 @@ class ShopBanners {
     bannerType = json['bannerType'];
     image = json['image'];
     headerText = json['headerText'];
+    font = json['font'];
     description = json['description'];
     cta = json['cta'];
-    illustration = json['illustration'];
-    color = json['color'];
+    backgroundImage = json['backgroundImage'];
     bannerSchedule = json['bannerSchedule'].cast<String>();
     status = json['status'];
+    shopName = json['shopName'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+    fontColor = json['fontColor'];
+    backgroundColor = json['backgroundColor'];
   }
 }

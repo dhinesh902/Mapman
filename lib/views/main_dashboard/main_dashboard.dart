@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:mapman/controller/home_controller.dart';
-import 'package:mapman/controller/video_controller.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
@@ -23,7 +22,6 @@ import 'package:mapman/views/main_dashboard/profile/profile.dart';
 import 'package:mapman/views/main_dashboard/video/components/video_Dialogue.dart';
 import 'package:mapman/views/main_dashboard/video/videos.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
-import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:provider/provider.dart';
@@ -76,8 +74,7 @@ class _MainDashboardState extends State<MainDashboard> {
       } catch (e) {
         debugPrint('Failed to fetch latest version: $e');
       }
-      print('----------------------------------$currentVersion');
-      print('----------------------------------$latestVersion');
+
       if (currentVersion != latestVersion && mounted) {
         showDialog(
           context: context,
@@ -263,15 +260,15 @@ class _MainDashboardState extends State<MainDashboard> {
     }
   }
 
-  Color getBackgroundColor(int currentPage, int currentVideoIndex) {
-    if (currentPage == 2 && currentVideoIndex == 0) {
-      return AppColors.lightViolet;
-    }
-    if (currentPage == 0 || (currentPage == 2 && currentVideoIndex != 1)) {
-      return AppColors.scaffoldBackground;
-    }
-    return AppColors.scaffoldBackgroundDark;
-  }
+  // Color getBackgroundColor(int currentPage, int currentVideoIndex) {
+  //   if (currentPage == 2 && currentVideoIndex == 0) {
+  //     return AppColors.lightViolet;
+  //   }
+  //   if (currentPage == 0 || (currentPage == 2 && currentVideoIndex != 1)) {
+  //     return AppColors.scaffoldBackground;
+  //   }
+  //   return AppColors.scaffoldBackgroundDark;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -302,118 +299,112 @@ class _MainDashboardState extends State<MainDashboard> {
         }
       },
 
-      child: CustomSafeArea(
-        color: getBackgroundColor(
-          homeController.currentPage,
-          context.watch<VideoController>().currentVideoIndex,
-        ),
-        child: Scaffold(
-          extendBody: true,
-          resizeToAvoidBottomInset: false,
-          body: _pages[homeController.currentPage],
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          floatingActionButton: InkWell(
-            onTap: () {
-              homeController.setSearchCategory = 'all';
-              homeController.setIsShowAddNearBy = false;
-              homeController.getSearchShops(input: 'all');
-              homeController.setCurrentPage = 1;
-            },
+      child: Scaffold(
+        extendBody: true,
+        resizeToAvoidBottomInset: false,
+        body: _pages[homeController.currentPage],
+        floatingActionButtonLocation:
+            FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: InkWell(
+          onTap: () {
+            homeController.setSearchCategory = 'all';
+            homeController.setIsShowAddNearBy = false;
+            homeController.getSearchShops(input: 'all');
+            homeController.setCurrentPage = 1;
+          },
 
-            child: AnimatedGradientCircle(),
-          ),
-          bottomNavigationBar: Stack(
-            alignment: Alignment.center,
-            children: [
-              AnimatedBottomNavigationBar.builder(
-                height: 65,
-                itemCount: 4,
-                notchMargin: 8,
-                rightCornerRadius: 6,
-                leftCornerRadius: 6,
-                gapWidth: 100,
-                tabBuilder: (int index, bool isActive) {
-                  final List<String> labels = [
-                    "Home",
-                    (shopId != null && shopId != 0) ? "Upload" : "Register",
-                    "Video",
-                    "Profile",
-                  ];
-                  final List<String> outlineIcons = [
-                    AppIcons.homeOutline,
-                    AppIcons.add,
-                    AppIcons.videoOutline,
-                    AppIcons.profileOutline,
-                  ];
-                  final List<String> fillIcons = [
-                    AppIcons.homeFill,
-                    AppIcons.add,
-                    AppIcons.videoFill,
-                    AppIcons.profileFill,
-                  ];
-                  bool isTabActive = index == 1 ? false : isActive;
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(
-                        isTabActive ? fillIcons[index] : outlineIcons[index],
-                        height: 24,
-                        width: 24,
-                        colorFilter: ColorFilter.mode(
-                          isTabActive ? AppColors.darkText : AppColors.darkGrey,
-                          BlendMode.srcIn,
-                        ),
+          child: AnimatedGradientCircle(),
+        ),
+        bottomNavigationBar: Stack(
+          alignment: Alignment.center,
+          children: [
+            AnimatedBottomNavigationBar.builder(
+              height: 65,
+              itemCount: 4,
+              notchMargin: 8,
+              rightCornerRadius: 6,
+              leftCornerRadius: 6,
+              gapWidth: 100,
+              tabBuilder: (int index, bool isActive) {
+                final List<String> labels = [
+                  "Home",
+                  (shopId != null && shopId != 0) ? "Upload" : "Register",
+                  "Video",
+                  "Profile",
+                ];
+                final List<String> outlineIcons = [
+                  AppIcons.homeOutline,
+                  AppIcons.add,
+                  AppIcons.videoOutline,
+                  AppIcons.profileOutline,
+                ];
+                final List<String> fillIcons = [
+                  AppIcons.homeFill,
+                  AppIcons.add,
+                  AppIcons.videoFill,
+                  AppIcons.profileFill,
+                ];
+                bool isTabActive = index == 1 ? false : isActive;
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      isTabActive ? fillIcons[index] : outlineIcons[index],
+                      height: 24,
+                      width: 24,
+                      colorFilter: ColorFilter.mode(
+                        isTabActive ? AppColors.darkText : AppColors.darkGrey,
+                        BlendMode.srcIn,
                       ),
-                      const SizedBox(height: 4),
-                      BodyTextColors(
-                        title: labels[index],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isTabActive
-                            ? AppColors.darkText
-                            : AppColors.darkGrey,
-                      ),
-                    ],
-                  );
-                },
-                backgroundColor: AppColors.scaffoldBackground,
-                borderColor: AppColors.primaryBorder,
-                activeIndex: homeController.currentPage == 1
-                    ? -1
-                    : homeController.currentPage,
-                gapLocation: GapLocation.center,
-                notchSmoothness: NotchSmoothness.softEdge,
-                elevation: 0,
-                borderWidth: 1.5,
-                onTap: (index) async {
-                  if (index == 1) {
-                    final token = SessionManager.getToken();
-                    if (token != null) {
-                      int? shopId = SessionManager.getShopId();
-                      if (shopId != 0) {
-                        VideoDialogues().showVideoUploadDialogue(context);
-                      } else {
-                        await showAddShopDetail(context);
-                      }
+                    ),
+                    const SizedBox(height: 4),
+                    BodyTextColors(
+                      title: labels[index],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isTabActive
+                          ? AppColors.darkText
+                          : AppColors.darkGrey,
+                    ),
+                  ],
+                );
+              },
+              backgroundColor: AppColors.scaffoldBackground,
+              borderColor: AppColors.primaryBorder,
+              activeIndex: homeController.currentPage == 1
+                  ? -1
+                  : homeController.currentPage,
+              gapLocation: GapLocation.center,
+              notchSmoothness: NotchSmoothness.softEdge,
+              elevation: 0,
+              borderWidth: 1.5,
+              onTap: (index) async {
+                if (index == 1) {
+                  final token = SessionManager.getToken();
+                  if (token != null) {
+                    int? shopId = SessionManager.getShopId();
+                    if (shopId != 0) {
+                      VideoDialogues().showVideoUploadDialogue(context);
                     } else {
-                      await LoginBottomSheet.showLoginBottomSheet(context);
+                      await showAddShopDetail(context);
                     }
                   } else {
-                    homeController.setCurrentPage = index;
+                    await LoginBottomSheet.showLoginBottomSheet(context);
                   }
-                },
+                } else {
+                  homeController.setCurrentPage = index;
+                }
+              },
+            ),
+            Positioned(
+              top: 45,
+              child: HeaderTextPrimary(
+                title: "Maps",
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
-              Positioned(
-                top: 45,
-                child: HeaderTextPrimary(
-                  title: "Maps",
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

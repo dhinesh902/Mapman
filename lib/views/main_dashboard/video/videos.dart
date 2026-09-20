@@ -112,417 +112,423 @@ class _VideosState extends State<Videos> {
     final shops = context.watch<ProfileController>().shopListData.data ?? [];
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Column(
-        children: [
-          Container(
-            height: 80,
-            clipBehavior: Clip.hardEdge,
-            decoration: videoController.currentVideoIndex == 1
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(30),
-                      bottomLeft: Radius.circular(30),
-                    ),
-                    color: AppColors.scaffoldBackgroundDark,
-                  )
-                : BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(30),
-                      bottomLeft: Radius.circular(30),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.lightViolet, AppColors.violet],
-                    ),
-                  ),
-            child: Row(
-              children: [
-                Container(
-                  height: 40,
-                  width: 220,
-                  margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: AppColors.bgGrey, // background for outer
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: VideoHeadingContainer(
-                          title: 'All Videos',
-                          icon: AppIcons.p24,
-                          isActive: videoController.currentVideoIndex == 0,
-                          isLeft: true,
-                          isVideo: true,
-                          onTap: () async {
-                            videoController.setCurrentVideoIndex = 0;
-                            await getCategoryVideos();
-                          },
-                        ),
+      body: SizedBox(
+        height: MediaQuery.of(context).size.height,
+        child: Column(
+          children: [
+            Container(
+              height: 100,
+              clipBehavior: Clip.hardEdge,
+              decoration: videoController.currentVideoIndex == 1
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        bottomRight: Radius.circular(30),
+                        bottomLeft: Radius.circular(30),
                       ),
-                      Expanded(
-                        child: VideoHeadingContainer(
-                          title: 'My Videos',
-                          icon: AppIcons.videoAppP,
-                          isActive: videoController.currentVideoIndex == 1,
-                          isLeft: false,
-                          isVideo: true,
-                          onTap: () async {
-                            final token = SessionManager.getToken();
-                            if (token != null && token.isNotEmpty) {
-                              videoController.setCurrentVideoIndex = 1;
-                              await getMyVideos();
-                            } else {
-                              LoginBottomSheet.showLoginBottomSheet(context);
-                            }
-                          },
-                        ),
+                      color: AppColors.scaffoldBackgroundDark,
+                    )
+                  : BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        bottomRight: Radius.circular(30),
+                        bottomLeft: Radius.circular(30),
                       ),
-                    ],
-                  ),
-                ),
-                Spacer(),
-                // GestureDetector(
-                //   onTap: () {
-                //     final token = SessionManager.getToken();
-                //     if (token == null || token.isEmpty) {
-                //       LoginBottomSheet.showLoginBottomSheet(context);
-                //     } else {
-                //       VideoDialogues().showRewardsDialogue(
-                //         context,
-                //         isEarnCoins: true,
-                //       );
-                //     }
-                //   },
-                //   child: Container(
-                //     height: 40,
-                //     width: 90,
-                //     margin: EdgeInsets.only(bottom: 15),
-                //     decoration: BoxDecoration(
-                //       color: AppColors.scaffoldBackground,
-                //       border: Border.all(color: GenericColors.darkYellow),
-                //       borderRadius: BorderRadiusGeometry.circular(20),
-                //     ),
-                //     child: Stack(
-                //       alignment: Alignment.center,
-                //       children: [
-                //         Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             Image.asset(
-                //               AppIcons.rupeeCoinP,
-                //               height: 34,
-                //               width: 34,
-                //             ),
-                //             SizedBox(width: 5),
-                //             Builder(
-                //               builder: (context) {
-                //                 final token = SessionManager.getToken();
-                //                 if (token == null || token.isEmpty) {
-                //                   return HeaderTextBlack(
-                //                     title: '0',
-                //                     fontSize: 16,
-                //                     fontWeight: FontWeight.w300,
-                //                   );
-                //                 }
-                //                 if (videoController.coinResponse.status ==
-                //                         Status.INITIAL ||
-                //                     videoController.coinResponse.status ==
-                //                         Status.LOADING) {
-                //                   return HeaderTextBlack(
-                //                     title: '...',
-                //                     fontSize: 16,
-                //                     fontWeight: FontWeight.w300,
-                //                   );
-                //                 }
-                //                 return HeaderTextBlack(
-                //                   title:
-                //                       '${videoController.coinResponse.data ?? 0}',
-                //                   fontSize: 16,
-                //                   fontWeight: FontWeight.w300,
-                //                 );
-                //               },
-                //             ),
-                //           ],
-                //         ),
-                //         Positioned(
-                //           top: 0,
-                //           left: 0,
-                //           right: 0,
-                //           child: Center(
-                //             child: Lottie.asset(AppAnimations.confetti),
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //   ),
-                // ),
-                SizedBox(width: 10),
-              ],
-            ),
-          ),
-
-          /// ALL VIDEOS
-          if (videoController.currentVideoIndex == 0) ...[
-            SizedBox(height: 15),
-            Expanded(
-              child: Builder(
-                builder: (context) {
-                  final isLoading =
-                      videoController.categoryVideoData.status ==
-                          Status.INITIAL ||
-                      videoController.categoryVideoData.status ==
-                          Status.LOADING;
-
-                  if (videoController.categoryVideoData.status ==
-                      Status.ERROR) {
-                    return CustomErrorTextWidget(
-                      title: '${videoController.categoryVideoData.message}',
-                    );
-                  }
-
-                  final dataList = isLoading
-                      ? List.generate(
-                          6,
-                          (index) => CategoryVideosData(
-                            id: index,
-                            categoryName: 'Category $index',
-                            categoryVideo: '',
-                          ),
-                        )
-                      : (videoController.categoryVideoData.data ?? []);
-
-                  categoryVideos = [...dataList];
-                  if (!isLoading) {
-                    categoryVideos.sort((a, b) {
-                      final aIsOthers =
-                          (a.categoryName ?? '').toLowerCase() == 'others';
-                      final bIsOthers =
-                          (b.categoryName ?? '').toLowerCase() == 'others';
-
-                      if (aIsOthers && !bIsOthers) return 1;
-                      if (!aIsOthers && bIsOthers) return -1;
-
-                      return 0;
-                    });
-                  }
-
-                  return Skeletonizer(
-                    enabled: isLoading,
-                    child: isLoading
-                        ? const VideosSkeleton(isMyVideos: false)
-                        : AllVideosCard(categoryVideoData: categoryVideos),
-                  );
-                },
-              ),
-            ),
-          ],
-
-          /// MY VIDEOS
-          if (videoController.currentVideoIndex == 1) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: const LinearGradient(
-                    colors: [Colors.white, Color(0xFFF4FFF5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(
-                    color: const Color(0xFF4CAF50).withValues(alpha: .18),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4CAF50).withValues(alpha: .10),
-                      blurRadius: 15,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 6),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [AppColors.lightViolet, AppColors.violet],
+                      ),
                     ),
-                  ],
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton2<ShopDetailData>(
-                    isExpanded: true,
-                    hint: Row(
+              padding: EdgeInsets.only(top: 40),
+              child: Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 220,
+                    margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.bgGrey, // background for outer
+                    ),
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.storefront_outlined,
-                          color: const Color(0xFF4CAF50),
-                          size: 20,
-                        ),
-                        SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            'Select shop to filter videos',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.darkText.withValues(alpha: .7),
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: VideoHeadingContainer(
+                            title: 'All Videos',
+                            icon: AppIcons.p24,
+                            isActive: videoController.currentVideoIndex == 0,
+                            isLeft: true,
+                            isVideo: true,
+                            onTap: () async {
+                              videoController.setCurrentVideoIndex = 0;
+                              await getCategoryVideos();
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: VideoHeadingContainer(
+                            title: 'My Videos',
+                            icon: AppIcons.videoAppP,
+                            isActive: videoController.currentVideoIndex == 1,
+                            isLeft: false,
+                            isVideo: true,
+                            onTap: () async {
+                              final token = SessionManager.getToken();
+                              if (token != null && token.isNotEmpty) {
+                                videoController.setCurrentVideoIndex = 1;
+                                await getMyVideos();
+                              } else {
+                                LoginBottomSheet.showLoginBottomSheet(context);
+                              }
+                            },
                           ),
                         ),
                       ],
                     ),
-                    items: shops.map((item) {
-                      return DropdownMenuItem<ShopDetailData>(
-                        value: item,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.store,
-                              color: const Color(0xFF4CAF50),
-                              size: 18,
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                item.shopName?.capitalize() ?? '',
-                                style: AppTextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.darkText,
-                                ).textStyle,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                  ),
+                  Spacer(),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     final token = SessionManager.getToken();
+                  //     if (token == null || token.isEmpty) {
+                  //       LoginBottomSheet.showLoginBottomSheet(context);
+                  //     } else {
+                  //       VideoDialogues().showRewardsDialogue(
+                  //         context,
+                  //         isEarnCoins: true,
+                  //       );
+                  //     }
+                  //   },
+                  //   child: Container(
+                  //     height: 40,
+                  //     width: 90,
+                  //     margin: EdgeInsets.only(bottom: 15),
+                  //     decoration: BoxDecoration(
+                  //       color: AppColors.scaffoldBackground,
+                  //       border: Border.all(color: GenericColors.darkYellow),
+                  //       borderRadius: BorderRadiusGeometry.circular(20),
+                  //     ),
+                  //     child: Stack(
+                  //       alignment: Alignment.center,
+                  //       children: [
+                  //         Row(
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: [
+                  //             Image.asset(
+                  //               AppIcons.rupeeCoinP,
+                  //               height: 34,
+                  //               width: 34,
+                  //             ),
+                  //             SizedBox(width: 5),
+                  //             Builder(
+                  //               builder: (context) {
+                  //                 final token = SessionManager.getToken();
+                  //                 if (token == null || token.isEmpty) {
+                  //                   return HeaderTextBlack(
+                  //                     title: '0',
+                  //                     fontSize: 16,
+                  //                     fontWeight: FontWeight.w300,
+                  //                   );
+                  //                 }
+                  //                 if (videoController.coinResponse.status ==
+                  //                         Status.INITIAL ||
+                  //                     videoController.coinResponse.status ==
+                  //                         Status.LOADING) {
+                  //                   return HeaderTextBlack(
+                  //                     title: '...',
+                  //                     fontSize: 16,
+                  //                     fontWeight: FontWeight.w300,
+                  //                   );
+                  //                 }
+                  //                 return HeaderTextBlack(
+                  //                   title:
+                  //                       '${videoController.coinResponse.data ?? 0}',
+                  //                   fontSize: 16,
+                  //                   fontWeight: FontWeight.w300,
+                  //                 );
+                  //               },
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         Positioned(
+                  //           top: 0,
+                  //           left: 0,
+                  //           right: 0,
+                  //           child: Center(
+                  //             child: Lottie.asset(AppAnimations.confetti),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  SizedBox(width: 10),
+                ],
+              ),
+            ),
+
+            /// ALL VIDEOS
+            if (videoController.currentVideoIndex == 0) ...[
+              SizedBox(height: 15),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    final isLoading =
+                        videoController.categoryVideoData.status ==
+                            Status.INITIAL ||
+                        videoController.categoryVideoData.status ==
+                            Status.LOADING;
+
+                    if (videoController.categoryVideoData.status ==
+                        Status.ERROR) {
+                      return CustomErrorTextWidget(
+                        title: '${videoController.categoryVideoData.message}',
                       );
-                    }).toList(),
-                    value: selectedShop,
-                    onChanged: (value) async {
-                      if (mounted && value != null) {
-                        setState(() => selectedShop = value);
-                        await context.read<VideoController>().getMyVideos(
-                          shopId: value.id,
-                        );
-                      }
-                    },
-                    buttonStyleData: ButtonStyleData(
-                      height: 55,
-                      padding: const EdgeInsets.only(left: 15, right: 15),
-                      elevation: 0,
+                    }
+
+                    final dataList = isLoading
+                        ? List.generate(
+                            6,
+                            (index) => CategoryVideosData(
+                              id: index,
+                              categoryName: 'Category $index',
+                              categoryVideo: '',
+                            ),
+                          )
+                        : (videoController.categoryVideoData.data ?? []);
+
+                    categoryVideos = [...dataList];
+                    if (!isLoading) {
+                      categoryVideos.sort((a, b) {
+                        final aIsOthers =
+                            (a.categoryName ?? '').toLowerCase() == 'others';
+                        final bIsOthers =
+                            (b.categoryName ?? '').toLowerCase() == 'others';
+
+                        if (aIsOthers && !bIsOthers) return 1;
+                        if (!aIsOthers && bIsOthers) return -1;
+
+                        return 0;
+                      });
+                    }
+
+                    return Skeletonizer(
+                      enabled: isLoading,
+                      child: isLoading
+                          ? const VideosSkeleton(isMyVideos: false)
+                          : AllVideosCard(categoryVideoData: categoryVideos),
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            /// MY VIDEOS
+            if (videoController.currentVideoIndex == 1) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    gradient: const LinearGradient(
+                      colors: [Colors.white, Color(0xFFF4FFF5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    iconStyleData: IconStyleData(
-                      icon: Icon(Icons.keyboard_arrow_down_rounded),
-                      iconSize: 24,
-                      iconEnabledColor: AppColors.darkText,
-                      iconDisabledColor: AppColors.darkText.withValues(
-                        alpha: .5,
+                    border: Border.all(
+                      color: const Color(0xFF4CAF50).withValues(alpha: .18),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4CAF50).withValues(alpha: .10),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
                       ),
-                    ),
-                    dropdownStyleData: DropdownStyleData(
-                      maxHeight: 250,
-                      padding: EdgeInsets.zero,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        color: Colors.white,
-                        border: Border.all(
-                          color: const Color(0xFF4CAF50).withValues(alpha: .18),
-                          width: 2,
+                    ],
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton2<ShopDetailData>(
+                      isExpanded: true,
+                      hint: Row(
+                        children: [
+                          Icon(
+                            Icons.storefront_outlined,
+                            color: const Color(0xFF4CAF50),
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Select shop to filter videos',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.darkText.withValues(alpha: .7),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      items: shops.map((item) {
+                        return DropdownMenuItem<ShopDetailData>(
+                          value: item,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.store,
+                                color: const Color(0xFF4CAF50),
+                                size: 18,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  item.shopName?.capitalize() ?? '',
+                                  style: AppTextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.darkText,
+                                  ).textStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      value: selectedShop,
+                      onChanged: (value) async {
+                        if (mounted && value != null) {
+                          setState(() => selectedShop = value);
+                          await context.read<VideoController>().getMyVideos(
+                            shopId: value.id,
+                          );
+                        }
+                      },
+                      buttonStyleData: ButtonStyleData(
+                        height: 55,
+                        padding: const EdgeInsets.only(left: 15, right: 15),
+                        elevation: 0,
+                      ),
+                      iconStyleData: IconStyleData(
+                        icon: Icon(Icons.keyboard_arrow_down_rounded),
+                        iconSize: 24,
+                        iconEnabledColor: AppColors.darkText,
+                        iconDisabledColor: AppColors.darkText.withValues(
+                          alpha: .5,
                         ),
                       ),
-                      offset: const Offset(0, -5),
-                    ),
-                    menuItemStyleData: const MenuItemStyleData(
-                      height: 50,
-                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      dropdownStyleData: DropdownStyleData(
+                        maxHeight: 250,
+                        padding: EdgeInsets.zero,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.white,
+                          border: Border.all(
+                            color: const Color(
+                              0xFF4CAF50,
+                            ).withValues(alpha: .18),
+                            width: 2,
+                          ),
+                        ),
+                        offset: const Offset(0, -5),
+                      ),
+                      menuItemStyleData: const MenuItemStyleData(
+                        height: 50,
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Builder(
-              builder: (context) {
-                final isLoading =
-                    videoController.myVideosData.status == Status.INITIAL ||
-                    videoController.myVideosData.status == Status.LOADING;
+              Builder(
+                builder: (context) {
+                  final isLoading =
+                      videoController.myVideosData.status == Status.INITIAL ||
+                      videoController.myVideosData.status == Status.LOADING;
 
-                if (videoController.myVideosData.status == Status.ERROR) {
-                  return CustomErrorTextWidget(
-                    title: '${videoController.myVideosData.message}',
-                  );
-                }
+                  if (videoController.myVideosData.status == Status.ERROR) {
+                    return CustomErrorTextWidget(
+                      title: '${videoController.myVideosData.message}',
+                    );
+                  }
 
-                final videoData = isLoading
-                    ? List.generate(
-                        4,
-                        (index) => VideosData(
-                          id: index,
-                          videoTitle: 'Video Title $index',
-                          thumbnail: '',
-                          views: 100,
-                          viewCount: 100,
-                          watched: false,
-                        ),
-                      )
-                    : (videoController.myVideosData.data ?? []);
-
-                if (videoData.isEmpty && !isLoading) {
-                  return NoVideoContainer();
-                }
-
-                return Flexible(
-                  child: Skeletonizer(
-                    enabled: isLoading,
-                    child: isLoading
-                        ? const VideosSkeleton(isMyVideos: true)
-                        : Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    HeaderTextBlack(
-                                      title:
-                                          'Total Videos (${videoData.length})',
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    InkWell(
-                                      onTap: isLoading
-                                          ? null
-                                          : () {
-                                              context.pushNamed(
-                                                AppRoutes.uploadVideo,
-                                                extra: VideosData(),
-                                              );
-                                            },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          SvgPicture.asset(AppIcons.upload),
-                                          BodyTextColors(
-                                            title: 'Upload ',
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w300,
-                                            color: GenericColors.darkGreen,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 15),
-                              Flexible(child: MyVideos(myVideos: videoData)),
-                            ],
+                  final videoData = isLoading
+                      ? List.generate(
+                          4,
+                          (index) => VideosData(
+                            id: index,
+                            videoTitle: 'Video Title $index',
+                            thumbnail: '',
+                            views: 100,
+                            viewCount: 100,
+                            watched: false,
                           ),
-                  ),
-                );
-              },
-            ),
+                        )
+                      : (videoController.myVideosData.data ?? []);
+
+                  if (videoData.isEmpty && !isLoading) {
+                    return NoVideoContainer();
+                  }
+
+                  return Flexible(
+                    child: Skeletonizer(
+                      enabled: isLoading,
+                      child: isLoading
+                          ? const VideosSkeleton(isMyVideos: true)
+                          : Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      HeaderTextBlack(
+                                        title:
+                                            'Total Videos (${videoData.length})',
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      InkWell(
+                                        onTap: isLoading
+                                            ? null
+                                            : () {
+                                                context.pushNamed(
+                                                  AppRoutes.uploadVideo,
+                                                  extra: VideosData(),
+                                                );
+                                              },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SvgPicture.asset(AppIcons.upload),
+                                            BodyTextColors(
+                                              title: 'Upload ',
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w300,
+                                              color: GenericColors.darkGreen,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 15),
+                                Flexible(child: MyVideos(myVideos: videoData)),
+                              ],
+                            ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -406,8 +406,7 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                                             CrossAxisAlignment.end,
                                         children: [
                                           BodyTextColors(
-                                            title:
-                                                '${freeSlots} of $totalSlots',
+                                            title: '$freeSlots of $totalSlots',
                                             fontSize: 14,
                                             color: freeSlots > 0
                                                 ? GenericColors.darkGreen
@@ -550,6 +549,14 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                                               'yyyy-MM-dd',
                                             ).format(d);
                                             finalDatesToSend.add(dStr);
+                                          }
+                                          if (finalDatesToSend.isEmpty) {
+                                            CustomToast.show(
+                                              context,
+                                              title: "Please select dates",
+                                              isError: true,
+                                            );
+                                            return;
                                           }
                                           final response = await offerController
                                               .manageBannerImage(

@@ -23,10 +23,12 @@ class BannerData {
   String? type;
   dynamic image;
   String? headerText;
+  String? fontColor;
+  String? backgroundColor;
+  String? font;
   String? description;
   String? cta;
-  String? illustration;
-  String? color;
+  String? backgroundImage;
   String? category;
   String? status;
   List<String>? bannerSchedule;
@@ -39,10 +41,11 @@ class BannerData {
     this.type,
     this.image,
     this.headerText,
+    this.fontColor,
+    this.backgroundColor,
+    this.font,
     this.description,
     this.cta,
-    this.illustration,
-    this.color,
     this.category,
     this.status,
     this.bannerSchedule,
@@ -56,10 +59,12 @@ class BannerData {
     type = json['type'];
     image = json['image'];
     headerText = json['headerText'];
+    fontColor = json['fontColor'];
+    backgroundColor = json['backgroundColor'];
+    font = json['font'];
     description = json['description'];
     cta = json['cta'];
-    illustration = json['illustration'];
-    color = json['color'];
+    backgroundImage = json['backgroundImage'];
     category = json['category'];
     status = json['status'];
     if (json['bannerSchedule'] != null) {
@@ -121,48 +126,41 @@ class OfferData {
   }
 }
 
-class ColorsData {
-  int? id;
-  String? color;
-  String? status;
-  String? createdAt;
-  String? updatedAt;
+class BackgroundImageModel {
+  int? status;
+  List<BackgroundImageData>? data;
 
-  ColorsData({
-    this.id,
-    this.color,
-    this.status,
-    this.createdAt,
-    this.updatedAt,
-  });
+  BackgroundImageModel({this.status, this.data});
 
-  ColorsData.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    color = json['color'];
+  BackgroundImageModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    if (json['data'] != null) {
+      data = <BackgroundImageData>[];
+      json['data'].forEach((v) {
+        data!.add(BackgroundImageData.fromJson(v));
+      });
+    }
   }
 }
 
-class IllustrationsData {
+class BackgroundImageData {
   int? id;
-  String? illustration;
+  String? backgroundImage;
   String? status;
   String? createdAt;
   String? updatedAt;
 
-  IllustrationsData({
+  BackgroundImageData({
     this.id,
-    this.illustration,
+    this.backgroundImage,
     this.status,
     this.createdAt,
     this.updatedAt,
   });
 
-  IllustrationsData.fromJson(Map<String, dynamic> json) {
+  BackgroundImageData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    illustration = json['illustration'];
+    backgroundImage = json['backgroundImage'];
     status = json['status'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
@@ -180,7 +178,7 @@ class OffersModel {
     if (json['data'] != null) {
       data = <OffersData>[];
       json['data'].forEach((v) {
-        data!.add(new OffersData.fromJson(v));
+        data!.add(OffersData.fromJson(v));
       });
     }
   }

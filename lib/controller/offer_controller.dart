@@ -36,12 +36,17 @@ class OfferController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<BannerData>>> getShopBanners({required int shopId}) async {
+  Future<ApiResponse<List<BannerData>>> getShopBanners({
+    required int shopId,
+  }) async {
     _bannerData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await offerService.getShopBanners(token: token, shopId: shopId);
+      final response = await offerService.getShopBanners(
+        token: token,
+        shopId: shopId,
+      );
       final bannerData = (response[Keys.data] as List)
           .map((e) => BannerData.fromJson(e))
           .toList();
@@ -97,12 +102,17 @@ class OfferController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  Future<ApiResponse<List<OfferData>>> getShopOffers({required int shopId}) async {
+  Future<ApiResponse<List<OfferData>>> getShopOffers({
+    required int shopId,
+  }) async {
     _offerData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await offerService.fetchShopOffers(token: token, shopId: shopId);
+      final response = await offerService.fetchShopOffers(
+        token: token,
+        shopId: shopId,
+      );
       final list = (response[Keys.data] as List)
           .map((e) => OfferData.fromJson(e))
           .toList();
@@ -135,51 +145,35 @@ class OfferController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  ApiResponse<List<ColorsData>> _colorsData = ApiResponse.initial(
-    Strings.noDataFound,
-  );
-  ApiResponse<List<ColorsData>> get colorsData => _colorsData;
+  ApiResponse<List<BackgroundImageData>> _backgroundImageData =
+      ApiResponse.initial(Strings.noDataFound);
 
-  Future<ApiResponse<List<ColorsData>>> fetchColors() async {
-    _colorsData = ApiResponse.loading(Strings.loading);
+  ApiResponse<List<BackgroundImageData>> get backgroundImageData =>
+      _backgroundImageData;
+
+  Future<ApiResponse<List<BackgroundImageData>>>
+  fetchBackgroundImageData() async {
+    _backgroundImageData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
       final token = SessionManager.getToken() ?? '';
-      final response = await offerService.fetchColors(token: token);
+      final response = await offerService.fetchBackgroundImageData(
+        token: token,
+      );
       final list = (response[Keys.data] as List)
-          .map((e) => ColorsData.fromJson(e))
+          .map((e) => BackgroundImageData.fromJson(e))
           .toList();
-      _colorsData = ApiResponse.completed(list);
+      _backgroundImageData = ApiResponse.completed(list);
     } catch (e) {
-      _colorsData = ApiResponse.error(e.toString());
+      _backgroundImageData = ApiResponse.error(e.toString());
     }
     notifyListeners();
-    return _colorsData;
+    return _backgroundImageData;
   }
 
-  ApiResponse<List<IllustrationsData>> _illustrationsData = ApiResponse.initial(
-    Strings.noDataFound,
-  );
-  ApiResponse<List<IllustrationsData>> get illustrationsData => _illustrationsData;
-
-  Future<ApiResponse<List<IllustrationsData>>> fetchIllustrations() async {
-    _illustrationsData = ApiResponse.loading(Strings.loading);
-    notifyListeners();
-    try {
-      final token = SessionManager.getToken() ?? '';
-      final response = await offerService.fetchIllustrations(token: token);
-      final list = (response[Keys.data] as List)
-          .map((e) => IllustrationsData.fromJson(e))
-          .toList();
-      _illustrationsData = ApiResponse.completed(list);
-    } catch (e) {
-      _illustrationsData = ApiResponse.error(e.toString());
-    }
-    notifyListeners();
-    return _illustrationsData;
-  }
-
-  Future<ApiResponse> manageBannerText({required Map<String, dynamic> body}) async {
+  Future<ApiResponse> manageBannerText({
+    required Map<String, dynamic> body,
+  }) async {
     _apiResponse = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
@@ -199,6 +193,7 @@ class OfferController extends ChangeNotifier {
   ApiResponse<List<OffersData>> _allOffersData = ApiResponse.initial(
     Strings.noDataFound,
   );
+
   ApiResponse<List<OffersData>> get allOffersData => _allOffersData;
 
   Future<ApiResponse<List<OffersData>>> fetchAllOffers() async {
@@ -227,7 +222,9 @@ class OfferController extends ChangeNotifier {
         token: token,
         offerId: offerId,
       );
-      _apiResponse = ApiResponse.completed(response[Keys.data] ?? response['message']);
+      _apiResponse = ApiResponse.completed(
+        response[Keys.data] ?? response['message'],
+      );
     } catch (e) {
       _apiResponse = ApiResponse.error(e.toString());
     }
@@ -235,10 +232,15 @@ class OfferController extends ChangeNotifier {
     return _apiResponse;
   }
 
-  ApiResponse<List<String>> _monthlyBannersData = ApiResponse.initial(Strings.noDataFound);
+  ApiResponse<List<String>> _monthlyBannersData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
   ApiResponse<List<String>> get monthlyBannersData => _monthlyBannersData;
 
-  Future<ApiResponse<List<String>>> fetchMonthlyBanners({required String month}) async {
+  Future<ApiResponse<List<String>>> fetchMonthlyBanners({
+    required String month,
+  }) async {
     _monthlyBannersData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {
@@ -247,7 +249,9 @@ class OfferController extends ChangeNotifier {
         token: token,
         month: month,
       );
-      final list = (response[Keys.data] as List).map((e) => e.toString()).toList();
+      final list = (response[Keys.data] as List)
+          .map((e) => e.toString())
+          .toList();
       _monthlyBannersData = ApiResponse.completed(list);
     } catch (e) {
       _monthlyBannersData = ApiResponse.error(e.toString());
@@ -256,10 +260,15 @@ class OfferController extends ChangeNotifier {
     return _monthlyBannersData;
   }
 
-  ApiResponse<AvailableSlotModel> _dayBannersData = ApiResponse.initial(Strings.noDataFound);
+  ApiResponse<AvailableSlotModel> _dayBannersData = ApiResponse.initial(
+    Strings.noDataFound,
+  );
+
   ApiResponse<AvailableSlotModel> get dayBannersData => _dayBannersData;
 
-  Future<ApiResponse<AvailableSlotModel>> fetchDayBanners({required String date}) async {
+  Future<ApiResponse<AvailableSlotModel>> fetchDayBanners({
+    required String date,
+  }) async {
     _dayBannersData = ApiResponse.loading(Strings.loading);
     notifyListeners();
     try {

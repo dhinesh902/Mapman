@@ -1,13 +1,11 @@
-import 'dart:io';
-
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
 import 'package:mapman/utils/constants/enums.dart';
-import 'package:mapman/utils/constants/images.dart';
 import 'package:mapman/utils/constants/text_styles.dart';
 import 'package:mapman/views/widgets/action_bar.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
@@ -17,8 +15,6 @@ import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
 import 'package:mapman/controller/offer_controller.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:convert';
 import 'package:mapman/controller/profile_controller.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/model/offers_model.dart';
@@ -34,36 +30,150 @@ class CreateMakeYourBanner extends StatefulWidget {
 }
 
 class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
+  late OfferController offerController;
   late TextEditingController titleController,
       descriptionController,
       ctaController;
   final formKey = GlobalKey<FormState>();
-  List<Color> bannerColors = [AppColors.whiteText, AppColors.whiteText];
-  String illustration = "";
+
+  String backgroundImage = "";
+  String selectedFont = "Roboto";
   final ValueNotifier<ShopDetailData?> selectedShopNotifier = ValueNotifier(
     null,
   );
   final ValueNotifier<List<DateTime>> selectedDatesNotifier = ValueNotifier([]);
   final ValueNotifier<DateTime?> focusedDateNotifier = ValueNotifier(null);
 
-  Color _parseColor(String colorString) {
-    try {
-      colorString = colorString.toUpperCase().replaceAll(
-        RegExp(r'[^A-F0-9]'),
-        "",
-      );
-      if (colorString.length == 6) {
-        colorString = "FF$colorString";
-      }
-      if (colorString.isEmpty) return Colors.white;
-      return Color(int.parse(colorString, radix: 16));
-    } catch (e) {
-      return Colors.white;
-    }
+  Color _fontColor = AppColors.primary;
+  Color _backgroundColor = AppColors.primary;
+
+  void _showColorPicker(
+    BuildContext context,
+    Color currentColor,
+    Function(Color) onColorSelected,
+  ) {
+    final colors = [
+      Colors.black,
+      Colors.white,
+      Colors.red,
+      Colors.green,
+      Colors.blue,
+      Colors.yellow,
+      Colors.orange,
+      Colors.purple,
+      Colors.pink,
+      Colors.teal,
+      Colors.cyan,
+      Colors.brown,
+      Colors.grey,
+      Colors.indigo,
+      Colors.lime,
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: 300,
+          child: Column(
+            children: [
+              const Text(
+                "Select Color",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: colors.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        onColorSelected(colors[index]);
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colors[index],
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildColorSelector({
+    required String title,
+    required Color selectedColor,
+    required Function(Color) onColorSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => _showColorPicker(context, selectedColor, onColorSelected),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: selectedColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   void initState() {
+    offerController = context.read<OfferController>();
+    selectedFont = widget.banner?.font ?? 'Roboto';
     titleController = TextEditingController(
       text: widget.banner?.headerText ?? "",
     );
@@ -73,25 +183,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
     ctaController = TextEditingController(text: widget.banner?.cta ?? "");
 
     if (widget.banner != null) {
-      illustration = widget.banner?.image ?? "";
-      final cStr = widget.banner?.color ?? "";
-      if (cStr.trim().startsWith('[')) {
-        try {
-          final List<dynamic> jList = jsonDecode(cStr);
-          bannerColors = jList.map((e) => _parseColor(e.toString())).toList();
-        } catch (e) {}
-      } else if (cStr.contains(',')) {
-        bannerColors = cStr
-            .split(',')
-            .map((e) => _parseColor(e.trim()))
-            .toList();
-      } else if (cStr.isNotEmpty) {
-        final parsed = _parseColor(cStr);
-        bannerColors = [parsed, parsed];
-      }
-      if (bannerColors.length == 1) {
-        bannerColors.add(bannerColors.first);
-      }
+      backgroundImage = widget.banner?.backgroundImage ?? "";
     }
 
     super.initState();
@@ -127,7 +219,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final offerController = context.watch<OfferController>();
+    offerController = context.watch<OfferController>();
     return CustomSafeArea(
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundDark,
@@ -137,28 +229,114 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
           child: ListView(
             padding: EdgeInsets.all(15),
             children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.pink, Colors.blue],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      String? result = await context.pushNamed(
+                        AppRoutes.selectBanner,
+                      );
+                      if (result != null) {
+                        setState(() => backgroundImage = result);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    splashColor: Colors.white.withValues(alpha: 0.08),
+                    highlightColor: Colors.white.withValues(alpha: 0.04),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppColors.whiteText.withValues(
+                                alpha: 0.10,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.cloud_upload_outlined,
+                              color: Colors.white,
+                              size: 17,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const BodyTextColors(
+                            title: 'Select Banner',
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Colors.white.withValues(alpha: 0.55),
+                            size: 12,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
               CustomBannerCard(
                 title: titleController.text,
                 description: descriptionController.text,
                 cta: ctaController.text,
-                colors: bannerColors,
-                image: illustration,
-                colorsOnTap: () async {
-                  final result = await BannerDialogues().showColorsDialogue(
-                    context,
-                  );
-                  if (result != null) {
-                    List<Color> colors = result;
-                    if (mounted) setState(() => bannerColors = colors);
-                  }
-                },
-                layersOnTap: () async {
-                  final result = await BannerDialogues()
-                      .showIllustrationDialogue(context);
-                  if (result != null) {
-                    if (mounted) setState(() => illustration = result);
-                  }
-                },
+                backgroundImage: backgroundImage,
+                selectedFont: selectedFont,
+                fontColor: _fontColor,
+                backgroundColor: _backgroundColor,
+              ),
+              SizedBox(height: 20),
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 3,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildColorSelector(
+                    title: "Font Color",
+                    selectedColor: _fontColor,
+                    onColorSelected: (c) => setState(() => _fontColor = c),
+                  ),
+                  _buildColorSelector(
+                    title: "Background Color",
+                    selectedColor: _backgroundColor,
+                    onColorSelected: (c) =>
+                        setState(() => _backgroundColor = c),
+                  ),
+                ],
               ),
               SizedBox(height: 20),
               ValueListenableBuilder<ShopDetailData?>(
@@ -242,6 +420,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
               SizedBox(height: 20),
               CustomTextField(
                 title: "Header Text",
+                maxLength: 30,
                 controller: titleController,
                 hintText: "eg.Summer sale is Live!!",
                 inputAction: TextInputAction.next,
@@ -255,9 +434,221 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                   if (mounted) setState(() => titleController.text = value);
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (context) {
+                        final fonts = [
+                          "Roboto",
+                          "Open Sans",
+                          "Lato",
+                          "Oswald",
+                          "Raleway",
+                          "Montserrat",
+                          "Poppins",
+                          "Ubuntu",
+                          "Playfair Display",
+                          "Merriweather",
+                        ];
+                        return Container(
+                          height: MediaQuery.of(context).size.height * 0.55,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 12),
+                              Container(
+                                width: 45,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const HeaderTextBlack(
+                                title: "Select Font Style",
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              const SizedBox(height: 16),
+                              Expanded(
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
+                                  itemCount: fonts.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final font = fonts[index];
+                                    final isSelected = selectedFont == font;
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() => selectedFont = font);
+                                        Navigator.pop(context);
+                                      },
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.primary.withValues(
+                                                  alpha: 0.08,
+                                                )
+                                              : Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.primary
+                                                : Colors.grey.withValues(
+                                                    alpha: 0.2,
+                                                  ),
+                                            width: isSelected ? 1.5 : 1,
+                                          ),
+                                          boxShadow: isSelected
+                                              ? [
+                                                  BoxShadow(
+                                                    color: AppColors.primary
+                                                        .withValues(alpha: 0.1),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ]
+                                              : [],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              font,
+                                              style: GoogleFonts.getFont(
+                                                font,
+                                                fontSize: 16,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                                color: isSelected
+                                                    ? AppColors.primary
+                                                    : AppColors.darkText,
+                                              ),
+                                            ),
+                                            if (isSelected)
+                                              const Icon(
+                                                Icons.check_circle_rounded,
+                                                color: AppColors.primary,
+                                                size: 22,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.whiteText,
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.text_format_rounded,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Header Font",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.hintColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  selectedFont,
+                                  style: GoogleFonts.getFont(
+                                    selectedFont,
+                                    fontSize: 15,
+                                    color: AppColors.darkText,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.darkText,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               CustomTextField(
                 title: "Description",
+                maxLength: 50,
                 controller: descriptionController,
                 hintText: "eg.Flat 30% off on all products ",
                 inputAction: TextInputAction.next,
@@ -366,14 +757,11 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                                   ).format(focusedDate);
                                 }
                                 return Expanded(
-                                  child: Text(
-                                    dateText,
+                                  child: HeaderTextBlack(
+                                    title: dateText,
                                     textAlign: TextAlign.right,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 );
                               },
@@ -430,16 +818,6 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       return;
                     }
 
-                    String colorStr = "";
-                    if (bannerColors.isNotEmpty) {
-                      final hex1 =
-                          "#${bannerColors[0].value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}";
-                      final hex2 = bannerColors.length > 1
-                          ? "#${bannerColors[1].value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}"
-                          : hex1;
-                      colorStr = "[\"$hex1\", \"$hex2\"]";
-                    }
-
                     List<String> finalDatesToSend = [];
                     for (var d in selectedDatesNotifier.value) {
                       String dStr = DateFormat('yyyy-MM-dd').format(d);
@@ -450,28 +828,27 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       "shopId": shopId,
                       "bannerType": "text",
                       "type": widget.banner != null ? "update" : "add",
-                      "illustration": illustration,
+                      "backgroundImage": backgroundImage,
                       "headerText": titleController.text,
                       "description": descriptionController.text,
                       "cta": ctaController.text,
-                      "color": colorStr,
                       "bannerId": widget.banner?.id ?? 0,
                       "bannerSchedule": finalDatesToSend,
+                      "font": selectedFont,
+                      "fontColor":
+                          '#${(_fontColor.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}',
+                      "backgroundColor":
+                          '#${(_backgroundColor.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}',
                     };
-
                     CustomDialogues.showLoadingDialogue(context);
-                    final response = await Provider.of<OfferController>(
-                      context,
-                      listen: false,
-                    ).manageBannerText(body: body);
+                    final response = await offerController.manageBannerText(
+                      body: body,
+                    );
                     if (!context.mounted) return;
                     Navigator.pop(context);
 
                     if (response.status == Status.COMPLETED) {
-                      Provider.of<OfferController>(
-                        context,
-                        listen: false,
-                      ).getShopBanners(shopId: shopId);
+                      offerController.getShopBanners(shopId: shopId);
                       CustomToast.show(
                         context,
                         title: widget.banner != null
@@ -712,16 +1089,15 @@ class CustomBannerCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
-    required this.image,
     required this.cta,
-    required this.colors,
-    required this.colorsOnTap,
-    required this.layersOnTap,
+    required this.backgroundImage,
+    required this.selectedFont,
+    this.fontColor = Colors.white,
+    this.backgroundColor = Colors.white,
   });
 
-  final String title, description, cta, image;
-  final List<Color> colors;
-  final VoidCallback colorsOnTap, layersOnTap;
+  final String title, description, cta, backgroundImage, selectedFont;
+  final Color fontColor, backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -732,72 +1108,41 @@ class CustomBannerCard extends StatelessWidget {
     final ctaTitle = cta.isNotEmpty ? cta : "CTA (shop now)";
     return Container(
       height: 155,
+      padding: EdgeInsets.all(15),
       decoration: BoxDecoration(
+        color: AppColors.whiteText,
         borderRadius: BorderRadius.circular(10),
-        gradient: LinearGradient(colors: colors),
+        image: backgroundImage.isNotEmpty
+            ? DecorationImage(
+                image: NetworkImage(backgroundImage),
+                fit: BoxFit.cover,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            title: HeaderTextPrimary(
-              title: headerTitle,
+          Text(
+            headerTitle,
+            style: GoogleFonts.getFont(
+              selectedFont,
               fontSize: 16,
+              color: fontColor,
               fontWeight: FontWeight.w500,
             ),
-            subtitle: BodyTextHint(
-              title: descriptionTitle,
-              fontSize: 12,
-              fontWeight: FontWeight.w300,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: colorsOnTap,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.scaffoldBackgroundDark,
-                    ),
-                    padding: EdgeInsets.all(10),
-                    child: Image.asset(AppIcons.colorsP, height: 20, width: 20),
-                  ),
-                ),
-
-                SizedBox(width: 10),
-                GestureDetector(
-                  onTap: layersOnTap,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.scaffoldBackgroundDark,
-                    ),
-                    padding: EdgeInsets.all(10),
-                    child: (image.startsWith('http'))
-                        ? CachedNetworkImage(
-                            imageUrl: image,
-                            height: 20,
-                            width: 20,
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error, size: 20),
-                          )
-                        : Image.asset(
-                            image.isNotEmpty ? image : AppIcons.layerP,
-                            height: 20,
-                            width: 20,
-                          ),
-                  ),
-                ),
-              ],
-            ),
+          ),
+          SizedBox(height: 10),
+          BodyTextColors(
+            title: descriptionTitle,
+            fontSize: 12,
+            color: fontColor,
+            fontWeight: FontWeight.w300,
           ),
           Spacer(),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-            margin: EdgeInsets.only(left: 15, bottom: 20),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(30),
             ),
             child: BodyTextColors(
@@ -809,475 +1154,6 @@ class CustomBannerCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class BannerDialogues {
-  Future<List<Color>?> showColorsDialogue(BuildContext context) async {
-    if (Platform.isIOS) {
-      return showCupertinoDialog(
-        context: context,
-        builder: (_) {
-          return CupertinoAlertDialog(content: _BannerColorsContainer());
-        },
-      );
-    } else {
-      return showDialog(
-        context: context,
-        builder: (_) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            backgroundColor: AppColors.whiteText,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _BannerColorsContainer(),
-          );
-        },
-      );
-    }
-  }
-
-  Future<String?> showIllustrationDialogue(BuildContext context) async {
-    if (Platform.isIOS) {
-      return showCupertinoDialog(
-        context: context,
-        builder: (_) {
-          return CupertinoAlertDialog(content: _BannerIllustrationContainer());
-        },
-      );
-    } else {
-      return showDialog(
-        context: context,
-        builder: (_) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            backgroundColor: AppColors.whiteText,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _BannerIllustrationContainer(),
-          );
-        },
-      );
-    }
-  }
-}
-
-class _BannerColorsContainer extends StatefulWidget {
-  const _BannerColorsContainer();
-
-  @override
-  State<_BannerColorsContainer> createState() => _BannerColorsContainerState();
-}
-
-class _BannerColorsContainerState extends State<_BannerColorsContainer> {
-  final List<List<Color>> bannerColors = [
-    [const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
-    [const Color(0xFF00D715), const Color(0xFFF8BD00)],
-    [const Color(0xFFCB30E0), const Color(0xFF6F1A7A)],
-    [const Color(0xFF0F56D1), const Color(0xFF000000)],
-    [const Color(0xFFFF2D55), const Color(0xFF572D35)],
-    [const Color(0xFF1ED7FE), const Color(0xFF48B2FE)],
-    [const Color(0xFFFF8D28), const Color(0xFFFF8D28)],
-    [const Color(0xFFFF383C), const Color(0xFFFF383C)],
-    [const Color(0xFFFFCC00), const Color(0xFFFFCC00)],
-    [const Color(0xFF34C759), const Color(0xFF34C759)],
-    [const Color(0xFF0088FF), const Color(0xFF0088FF)],
-    [const Color(0xFFAC7F5E), const Color(0xFFAC7F5E)],
-  ];
-
-  int selectedIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OfferController>(context, listen: false).fetchColors();
-    });
-  }
-
-  Color _parseColor(String colorString) {
-    try {
-      colorString = colorString.toUpperCase().replaceAll(
-        RegExp(r'[^A-F0-9]'),
-        "",
-      );
-      if (colorString.length == 6) {
-        colorString = "FF$colorString";
-      }
-      if (colorString.isEmpty) return Colors.white;
-      return Color(int.parse(colorString, radix: 16));
-    } catch (e) {
-      return Colors.white;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<OfferController>(
-      builder: (context, controller, child) {
-        final isLoading = controller.colorsData.status == Status.LOADING;
-        final colorList = controller.colorsData.data ?? [];
-
-        List<List<Color>> displayColors = [];
-        if (!isLoading && colorList.isNotEmpty) {
-          for (var cData in colorList) {
-            if (cData.color != null) {
-              final c = cData.color!;
-              List<Color> gradientColors = [];
-
-              if (c.trim().startsWith('[')) {
-                try {
-                  final List<dynamic> jsonList = jsonDecode(c);
-                  gradientColors = jsonList
-                      .map((e) => _parseColor(e.toString()))
-                      .toList();
-                } catch (e) {
-                  gradientColors = [Colors.white, Colors.white];
-                }
-              } else if (c.contains(',')) {
-                gradientColors = c
-                    .split(',')
-                    .map((e) => _parseColor(e.trim()))
-                    .toList();
-              } else {
-                final parsed = _parseColor(c);
-                gradientColors = [parsed, parsed];
-              }
-
-              if (gradientColors.isNotEmpty) {
-                if (gradientColors.length == 1) {
-                  gradientColors.add(gradientColors.first);
-                }
-                displayColors.add(gradientColors);
-              }
-            }
-          }
-        }
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (Platform.isAndroid) SizedBox(height: 20),
-            Row(
-              children: [
-                SizedBox(width: 20),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.scaffoldBackgroundDark,
-                  ),
-                  child: Image.asset(AppIcons.colorsP, height: 20, width: 20),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HeaderTextBlack(
-                        title: "Banner Color",
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      BodyTextHint(
-                        title: "Choose your preferred banner color",
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const CustomDivider(padding: EdgeInsets.symmetric(vertical: 20)),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: isLoading ? 1 : displayColors.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  mainAxisExtent: 40,
-                ),
-                itemBuilder: (context, index) {
-                  if (isLoading) {
-                    return const CustomLoadingIndicator();
-                  }
-                  final isSelected = selectedIndex == index;
-
-                  return GestureDetector(
-                    onTap: () {
-                      if (mounted) setState(() => selectedIndex = index);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(colors: displayColors[index]),
-                      ),
-                      child: isSelected
-                          ? SvgPicture.asset(
-                              AppIcons.doubleCheck,
-                              height: 20,
-                              width: 20,
-                            )
-                          : null,
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CustomOutlineButton(
-                      title: "Cancel",
-                      onTap: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomFullButton(
-                      title: "Apply",
-                      isDialogue: true,
-                      onTap: () {
-                        if (isLoading || displayColors.isEmpty) return;
-                        Navigator.pop(context, displayColors[selectedIndex]);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (Platform.isAndroid) SizedBox(height: 20),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _BannerIllustrationContainer extends StatefulWidget {
-  const _BannerIllustrationContainer();
-
-  @override
-  State<_BannerIllustrationContainer> createState() =>
-      _BannerIllustrationContainerState();
-}
-
-class _BannerIllustrationContainerState
-    extends State<_BannerIllustrationContainer> {
-  final List<String> illustrations = [
-    AppIcons.galleryP,
-    AppIcons.galleryP,
-    AppIcons.galleryP,
-    AppIcons.galleryP,
-    AppIcons.galleryP,
-    AppIcons.galleryP,
-  ];
-
-  int selectedIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OfferController>(context, listen: false).fetchIllustrations();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<OfferController>(
-      builder: (context, controller, child) {
-        final isLoading = controller.illustrationsData.status == Status.LOADING;
-        final illList = controller.illustrationsData.data ?? [];
-
-        List<String> displayIllus = [];
-        if (!isLoading && illList.isNotEmpty) {
-          for (var iData in illList) {
-            if (iData.illustration != null) {
-              displayIllus.add(iData.illustration!);
-            }
-          }
-        }
-
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (Platform.isAndroid) const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.scaffoldBackgroundDark,
-                        ),
-                        child: Image.asset(
-                          AppIcons.layerP,
-                          height: 20,
-                          width: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            HeaderTextBlack(
-                              title: "Illustration",
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            SizedBox(height: 4),
-                            BodyTextHint(
-                              title: "Choose your illustration",
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const CustomDivider(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: isLoading ? 1 : displayIllus.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: Platform.isIOS ? 3 : 4,
-                      crossAxisSpacing: 5,
-                      mainAxisSpacing: 16,
-                      mainAxisExtent: 72,
-                    ),
-                    itemBuilder: (context, index) {
-                      if (isLoading) {
-                        return const CustomLoadingIndicator();
-                      }
-                      final isSelected = selectedIndex == index;
-
-                      return GestureDetector(
-                        onTap: () {
-                          if (mounted) setState(() => selectedIndex = index);
-                        },
-                        child: AnimatedScale(
-                          scale: 1,
-                          duration: const Duration(milliseconds: 200),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeInOut,
-                            padding: const EdgeInsets.all(1.5),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(6),
-                              gradient: isSelected
-                                  ? const LinearGradient(
-                                      colors: [
-                                        GenericColors.darkGreen,
-                                        GenericColors.darkYellow,
-                                      ],
-                                    )
-                                  : null,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.whiteText
-                                    : AppColors.scaffoldBackgroundDark,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  (displayIllus[index].startsWith('http'))
-                                      ? CachedNetworkImage(
-                                          imageUrl: displayIllus[index],
-                                          height: 25,
-                                          width: 25,
-                                          errorWidget: (context, url, error) =>
-                                              Icon(Icons.error, size: 25),
-                                        )
-                                      : Image.asset(
-                                          displayIllus[index],
-                                          height: 25,
-                                          width: 25,
-                                        ),
-                                  const SizedBox(height: 5),
-                                  const BodyTextHint(
-                                    title: "None",
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: CustomOutlineButton(
-                          title: "Cancel",
-                          onTap: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: CustomFullButton(
-                          title: "Apply",
-                          isDialogue: true,
-                          onTap: () {
-                            if (isLoading || displayIllus.isEmpty) return;
-                            Navigator.of(
-                              context,
-                            ).pop(displayIllus[selectedIndex]);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (Platform.isAndroid) const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

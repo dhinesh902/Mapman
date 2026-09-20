@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mapman/model/offers_model.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/color_constants.dart';
@@ -619,20 +618,26 @@ class OfferCard extends StatelessWidget {
     this.onDelete,
   });
 
+  Color _parseColor(String? hexString, Color defaultColor) {
+    if (hexString == null || hexString.isEmpty) return defaultColor;
+    final buffer = StringBuffer();
+    final hex = hexString.replaceFirst('#', '');
+    if (hex.length == 6) {
+      buffer.write('FF');
+    }
+    buffer.write(hex);
+    try {
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return defaultColor;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<String> colorList = _getColors(banner.color);
-    final List<Color> gradientColors = colorList
-        .map((hex) => _hexToColor(hex))
-        .toList();
-
-    final LinearGradient overlayGradient = LinearGradient(
-      colors: gradientColors.isNotEmpty
-          ? gradientColors.map((c) => c.withValues(alpha: 0.85)).toList()
-          : [Colors.transparent, Colors.transparent],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+    final headerColor = _parseColor(banner.fontColor, Colors.white);
+    final descColor = _parseColor(banner.fontColor, AppColors.whiteText.withValues(alpha: 0.9));
+    final btnBgColor = _parseColor(banner.backgroundColor, Colors.white);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20, left: 15, right: 15),
@@ -670,7 +675,12 @@ class OfferCard extends StatelessWidget {
                   if (banner.image != null && banner.image!.isNotEmpty)
                     CustomNetworkImage(imageUrl: banner.image!),
                   DecoratedBox(
-                    decoration: BoxDecoration(gradient: overlayGradient),
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(banner.backgroundImage ?? ''),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -683,8 +693,9 @@ class OfferCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 banner.headerText ?? '',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: GoogleFonts.getFont(
+                                  banner.font ?? '',
+                                  color: headerColor,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
@@ -693,34 +704,15 @@ class OfferCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (banner.illustration != null) ...[
-                              Container(
-                                height: 36,
-                                width: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                padding: EdgeInsets.all(5),
-                                child: Center(
-                                  child: CustomNetworkImage(
-                                    imageUrl: banner.illustration ?? '',
-                                    boxFit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 8),
                         Expanded(
-                          child: Text(
-                            banner.description ?? '',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
+                          child: BodyTextColors(
+                            title: banner.description ?? '',
+                            color: descColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -732,7 +724,7 @@ class OfferCard extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: btnBgColor,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -744,15 +736,11 @@ class OfferCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: Text(
-                              banner.cta ?? '',
-                              style: TextStyle(
-                                color: gradientColors.isNotEmpty
-                                    ? gradientColors.first
-                                    : AppColors.darkGrey,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: BodyTextColors(
+                              title: banner.cta ?? '',
+                              color: AppColors.whiteText,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                       ],
@@ -808,32 +796,6 @@ class OfferCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static List<String> _getColors(String? color) {
-    if (color == null || color.trim().isEmpty) return [];
-    try {
-      final decoded = jsonDecode(color);
-      if (decoded is List) {
-        return decoded
-            .map((e) => e.toString())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  static Color _hexToColor(String hex) {
-    String value = hex.trim().replaceFirst('#', '');
-    if (value.length == 3) {
-      value = value.split('').map((char) => '$char$char').join();
-    }
-    if (value.length == 6) value = 'FF$value';
-    if (value.length == 8) return Color(int.parse(value, radix: 16));
-    return AppColors.darkGrey;
   }
 }
 

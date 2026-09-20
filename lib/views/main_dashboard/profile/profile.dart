@@ -17,6 +17,7 @@ import 'package:mapman/views/main_dashboard/notification/notification_settings.d
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_dialogues.dart';
 import 'package:mapman/views/widgets/custom_image.dart';
+import 'package:mapman/views/widgets/custom_safearea.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:mapman/views/widgets/login_bottom_sheet.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -70,212 +71,218 @@ class _ProfileState extends State<Profile> {
     final isGuest = token == null || token.isEmpty;
 
     if (isGuest) {
-      return Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundDark,
-        body: Column(
-          children: [
-            const ProfileTopCardGuest(),
-            const SizedBox(height: 40),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
-                      Container(
-                        height: 120,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Image.asset(
-                            AppIcons.shopP,
-                            height: 60,
-                            width: 60,
+      return CustomSafeArea(
+        color: AppColors.scaffoldBackgroundDark,
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundDark,
+          body: Column(
+            children: [
+              const ProfileTopCardGuest(),
+              const SizedBox(height: 40),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+                        Container(
+                          height: 120,
+                          width: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              AppIcons.shopP,
+                              height: 60,
+                              width: 60,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      const HeaderTextBlack(
-                        title: 'Welcome, Guest User',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      const SizedBox(height: 10),
-                      const BodyTextHint(
-                        title:
-                            'Log in or sign up to save videos, register and manage your shop, view shop analytics, and access full features.',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 40),
-                      CustomFullButton(
-                        title: 'Log In / Register',
-                        onTap: () {
-                          LoginBottomSheet.showLoginBottomSheet(context);
-                        },
-                      ),
-                      const SizedBox(height: 30),
-                      ProfileListTile(
-                        image: AppIcons.helpP,
-                        title: 'Help & Support',
-                        body: '24×7 Customer Support',
-                        onTap: () {
-                          context.pushNamed(AppRoutes.helpAndSupport);
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                      ProfileListTile(
-                        image: AppIcons.alertP,
-                        title: 'Report an Issue',
-                        body: 'Report bugs or submit feedback',
-                        onTap: () {
-                          context.pushNamed(AppRoutes.reportIssue);
-                        },
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        const HeaderTextBlack(
+                          title: 'Welcome, Guest User',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        const SizedBox(height: 10),
+                        const BodyTextHint(
+                          title:
+                              'Log in or sign up to save videos, register and manage your shop, view shop analytics, and access full features.',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 40),
+                        CustomFullButton(
+                          title: 'Log In / Register',
+                          onTap: () {
+                            LoginBottomSheet.showLoginBottomSheet(context);
+                          },
+                        ),
+                        const SizedBox(height: 30),
+                        ProfileListTile(
+                          image: AppIcons.helpP,
+                          title: 'Help & Support',
+                          body: '24×7 Customer Support',
+                          onTap: () {
+                            context.pushNamed(AppRoutes.helpAndSupport);
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                        ProfileListTile(
+                          image: AppIcons.alertP,
+                          title: 'Report an Issue',
+                          body: 'Report bugs or submit feedback',
+                          onTap: () {
+                            context.pushNamed(AppRoutes.reportIssue);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundDark,
-      body: Builder(
-        builder: (context) {
-          final isLoading =
-              profileController.profileData.status == Status.INITIAL ||
-              profileController.profileData.status == Status.LOADING;
+    return CustomSafeArea(
+      color: AppColors.scaffoldBackgroundDark,
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundDark,
+        body: Builder(
+          builder: (context) {
+            final isLoading =
+                profileController.profileData.status == Status.INITIAL ||
+                profileController.profileData.status == Status.LOADING;
 
-          if (profileController.profileData.status == Status.ERROR) {
-            return CustomErrorTextWidget(
-              title: '${profileController.profileData.message}',
-            );
-          }
+            if (profileController.profileData.status == Status.ERROR) {
+              return CustomErrorTextWidget(
+                title: '${profileController.profileData.message}',
+              );
+            }
 
-          final profileData = isLoading
-              ? ProfileData(userName: 'Profile Name', profilePic: '')
-              : (profileController.profileData.data ?? ProfileData());
+            final profileData = isLoading
+                ? ProfileData(userName: 'Profile Name', profilePic: '')
+                : (profileController.profileData.data ?? ProfileData());
 
-          return Skeletonizer(
-            enabled: isLoading,
-            child: isLoading
-                ? const ProfileSkeleton()
-                : Column(
-                    children: [
-                      ProfileTopCard(homeController: homeController),
-                      const SizedBox(height: 20),
-                      ProfileImage(profileData: profileData),
-                      const SizedBox(height: 20),
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.only(bottom: 30),
-                          shrinkWrap: true,
-                          children: [
-                            ProfileListTile(
-                              image: AppIcons.personP,
-                              title: 'Profile Details',
-                              body: 'View your details',
-                              onTap: () {
-                                context.pushNamed(
-                                  AppRoutes.editProfile,
-                                  extra: profileData,
-                                );
-                              },
-                            ),
-
-                            SizedBox(height: 15),
-                            ProfileListTile(
-                              image: AppIcons.shopP,
-                              title: 'Your Listings',
-                              body: 'View list of shops',
-                              onTap: () {
-                                context.pushNamed(AppRoutes.shopList);
-                              },
-                            ),
-                            if (shopId != 0) ...[
-                              SizedBox(height: 15),
+            return Skeletonizer(
+              enabled: isLoading,
+              child: isLoading
+                  ? const ProfileSkeleton()
+                  : Column(
+                      children: [
+                        ProfileTopCard(homeController: homeController),
+                        const SizedBox(height: 20),
+                        ProfileImage(profileData: profileData),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.only(bottom: 30),
+                            shrinkWrap: true,
+                            children: [
                               ProfileListTile(
-                                image: AppIcons.bannerP,
-                                title: 'Your Banner & Offers',
-                                body: 'Choose how you want to create',
+                                image: AppIcons.personP,
+                                title: 'Profile Details',
+                                body: 'View your details',
                                 onTap: () {
-                                  context.pushNamed(AppRoutes.bannersOffers);
+                                  context.pushNamed(
+                                    AppRoutes.editProfile,
+                                    extra: profileData,
+                                  );
                                 },
                               ),
-                            ],
-                            if (shopId != 0) ...[
+
                               SizedBox(height: 15),
                               ProfileListTile(
-                                image: AppIcons.analyticsP,
-                                title: 'Shop Analytics',
-                                body: 'Shop Metrics',
+                                image: AppIcons.shopP,
+                                title: 'Your Listings',
+                                body: 'View list of shops',
                                 onTap: () {
-                                  context.pushNamed(AppRoutes.analytics);
+                                  context.pushNamed(AppRoutes.shopList);
                                 },
                               ),
+                              if (shopId != 0) ...[
+                                SizedBox(height: 15),
+                                ProfileListTile(
+                                  image: AppIcons.bannerP,
+                                  title: 'Your Banner & Offers',
+                                  body: 'Choose how you want to create',
+                                  onTap: () {
+                                    context.pushNamed(AppRoutes.bannersOffers);
+                                  },
+                                ),
+                              ],
+                              if (shopId != 0) ...[
+                                SizedBox(height: 15),
+                                ProfileListTile(
+                                  image: AppIcons.analyticsP,
+                                  title: 'Shop Analytics',
+                                  body: 'Shop Metrics',
+                                  onTap: () {
+                                    context.pushNamed(AppRoutes.analytics);
+                                  },
+                                ),
+                              ],
+                              SizedBox(height: 15),
+                              ProfileListTile(
+                                image: AppIcons.helpP,
+                                title: 'Help & Support',
+                                body: '24×7 Customer Support',
+                                onTap: () {
+                                  context.pushNamed(AppRoutes.helpAndSupport);
+                                },
+                              ),
+                              SizedBox(height: 15),
+                              ProfileListTile(
+                                image: AppIcons.alertP,
+                                title: 'Report an Issue',
+                                body: 'Report bugs or submit feedback',
+                                onTap: () {
+                                  context.pushNamed(AppRoutes.reportIssue);
+                                },
+                              ),
+                              SizedBox(height: 15),
+                              ProfileListTile(
+                                image: AppIcons.logoutP,
+                                title: 'Logout',
+                                body: 'Close the Current Profile',
+                                onTap: () {
+                                  CustomDialogues().showLogoutDialog(
+                                    context,
+                                    title: 'Sign out',
+                                    isDeleteAccount: false,
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 15),
+                              GeneralSettingListTile(
+                                image: AppIcons.deleteBlueP,
+                                title: 'Delete Account',
+                                body: 'Permanently remove your account',
+                                onTap: () {
+                                  CustomDialogues().showLogoutDialog(
+                                    context,
+                                    title: 'Delete Account',
+                                    isDeleteAccount: true,
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 80),
                             ],
-                            SizedBox(height: 15),
-                            ProfileListTile(
-                              image: AppIcons.helpP,
-                              title: 'Help & Support',
-                              body: '24×7 Customer Support',
-                              onTap: () {
-                                context.pushNamed(AppRoutes.helpAndSupport);
-                              },
-                            ),
-                            SizedBox(height: 15),
-                            ProfileListTile(
-                              image: AppIcons.alertP,
-                              title: 'Report an Issue',
-                              body: 'Report bugs or submit feedback',
-                              onTap: () {
-                                context.pushNamed(AppRoutes.reportIssue);
-                              },
-                            ),
-                            SizedBox(height: 15),
-                            ProfileListTile(
-                              image: AppIcons.logoutP,
-                              title: 'Logout',
-                              body: 'Close the Current Profile',
-                              onTap: () {
-                                CustomDialogues().showLogoutDialog(
-                                  context,
-                                  title: 'Sign out',
-                                  isDeleteAccount: false,
-                                );
-                              },
-                            ),
-                            SizedBox(height: 15),
-                            GeneralSettingListTile(
-                              image: AppIcons.deleteBlueP,
-                              title: 'Delete Account',
-                              body: 'Permanently remove your account',
-                              onTap: () {
-                                CustomDialogues().showLogoutDialog(
-                                  context,
-                                  title: 'Delete Account',
-                                  isDeleteAccount: true,
-                                );
-                              },
-                            ),
-                            SizedBox(height: 80),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-          );
-        },
+                      ],
+                    ),
+            );
+          },
+        ),
       ),
     );
   }

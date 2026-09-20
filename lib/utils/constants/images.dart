@@ -62,6 +62,7 @@ class AppIcons {
   static const String happyBg3P = 'assets/images/png/banner/happy_bg3.jpg';
   static const String happy3p = 'assets/images/png/banner/happy3.png';
   static const String shopP = 'assets/images/png/shop.png';
+  static const String arcBgP = 'assets/images/png/arc_bg.png';
   static const String bannerP = 'assets/images/png/banner.png';
   static const String offerP = 'assets/images/png/offer.png';
   static const String discountP = 'assets/images/png/discount.png';
@@ -123,6 +124,8 @@ class AppIcons {
   static const String appLogoP = 'assets/images/png/app_logo.png';
   static const String analyticsP = 'assets/images/png/analytics.png';
   static const String privacyPolicyP = 'assets/images/png/privacy_policy.png';
+  // static const String homeBgP = 'assets/images/png/home-bg.jpeg';
+  static const String homeBgP = 'assets/images/png/home_bg.png';
   static const String cardP = 'assets/images/png/card.jpg';
   static const String termsAndConditionsP =
       'assets/images/png/terms_and_conditions.png';

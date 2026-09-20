@@ -3,7 +3,6 @@ import 'package:flutter_scratch_card/flutter_scratch_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mapman/routes/app_routes.dart';
 import 'package:mapman/utils/constants/images.dart';
-import 'package:mapman/utils/extensions/string_extensions.dart';
 import 'package:mapman/views/widgets/custom_buttons.dart';
 import 'package:mapman/views/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';

@@ -18,6 +18,7 @@ class AppRoutes {
   static String editShopDetail = 'edit_shop_detail';
   static String analytics = 'analytics';
   static String shopDetail = 'shop_detail';
+  static String selectBanner = 'select_banner';
   static String registerShopDetail = 'register_shop_detail';
   static String enterLocation = 'enter_location';
   static String enterYourLocation = 'enter_your_location';
