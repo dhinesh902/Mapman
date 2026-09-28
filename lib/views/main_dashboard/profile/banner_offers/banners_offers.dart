@@ -633,11 +633,41 @@ class OfferCard extends StatelessWidget {
     }
   }
 
+  Gradient _parseGradient(String? hexString, Color defaultColor) {
+    if (hexString == null || hexString.isEmpty) {
+      return LinearGradient(colors: [defaultColor, defaultColor]);
+    }
+    final parts = hexString.split(',');
+    List<Color> colors = [];
+    for (var part in parts) {
+      final hex = part.trim().replaceFirst('#', '');
+      final buffer = StringBuffer();
+      if (hex.length == 6) {
+        buffer.write('FF');
+      }
+      buffer.write(hex);
+      try {
+        colors.add(Color(int.parse(buffer.toString(), radix: 16)));
+      } catch (e) {
+        colors.add(defaultColor);
+      }
+    }
+    if (colors.isEmpty) {
+      return LinearGradient(colors: [defaultColor, defaultColor]);
+    } else if (colors.length == 1) {
+      return LinearGradient(colors: [colors.first, colors.first]);
+    }
+    return LinearGradient(colors: colors);
+  }
+
   @override
   Widget build(BuildContext context) {
     final headerColor = _parseColor(banner.fontColor, Colors.white);
-    final descColor = _parseColor(banner.fontColor, AppColors.whiteText.withValues(alpha: 0.9));
-    final btnBgColor = _parseColor(banner.backgroundColor, Colors.white);
+    final descColor = _parseColor(
+      banner.fontColor,
+      AppColors.whiteText.withValues(alpha: 0.9),
+    );
+    final btnBgGradient = _parseGradient(banner.backgroundColor, Colors.white);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20, left: 15, right: 15),
@@ -694,7 +724,7 @@ class OfferCard extends StatelessWidget {
                               child: Text(
                                 banner.headerText ?? '',
                                 style: GoogleFonts.getFont(
-                                  banner.font ?? '',
+                                  banner.font ?? 'Roboto',
                                   color: headerColor,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -724,7 +754,7 @@ class OfferCard extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: btnBgColor,
+                              gradient: btnBgGradient,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(

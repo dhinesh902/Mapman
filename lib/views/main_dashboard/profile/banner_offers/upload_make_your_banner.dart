@@ -431,87 +431,13 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        if (proceed) ...[
-                          CustomRowWidget(
-                            headerChild: HeaderTextBlack(
-                              title: "Banner Type",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            valueChild: BodyTextColors(
-                              title: "Uploaded Image",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: GenericColors.darkGreen,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
 
-                          const CustomDivider(),
-                          const SizedBox(height: 20),
-
-                          CustomRowWidget(
-                            headerChild: BodyTextColors(
-                              title: "Banner Charge",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkText.withValues(alpha: .7),
-                            ),
-                            valueChild: BodyTextColors(
-                              title: "Rs.99",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkText.withValues(alpha: .7),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          CustomRowWidget(
-                            headerChild: BodyTextColors(
-                              title: "GST (18%)",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkText.withValues(alpha: .7),
-                            ),
-                            valueChild: BodyTextColors(
-                              title: "Rs.18",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkText.withValues(alpha: .7),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          const CustomDivider(),
-                          const SizedBox(height: 10),
-
-                          CustomRowWidget(
-                            headerChild: HeaderTextBlack(
-                              title: "Total",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            valueChild: HeaderTextBlack(
-                              title: "Rs.117",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-                          const CustomDivider(),
-                          const SizedBox(height: 20),
-                        ],
                         const SizedBox(height: 20),
 
                         offerController.apiResponse.status == Status.LOADING
                             ? ButtonProgressBar()
                             : CustomFullButton(
-                                title: proceed
-                                    ? "Pay Now"
-                                    : "Proceed to Payment",
+                                title: "Upload",
                                 color:
                                     ((image != null || widget.banner != null) &&
                                         selectedShopNotifier.value != null)
@@ -539,9 +465,6 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                                         }
                                       }
                                     : () async {
-                                        if (!proceed) {
-                                          proceedToPaymentNotifier.value = true;
-                                        } else {
                                           List<String> finalDatesToSend = [];
                                           for (var d
                                               in selectedDatesNotifier.value) {
@@ -606,7 +529,6 @@ class _UploadMakeYourBannerState extends State<UploadMakeYourBanner> {
                                               isError: true,
                                             );
                                           }
-                                        }
                                       },
                               ),
                       ],

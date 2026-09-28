@@ -120,8 +120,12 @@ class OfferData {
     offerTitle = json['offerTitle'];
     offerPercentage = json['offerPercentage'];
     offerExpiry = json['offerExpiry'];
-    offerDetails = json['offerDetails'].cast<String>();
-    termsAndConditions = json['termsAndConditions'].cast<String>();
+    if (json['offerDetails'] != null) {
+      offerDetails = json['offerDetails'].cast<String>();
+    }
+    if (json['termsAndConditions'] != null) {
+      termsAndConditions = json['termsAndConditions'].cast<String>();
+    }
     status = json['status'];
   }
 }
@@ -222,8 +226,12 @@ class OffersData {
     offerTitle = json['offerTitle'];
     offerPercentage = json['offerPercentage'];
     offerExpiry = json['offerExpiry'];
-    offerDetails = json['offerDetails'].cast<String>();
-    termsAndConditions = json['termsAndConditions'].cast<String>();
+    if (json['offerDetails'] != null) {
+      offerDetails = json['offerDetails'].cast<String>();
+    }
+    if (json['termsAndConditions'] != null) {
+      termsAndConditions = json['termsAndConditions'].cast<String>();
+    }
     openStatus = json['openStatus'];
     status = json['status'];
     createdAt = json['createdAt'];

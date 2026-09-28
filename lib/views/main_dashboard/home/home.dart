@@ -464,7 +464,7 @@ class _HomeState extends State<Home> {
                                     crossAxisCount: 4,
                                     mainAxisSpacing: 15,
                                     crossAxisSpacing: 10,
-                                    mainAxisExtent: 95,
+                                    mainAxisExtent: 93,
                                   ),
                               itemCount: categories.length,
                               itemBuilder: (context, index) {
@@ -526,11 +526,11 @@ class _HomeState extends State<Home> {
                                                   : Image.network(
                                                       '${ApiRoutes.baseUrl}${category.categoryImage ?? ''}',
                                                       height: isFurniture
-                                                          ? 30
-                                                          : 25,
+                                                          ? 35
+                                                          : 30,
                                                       width: isFurniture
-                                                          ? 30
-                                                          : 25,
+                                                          ? 35
+                                                          : 30,
                                                       fit: BoxFit.contain,
                                                       filterQuality:
                                                           FilterQuality.high,
@@ -1149,6 +1149,33 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
     }
   }
 
+  Gradient _parseGradient(String? hexString, Color defaultColor) {
+    if (hexString == null || hexString.isEmpty) {
+      return LinearGradient(colors: [defaultColor, defaultColor]);
+    }
+    final parts = hexString.split(',');
+    List<Color> colors = [];
+    for (var part in parts) {
+      final hex = part.trim().replaceFirst('#', '');
+      final buffer = StringBuffer();
+      if (hex.length == 6) {
+        buffer.write('FF');
+      }
+      buffer.write(hex);
+      try {
+        colors.add(Color(int.parse(buffer.toString(), radix: 16)));
+      } catch (e) {
+        colors.add(defaultColor);
+      }
+    }
+    if (colors.isEmpty) {
+      return LinearGradient(colors: [defaultColor, defaultColor]);
+    } else if (colors.length == 1) {
+      return LinearGradient(colors: [colors.first, colors.first]);
+    }
+    return LinearGradient(colors: colors);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.shopBanners.isEmpty) {
@@ -1166,7 +1193,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
               banner.fontColor,
               Colors.white.withValues(alpha: 0.92),
             );
-            final btnBgColor = _parseColor(
+            final btnBgGradient = _parseGradient(
               banner.backgroundColor,
               AppColors.primary,
             );
@@ -1238,7 +1265,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.spaceGrotesk(
-                                      fontSize: 16,
+                                      fontSize: 18,
                                       fontWeight: FontWeight.w900,
                                       color: AppColors.whiteText,
                                     ),
@@ -1258,14 +1285,14 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.getFont(
                                   banner.font ?? 'Roboto',
-                                  fontSize: 16,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.3,
                                   color: headerColor,
                                 ),
                               ),
                             ],
-                            SizedBox(height: 15),
+                            SizedBox(height: 10),
                             if (banner.description != null &&
                                 banner.description
                                     .toString()
@@ -1276,7 +1303,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 color: descColor,
-                                fontSize: 13.5,
+                                fontSize: 15.5,
                                 fontWeight: FontWeight.w400,
                               ),
                               const SizedBox(height: 14),
@@ -1289,7 +1316,7 @@ class _ShopBannersSliderState extends State<ShopBannersSlider> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: btnBgColor,
+                                  gradient: btnBgGradient,
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
                                     color: Colors.white.withValues(alpha: 0.20),

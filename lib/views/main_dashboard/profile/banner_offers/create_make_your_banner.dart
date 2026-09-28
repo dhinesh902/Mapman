@@ -45,7 +45,9 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
   final ValueNotifier<DateTime?> focusedDateNotifier = ValueNotifier(null);
 
   Color _fontColor = AppColors.primary;
-  Color _backgroundColor = AppColors.primary;
+  Gradient _backgroundGradient = const LinearGradient(
+    colors: [AppColors.primary, AppColors.primary],
+  );
 
   void _showColorPicker(
     BuildContext context,
@@ -148,6 +150,124 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
               height: 24,
               decoration: BoxDecoration(
                 color: selectedColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGradientPicker(
+    BuildContext context,
+    Gradient currentGradient,
+    Function(Gradient) onGradientSelected,
+  ) {
+    final gradients = [
+      LinearGradient(colors: [Colors.pink, Colors.blue]),
+      LinearGradient(colors: [Colors.purple, Colors.orange]),
+      LinearGradient(colors: [Colors.teal, Colors.green]),
+      LinearGradient(colors: [Colors.red, Colors.yellow]),
+      LinearGradient(colors: [Colors.indigo, Colors.cyan]),
+      LinearGradient(colors: [Colors.black, Colors.grey]),
+      LinearGradient(colors: [Colors.blue, Colors.lightBlueAccent]),
+      LinearGradient(colors: [Colors.green, Colors.lightGreenAccent]),
+      LinearGradient(colors: [Colors.red, Colors.pinkAccent]),
+      LinearGradient(colors: [Colors.orange, Colors.deepOrangeAccent]),
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: 300,
+          child: Column(
+            children: [
+              const Text(
+                "Select Background Color",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: gradients.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        onGradientSelected(gradients[index]);
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: gradients[index],
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGradientSelector({
+    required String title,
+    required Gradient selectedGradient,
+    required Function(Gradient) onGradientSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => _showGradientPicker(context, selectedGradient, onGradientSelected),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: selectedGradient,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.grey),
               ),
@@ -314,7 +434,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                 backgroundImage: backgroundImage,
                 selectedFont: selectedFont,
                 fontColor: _fontColor,
-                backgroundColor: _backgroundColor,
+                backgroundGradient: _backgroundGradient,
               ),
               SizedBox(height: 20),
               GridView.count(
@@ -330,11 +450,12 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                     selectedColor: _fontColor,
                     onColorSelected: (c) => setState(() => _fontColor = c),
                   ),
-                  _buildColorSelector(
+                  _buildGradientSelector(
                     title: "Background Color",
-                    selectedColor: _backgroundColor,
-                    onColorSelected: (c) =>
-                        setState(() => _backgroundColor = c),
+                    selectedGradient: _backgroundGradient,
+                    onGradientSelected: (g) {
+                      setState(() => _backgroundGradient = g);
+                    },
                   ),
                 ],
               ),
@@ -808,7 +929,7 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
               const SizedBox(height: 20),
 
               CustomFullButton(
-                title: "Proceed to Payment",
+                title: "Upload",
                 isDialogue: true,
                 onTap: () async {
                   if (formKey.currentState!.validate()) {
@@ -837,8 +958,9 @@ class _CreateMakeYourBannerState extends State<CreateMakeYourBanner> {
                       "font": selectedFont,
                       "fontColor":
                           '#${(_fontColor.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}',
-                      "backgroundColor":
-                          '#${(_backgroundColor.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}',
+                      "backgroundColor": _backgroundGradient is LinearGradient 
+                          ? _backgroundGradient.colors.map((c) => '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}').join(',')
+                          : '#FFFFFF',
                     };
                     CustomDialogues.showLoadingDialogue(context);
                     final response = await offerController.manageBannerText(
@@ -1094,10 +1216,12 @@ class CustomBannerCard extends StatelessWidget {
     required this.selectedFont,
     this.fontColor = Colors.white,
     this.backgroundColor = Colors.white,
+    this.backgroundGradient,
   });
 
   final String title, description, cta, backgroundImage, selectedFont;
   final Color fontColor, backgroundColor;
+  final Gradient? backgroundGradient;
 
   @override
   Widget build(BuildContext context) {
@@ -1142,7 +1266,8 @@ class CustomBannerCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 4),
             decoration: BoxDecoration(
-              color: backgroundColor,
+              color: backgroundGradient == null ? backgroundColor : null,
+              gradient: backgroundGradient,
               borderRadius: BorderRadius.circular(30),
             ),
             child: BodyTextColors(
