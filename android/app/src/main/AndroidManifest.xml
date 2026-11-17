@@ -68,6 +68,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Replace with your actual domain details -->
+                <data android:scheme="http" android:host="example.com" />
+                <data android:scheme="https" />
+            </intent-filter>
         </activity>
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
@@ -82,6 +92,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyD5DDgkqYerJpBqwE2PVU-WVRQAs8ujfbw" />
+        <meta-data
+            android:name="flutter_deeplinking_enabled"
+            android:value="true"/>
 
 
     </application>
